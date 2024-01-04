@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Link} from "@inertiajs/react";
-import ApplicationLogo from "@/Components/ApplicationLogo";
+import ApplicationLogo from "@/Components/Ui/Logo/ApplicationLogo";
 import NavLink from "@/Components/Navigation/NavLink";
 import MobileNavigation from "@/Components/Navigation/MobileNavigation";
 import {User} from "@/types";

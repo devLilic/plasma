@@ -17,7 +17,7 @@ const Authenticated = ({user, children}: AuthenticatedPageProps) => {
 
             <main>
                 <div className="py-4">
-                    <div className="mx-auto sm:px-6 lg:px-8">
+                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
                         {children}
                     </div>
                 </div>
