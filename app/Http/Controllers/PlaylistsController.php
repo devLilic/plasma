@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Facades\App\Services\Articles\ArticlesService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 
@@ -20,7 +21,7 @@ class PlaylistsController extends Controller
      */
     public function create()
     {
-        //
+
     }
 
     /**
@@ -28,7 +29,12 @@ class PlaylistsController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $content = $request->validated('file')->getContent();
+        $articles = ArticlesService::generate($content);
+
+        return Inertia::render('Playlists/Show', [
+            'articles' => $articles
+        ]);
     }
 
     /**
@@ -36,7 +42,7 @@ class PlaylistsController extends Controller
      */
     public function show(string $id)
     {
-        //
+        return Inertia::render('Playlist/Show');
     }
 
     /**

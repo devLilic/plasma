@@ -7,24 +7,6 @@ import {Card, List} from "@material-tailwind/react";
 import ListOfPlaylists from "@/Components/Playlist/ListOfPlaylists";
 
 const Playlist = ({auth}: PageProps) => {
-    const [isFileTypeOK, setIsFileTypeOK] = useState(false);
-    const {data, setData, post} = useForm({
-        file: {},
-    });
-
-    // useEffect(() => {
-    //     if (isFileTypeOK) {
-    //         post('titles', data);
-    //     }
-    // }, [isFileTypeOK])
-
-    function handleChange(e: ChangeEvent<HTMLFormElement>) {
-        // check if uploaded file is of type HTML
-        const typeOK = e.target.files[0].type === 'text/html'
-        setData("file", e.target.files[0]);
-        setIsFileTypeOK(typeOK)
-    }
-
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -35,9 +17,9 @@ const Playlist = ({auth}: PageProps) => {
                 <Card className="flex-1">
                     <form>
                         <div className="flex flex-col w-full h-48 items-center justify-center bg-grey-lighter">
-                            <UploadButton title="Încarcă playlist" handleChange={handleChange}/>
+                            <UploadButton title="Încarcă playlist" handleChange={()=>{console.log('upload')} }/>
                             <div>
-                                {!isFileTypeOK && <div className='mt-5'>Fișier HTML</div>}
+                                Fișier HTML
                             </div>
                         </div>
                     </form>
@@ -48,7 +30,6 @@ const Playlist = ({auth}: PageProps) => {
             </div>
 
         </AuthenticatedLayout>
-
     );
 };
 
