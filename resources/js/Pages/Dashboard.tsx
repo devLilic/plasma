@@ -1,7 +1,7 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import {Head} from '@inertiajs/react';
 import {PageProps} from '@/types';
-import Playlist from "@/Pages/Playlist/Playlist";
+import PlaylistPage from "@/Pages/Playlist/PlaylistPage";
 
 const Dashboard = ({auth}: PageProps) => {
     return (
@@ -11,7 +11,7 @@ const Dashboard = ({auth}: PageProps) => {
             <Head title="Dashboard"/>
 
             <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-2">
-                <Playlist/>
+                <PlaylistPage/>
             </div>
         </AuthenticatedLayout>
     );

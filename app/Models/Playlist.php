@@ -10,7 +10,7 @@ class Playlist extends Model {
 
     use HasFactory;
 
-    protected $fillable = ['title', 'play_date'];
+    protected $fillable = ['title'];
 
     public function articles(): HasMany
     {
