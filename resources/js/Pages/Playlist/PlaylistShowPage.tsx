@@ -22,7 +22,7 @@ const PlaylistShowPage = ({auth, articles}: PlaylistShowPageProps) => {
 
             <div className="flex flex-row justify-around items-start">
                 <Card className="flex-1">
-                    <ArticlesList  articles={articles}/>
+                    <ArticlesList articles={articles}/>
                 </Card>
             </div>
         </AuthenticatedLayout>

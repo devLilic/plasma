@@ -49,7 +49,7 @@ const PlaylistPage = ({auth, playlists}: PlaylistPageProps) => {
                         </div>
                     </form>
                 </Card>
-                <Card className='flex w-3/4 ml-2 items-center'>
+                <Card className='flex w-1/2 ml-2 items-center'>
                     <ListOfPlaylists playlists={playlists}/>
                 </Card>
             </div>

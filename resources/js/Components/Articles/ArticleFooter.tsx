@@ -6,9 +6,10 @@ import SearchImageIcon from "@/Components/UI/Svg/SearchImageIcon";
 
 interface ArticleFooterProps {
     article: Article
+    setCurrent: () => void
 }
 
-const ArticleFooter = ({article}: ArticleFooterProps) => {
+const ArticleFooter = ({article, setCurrent}: ArticleFooterProps) => {
     const [query, setQuery] = useState(article.title)
     const [showIntro, setShowIntro] = useState(false)
 
@@ -45,7 +46,9 @@ const ArticleFooter = ({article}: ArticleFooterProps) => {
                 <Button variant='outlined'
                         color='purple'
                         className='my-1 py-0'
-                        type='button'>
+                        type='button'
+                        onClick={setCurrent}
+                >
                     <SearchImageIcon />
                 </Button>
             </div>
