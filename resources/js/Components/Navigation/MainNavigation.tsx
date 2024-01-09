@@ -1,6 +1,6 @@
 import React, {useState} from 'react';
 import {Link} from "@inertiajs/react";
-import ApplicationLogo from "@/Components/Ui/Logo/ApplicationLogo";
+import ApplicationLogo from "@/Components/UI/Logo/ApplicationLogo";
 import NavLink from "@/Components/Navigation/NavLink";
 import MobileNavigation from "@/Components/Navigation/MobileNavigation";
 import {User} from "@/types";
@@ -25,8 +25,8 @@ const MainNavigation = ({user}: MainNavigationProps) => {
                         </div>
 
                         <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                            <NavLink href={route('dashboard')} active={route().current('dashboard')}>
-                                Dashboard
+                            <NavLink href={route('playlists.index')} active={route().current('playlists.index')}>
+                                Playlisturi
                             </NavLink>
                         </div>
                     </div>

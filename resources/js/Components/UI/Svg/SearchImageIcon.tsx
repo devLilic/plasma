@@ -3,7 +3,7 @@ import React from 'react';
 const SearchImageIcon = () => {
     return (
         <svg xmlns="http://www.w3.org/2000/svg" x="0px" y="0px"
-             width="35" height="25"
+             width="45" height="35"
              viewBox="0 0 100 100">
             <path fill="#ee3e54" d="M13 27A2 2 0 1 0 13 31A2 2 0 1 0 13 27Z"></path>
             <path fill="#f1bc19" d="M77 12A1 1 0 1 0 77 14A1 1 0 1 0 77 12Z"></path>

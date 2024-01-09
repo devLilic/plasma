@@ -4,14 +4,11 @@ import PlaylistFirstItem from "@/Components/Playlist/PlaylistFirstItem";
 import {Playlist} from "@/types";
 import {List, Typography} from "@material-tailwind/react";
 
-const ListOfPlaylists = () => {
-    const [playlists, setPlaylists] = useState<Playlist[]>([
-        {id: 1, title: "Jurnal 2024-01-03 13.00", playDate: "2024-01-03 13.00"},
-        {id: 2, title: "Jurnal 2024-01-03 18.00", playDate: "2024-01-03 18.00"},
-        {id: 3, title: "Jurnal 2024-01-03 22.00", playDate: "2024-01-03 22.00"},
-        {id: 4, title: "Jurnal 2024-01-04 13.00", playDate: "2024-01-04 13.00"},
-        {id: 5, title: "Jurnal 2024-01-04 18.00", playDate: "2024-01-04 18.00"}
-    ])
+
+interface ListOfPlaylistsProps {
+    playlists: Playlist[]
+}
+const ListOfPlaylists = ({playlists}: ListOfPlaylistsProps) => {
 
     // useEffect(() => {
     //     fetch("/api/v1/playlists", {

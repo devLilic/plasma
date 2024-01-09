@@ -12,9 +12,8 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
 };
 
 export interface Playlist {
-    id: number,
-    title: string,
-    playDate: string
+    id: number
+    title: string
 }
 
 export interface Article {

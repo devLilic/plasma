@@ -18,7 +18,10 @@ class PlaylistsController extends Controller
      */
     public function index()
     {
-        return Inertia::render('Playlist/PlaylistPage');
+        $playlists = Playlist::orderBy('created_at', 'DESC')->take(6)->get();
+        return Inertia::render('Playlist/PlaylistPage', [
+            'playlists' => $playlists
+        ]);
     }
 
     /**

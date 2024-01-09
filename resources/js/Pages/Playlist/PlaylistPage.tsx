@@ -2,11 +2,18 @@ import React, {ChangeEvent, useEffect, useState} from 'react';
 import UploadButton from "@/Components/UI/UploadButton/UploadButton";
 import {Head, useForm} from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {PageProps} from "@/types";
+import {PageProps, Playlist, User} from "@/types";
 import {Card, List} from "@material-tailwind/react";
 import ListOfPlaylists from "@/Components/Playlist/ListOfPlaylists";
 
-const PlaylistPage = ({auth}: PageProps) => {
+interface PlaylistPageProps{
+    auth: {
+        user: User
+    }
+    playlists: Playlist[]
+}
+
+const PlaylistPage = ({auth, playlists}: PlaylistPageProps) => {
     const [isFileTypeOK, setIsFileTypeOK] = useState(false);
     const {data, setData, post} = useForm({
         file: {},
@@ -43,7 +50,7 @@ const PlaylistPage = ({auth}: PageProps) => {
                     </form>
                 </Card>
                 <Card className='flex w-3/4 ml-2 items-center'>
-                    <ListOfPlaylists/>
+                    <ListOfPlaylists playlists={playlists}/>
                 </Card>
             </div>
 
