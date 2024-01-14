@@ -1,9 +1,13 @@
 import React, {useState, useRef, useEffect} from 'react'
-import ReactCrop from 'react-image-crop'
+import ReactCrop, {Crop, PercentCrop} from 'react-image-crop'
 import 'react-image-crop/dist/ReactCrop.css'
-import {canvasPreview} from './CanvasPreview'
-import {Button} from "@material-tailwind/react";
-import imagesProvider from "@/Store/LocalImagesStore/ImagesProvider";
+
+interface CropBlockProps{
+    image: {
+        url: string,
+    }
+    handleCrop: () => void
+}
 
 const defaultState = {
     img: '',
@@ -23,12 +27,12 @@ const defaultState = {
     }
 }
 
-const CropBlock = ({image, handleCrop}) => {
+const CropBlock = ({image, handleCrop}: CropBlockProps) => {
     const [imageToCrop, setImageToCrop] = useState({
         ...defaultState,
         img: image.url,
     });
-    const img = useRef();
+    const img = useRef(null);
     const aspect = 16 / 9;
 
     // reset imageToCrop and set to new image when another image is selected
@@ -63,7 +67,7 @@ const CropBlock = ({image, handleCrop}) => {
     }
 
     // handle drag or move Crop selection
-    const handleEditCropArea = (crop, percentCrop) => {
+    const handleEditCropArea = (crop: Crop, percentCrop: PercentCrop) => {
         setImageToCrop(prevState => ({
             ...prevState,
             crop: {

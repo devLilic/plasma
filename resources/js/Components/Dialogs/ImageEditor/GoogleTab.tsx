@@ -1,5 +1,4 @@
-import React, {useContext} from 'react';
-import ImagesContext from "@/Store/LocalImagesStore/images-context";
+import React from 'react';
 import {Button, Input, TabPanel} from "@material-tailwind/react";
 import Loading from "@/Components/UI/Svg/Loading";
 import 'react-image-crop/dist/ReactCrop.css';
@@ -7,7 +6,6 @@ import CropBlock from "@/Shared/Dialogs/ImageEditor/Crop/CropBlock";
 import ExternalImagesList from "@/Components/ExternalImages/ExternalImagesList";
 
 const GoogleTab = (props) => {
-    const imagesCtx = useContext(ImagesContext);
 
     const setImage = () => {
         imagesCtx.cropImage()
@@ -24,7 +22,7 @@ const GoogleTab = (props) => {
             </div>}
             {!imagesCtx.external.error && !imagesCtx.external.loading && <div>
                 <h2 className='text-xl text-gray-900 py-2 text-center'>
-                    Rezultate pentru "{imagesCtx.external.query}"
+                    Rezultate pentru "..."
                 </h2>
                 <div className='flex w-full items-start justify-between'>
 

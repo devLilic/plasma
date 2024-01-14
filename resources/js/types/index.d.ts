@@ -27,3 +27,15 @@ export interface Article {
     playlist_order: number
     image_id: number | null
 }
+
+export interface Image {
+    id: number
+    url: string
+    isNew: boolean
+    tags: Tag[]
+}
+
+export interface Tag {
+    id: number
+    title: string
+}

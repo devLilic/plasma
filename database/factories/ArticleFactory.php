@@ -19,7 +19,7 @@ class ArticleFactory extends Factory
     {
         $playlist = Playlist::factory()->create();
         return [
-            'tehno_title' => $this->faker->word,
+            'subtitle' => $this->faker->word,
             'article_type' => 'BETA',
             'playlist_id' => $playlist->id,
         ];

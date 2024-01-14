@@ -1,17 +1,24 @@
 import {Article} from "@/types";
 import ArticleItem from "@/Components/Articles/ArticleItem";
 import NewArticleDialog from "@/Components/Dialogs/NewArticleDialog";
-import {useState} from "react";
+import {useEffect, useState} from "react";
 import ImageEditorDialog from "@/Components/Dialogs/ImageEditorDialog";
+import {useActions} from "@/Hooks/useActions";
 
 interface ArticlesListProps {
     articles: Article[]
 }
 
 const ArticlesList = ({articles}: ArticlesListProps) => {
+    const {addArticle} = useActions();
     const [isNewArticleDialogOpen, setIsNewArticleDialogOpen] = useState(false)
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
     const [currentArticle, setCurrentArticle] = useState(articles[0])
+
+    // load images when the page loaded
+    useEffect(() => {
+        console.log('Loading images')
+    }, []);
 
     const handleNewArticleDialogOpen = () => {
         setIsNewArticleDialogOpen(prevState => !prevState)
