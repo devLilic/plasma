@@ -1,5 +1,5 @@
 import {useDispatch} from "react-redux";
-import {articleActions} from "@/Store/article/article.api";
+import {articleActions} from "@/Store/article/article.slice";
 import {bindActionCreators} from "@reduxjs/toolkit";
 
 

@@ -4,16 +4,16 @@ import NewArticleDialog from "@/Components/Dialogs/NewArticleDialog";
 import {useEffect, useState} from "react";
 import ImageEditorDialog from "@/Components/Dialogs/ImageEditorDialog";
 import {useActions} from "@/Hooks/useActions";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
 
-interface ArticlesListProps {
-    articles: Article[]
-}
 
-const ArticlesList = ({articles}: ArticlesListProps) => {
-    const {addArticle} = useActions();
+const ArticlesList = () => {
     const [isNewArticleDialogOpen, setIsNewArticleDialogOpen] = useState(false)
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false)
-    const [currentArticle, setCurrentArticle] = useState(articles[0])
+
+    const {articles} = useTypedSelector(state => state.article)
+
+    const {setCurrent} = useActions();
 
     // load images when the page loaded
     useEffect(() => {
@@ -24,34 +24,31 @@ const ArticlesList = ({articles}: ArticlesListProps) => {
         setIsNewArticleDialogOpen(prevState => !prevState)
     }
     const handleImageDialogOpen = () => {
-        setIsImageDialogOpen(prevState => !prevState)
+        console.log("open dialog")
+        setIsImageDialogOpen(prevState => !prevState);
     }
 
-    const handleSetCurrentArticle = (id: number) => {
-        let selectedArticle = articles.find(article => article.id === id)
-        setCurrentArticle(prevState => selectedArticle ?? prevState)
+    const editCurrentArticle = (id: number) => {
+        setCurrent({id})
         setIsImageDialogOpen(true)
     }
 
     return (
         <div className="shadow-sm sm:rounded-lg p-3">
-            <div className='grid grid-cols-3 gap-x-5 gap-y-5'>
+            <div className='grid grid-cols-4 gap-x-5 gap-y-5'>
                 {articles && (
                     articles.map(article =>
                         <ArticleItem article={article}
                                      key={article.id}
-                                     setCurrent={() => handleSetCurrentArticle(article.id)}
-                                     handleNewArticleDialog={handleNewArticleDialogOpen}
-                        />
-                    )
-                )}
+                                     editArticle={() => editCurrentArticle(article.id)}
+                                     handleNewArticleDialog={handleNewArticleDialogOpen}/>
+                    ))}
             </div>
             <div className='text-center my-2'>
                 {/*<Button className="mb-3" onClick={saveImages}>Save</Button>*/}
             </div>
             <NewArticleDialog isOpen={isNewArticleDialogOpen} handleDialog={handleNewArticleDialogOpen}/>
-            <ImageEditorDialog isOpen={isImageDialogOpen} handleDialog={handleImageDialogOpen}
-                               article={currentArticle}/>
+            <ImageEditorDialog isOpen={isImageDialogOpen} handleDialog={handleImageDialogOpen}/>
         </div>
     );
 };

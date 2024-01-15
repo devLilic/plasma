@@ -25,7 +25,8 @@ export interface Article {
     article_type: "BETA" | "OFF"
     playlist_id: number
     playlist_order: number
-    image_id: number | null
+    image: Image | null
+    current?: boolean
 }
 
 export interface Image {

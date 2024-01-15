@@ -32,12 +32,12 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
         <Dialog size="xs"
                 open={isOpen}
                 handler={handleDialog}
-        >
-            <DialogHeader className='bg-green-50 rounded-t-2xl'>Articol nou</DialogHeader>
-            <DialogBody>
+                placeholder={undefined}>
+            <DialogHeader className='bg-green-50 rounded-t-2xl' placeholder={undefined}>Articol nou</DialogHeader>
+            <DialogBody placeholder={undefined}>
                 <div className='w-full flex flex-col justify-center items-center'>
                     <div className='w-full mb-3'>
-                        <Input label='Titlu' size='lg' value={title} onChange={changeTitle}/>
+                        <Input label='Titlu' size='lg' value={title} onChange={changeTitle} crossOrigin={undefined}/>
                     </div>
                     <div className='py-2 h-15 flex justify-around w-8/12'>
                         <Radio id='BETA'
@@ -45,21 +45,29 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
                                value='BETA'
                                label='BETA'
                                checked={newArticleType === 'BETA'}
-                               onChange={changeType}
-                        />
+                               crossOrigin={undefined}
+                               onChange={changeType}/>
                         <Radio id='OFF'
                                name='article_type'
                                value='OFF'
                                label='OFF'
                                checked={newArticleType === 'OFF'}
-                               onChange={changeType}
-                        />
+                               crossOrigin={undefined}
+                               onChange={changeType}/>
                     </div>
                 </div>
             </DialogBody>
-            <DialogFooter>
-                <Button color='green' size='sm'>Save</Button>
-                <Button variant='outlined' size='sm' className='ml-4' onClick={handleDialog}>Cancel</Button>
+            <DialogFooter placeholder={undefined}>
+                <Button color='green'
+                        size='sm'
+                        placeholder={undefined}
+                >Save</Button>
+                <Button variant='outlined'
+                        size='sm'
+                        className='ml-4'
+                        onClick={handleDialog}
+                        placeholder={undefined}
+                >Cancel</Button>
             </DialogFooter>
         </Dialog>
     );

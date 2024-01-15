@@ -1,6 +1,7 @@
 import React from 'react';
 import TagsList from "@/Components/LocalImages/TagsList";
 import {Image} from "@/types";
+import {useActions} from "@/Hooks/useActions";
 
 interface ImageItemProps {
     image: Image

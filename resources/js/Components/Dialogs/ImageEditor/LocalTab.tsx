@@ -3,15 +3,17 @@ import {Input} from "@material-tailwind/react";
 import {useGetImagesQuery} from "@/Store/image/image.api";
 import LocalImages from "@/Components/LocalImages/LocalImages";
 
-const LocalTab = () => {
+interface LocalTabProps{
+    handleModal: ()=>void
+}
+
+const LocalTab = ({handleModal}: LocalTabProps) => {
     const {data, isLoading, error} = useGetImagesQuery(0)
 
     const [searchTag, setSearchTag] = useState('')
-
     const handleSearchTag = (e: ChangeEvent<HTMLInputElement>) => setSearchTag(prevState => e.target.value)
 
-
-    const localImages = data ? (<LocalImages images={data} isLoading={isLoading}/>) : "";
+    const localImages = data ? (<LocalImages images={data} isLoading={isLoading} handleModal={handleModal}/>) : "";
 
     return (
         <>
@@ -19,7 +21,7 @@ const LocalTab = () => {
                 <Input label='Caută imagini după tag'
                        value={searchTag}
                        onChange={handleSearchTag}
-                />
+                       crossOrigin={undefined}/>
             </div>
             <div className='flex'>
                 {/*<div className={imagesCtx.relevant.images.length ? 'w-2/12' : ''}>*/}

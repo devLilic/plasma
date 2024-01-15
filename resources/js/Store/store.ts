@@ -1,6 +1,6 @@
 import {configureStore} from "@reduxjs/toolkit";
 import {imageApi} from "@/Store/image/image.api";
-import {articleReducer} from "@/Store/article/article.api";
+import {articleReducer} from "@/Store/article/article.slice";
 
 export const store = configureStore({
     reducer: {

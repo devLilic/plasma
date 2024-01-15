@@ -10,52 +10,53 @@ import {
     TabsBody,
     TabsHeader
 } from "@material-tailwind/react";
-import {Article, PageProps} from "@/types";
 import LocalTab from "@/Components/Dialogs/ImageEditor/LocalTab";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
 
 interface ImageEditorDialogProps {
     isOpen: boolean,
     handleDialog: () => void
-    article: Article
 }
 
-const ImageEditorDialog = ({isOpen, handleDialog, article}: ImageEditorDialogProps) => {
+const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
 
+    const article = useTypedSelector(state => state.article.articles.find(article => article.current));
     return (
         <Dialog size='xl' open={isOpen} handler={handleDialog} placeholder={undefined}>
             <DialogHeader className='text-lg bg-gray-100 rounded-t-2xl border flex justify-between'
                           placeholder={undefined}>
                 <div>
-                    <p>{article.title}</p>
-                    <p className='text-sm mt-2'>{article.subtitle}</p>
+                    <p>{article?.title}</p>
+                    <p className='text-sm mt-2'>{article?.subtitle}</p>
                 </div>
                 <div>
-                    <Popover>
+                    {article && <Popover>
                         <PopoverHandler>
                             <Button variant="outlined"
                                     color='purple'
-                                    className='my-1 py-3'>Intro</Button>
+                                    className='my-1 py-3'
+                                    placeholder={undefined}>Intro</Button>
                         </PopoverHandler>
                         <PopoverContent
-                            className="z-[10000] bg-yellow-100 max-w-[300px]">{article.intro}</PopoverContent>
-                    </Popover>
+                            className="z-[10000] bg-yellow-100 max-w-[300px]"
+                            placeholder={undefined}
+                        >{article?.intro}</PopoverContent>
+                    </Popover>}
                 </div>
             </DialogHeader>
-            <DialogBody className='border-t border-b'>
-
+            <DialogBody className='border-t border-b min-h-[600px]' placeholder={undefined}>
                 <Tabs value='local'>
-                    <TabsHeader>
-                        <Tab key="local" value="local">Imagini locale</Tab>
-                        <Tab key="external" value="external">Google</Tab>
-                        <Tab key="upload" value="upload">Upload</Tab>
+                    <TabsHeader placeholder={undefined} indicatorProps={{
+                        className: "bg-purple-300"
+                    }}>
+                        <Tab key="local" activeClassName='text-white' value="local" placeholder={undefined}>Imagini locale</Tab>
+                        <Tab key="external" activeClassName='text-white'  value="external" placeholder={undefined}>Google</Tab>
+                        <Tab key="upload" activeClassName='text-white' value="upload" placeholder={undefined}>Upload</Tab>
                     </TabsHeader>
                     <TabsBody
-                        animate={{
-                            mount: {y: 0},
-                            unmount: {y: 250},
-                        }}>
+                        placeholder={undefined}>
                         <TabPanel key='local' value='local' className='w-full'>
-                            <LocalTab/>
+                            <LocalTab handleModal={handleDialog}/>
                         </TabPanel>
                         <TabPanel key='external' value='external' className='w-full'>
                             Google
@@ -72,10 +73,12 @@ const ImageEditorDialog = ({isOpen, handleDialog, article}: ImageEditorDialogPro
 
 
             </DialogBody>
-            <DialogFooter>
+            <DialogFooter placeholder={undefined}>
                 <Button size='sm'
                         onClick={handleDialog}
-                        variant='outlined'>Close</Button>
+                        variant='outlined'
+                        placeholder={undefined}
+                >Close</Button>
             </DialogFooter>
         </Dialog>
     );

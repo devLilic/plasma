@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\FileUploadRequest;
+use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\Playlist;
 use Facades\App\Services\Articles\ArticlesService;
@@ -69,7 +70,7 @@ class PlaylistsController extends Controller
             return redirect()->to("/playlists");
         }
         return Inertia::render('Playlist/PlaylistShowPage', [
-            'articles' => Article::where('playlist_id', $id)->get()
+            'articles' => ArticleResource::collection(Article::where('playlist_id', $id)->get())
         ]);
     }
 

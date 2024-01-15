@@ -1,10 +1,10 @@
-import React, {useState} from 'react';
+import React, {useEffect} from 'react';
 import {Head} from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
 import {Article, User} from "@/types";
 import {Card} from "@material-tailwind/react";
-import ArticleItem from "@/Components/Articles/ArticleItem";
 import ArticlesList from "@/Components/Articles/ArticlesList";
+import {useActions} from "@/Hooks/useActions";
 
 interface PlaylistShowPageProps {
     auth: {
@@ -14,15 +14,17 @@ interface PlaylistShowPageProps {
 }
 
 const PlaylistShowPage = ({auth, articles}: PlaylistShowPageProps) => {
-
-
+    const {setArticles} = useActions();
+    useEffect(() => {
+        setArticles(articles);
+    }, []);
     return (
         <AuthenticatedLayout user={auth.user}>
             <Head title="Playlist"/>
 
             <div className="flex flex-row justify-around items-start">
-                <Card className="flex-1">
-                    <ArticlesList articles={articles}/>
+                <Card className="flex-1" placeholder={undefined}>
+                    <ArticlesList />
                 </Card>
             </div>
         </AuthenticatedLayout>

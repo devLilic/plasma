@@ -6,14 +6,14 @@ import SearchImageIcon from "@/Components/UI/Svg/SearchImageIcon";
 
 interface ArticleFooterProps {
     article: Article
-    setCurrent: () => void
+    editArticle: () => void
 }
 
-const ArticleFooter = ({article, setCurrent}: ArticleFooterProps) => {
+const ArticleFooter = ({article, editArticle}: ArticleFooterProps) => {
     const [query, setQuery] = useState(article.title)
     const [showIntro, setShowIntro] = useState(false)
 
-    const makeLinkQuery = (q:string) => {
+    const makeLinkQuery = (q: string) => {
         return `https://www.google.com/search?q=${q.split(' ').join('+')}&source=lnms&tbm=isch`
     }
 
@@ -30,30 +30,37 @@ const ArticleFooter = ({article, setCurrent}: ArticleFooterProps) => {
                     <PopoverHandler>
                         <Button variant="outlined"
                                 color='purple'
-                                className='my-1 py-0'>Intro</Button>
+                                className='my-1 py-0'
+                                placeholder={undefined}
+                        >Intro</Button>
                     </PopoverHandler>
-                    <PopoverContent className="z-20 bg-yellow-100 max-w-[300px]">{article.intro}</PopoverContent>
+                    <PopoverContent className="z-20 bg-yellow-100 max-w-[300px]"
+                                    placeholder={undefined}
+                    >{article.intro}</PopoverContent>
                 </Popover>
                 {/*<Button variant="outlined"*/}
                 {/*        size="sm"*/}
                 {/*        onClick={() => setShowIntro(prevState => !prevState)}*/}
                 {/*>Intro</Button>*/}
 
-                <Button variant="outlined" onClick={visitGoogle} color='purple' className='my-1 py-0'>
-                    <GoogleIcon />
-                </Button>
+                <Button variant="outlined"
+                        color='purple'
+                        className='my-1 py-0'
+                        placeholder={undefined}
+                        onClick={visitGoogle}
+                ><GoogleIcon/></Button>
 
                 <Button variant='outlined'
                         color='purple'
                         className='my-1 py-0'
                         type='button'
-                        onClick={setCurrent}
-                >
-                    <SearchImageIcon />
-                </Button>
+                        placeholder={undefined}
+                        onClick={editArticle}
+                ><SearchImageIcon/></Button>
             </div>
             <div className='relative w-full'>
-                {showIntro && <p className='border border-purple-600 -ml-2 -mr-2 rounded-lg shadow-2xl z-50 px-2 py-1 mt-1 absolute top-0 left-0 bg-white'>{article.intro}</p>}
+                {showIntro &&
+                    <p className='border border-purple-600 -ml-2 -mr-2 rounded-lg shadow-2xl z-50 px-2 py-1 mt-1 absolute top-0 left-0 bg-white'>{article.intro}</p>}
             </div>
         </div>
     );
