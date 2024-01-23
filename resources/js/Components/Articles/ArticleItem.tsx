@@ -7,17 +7,19 @@ import {useSelector} from "react-redux";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import ContentWithImage from "@/Components/Articles/ContentWithImage";
 import {useActions} from "@/Hooks/useActions";
+import {selectArticleById} from "@/Store/article/article.slice";
 
 interface ArticleItemProps {
-    article: Article,
+    articleId: number,
     handleNewArticleDialog: () => void
-    editArticle: (id: number) => void
+    openDialog: () => void
 }
 
-const ArticleItem = ({article, handleNewArticleDialog, editArticle}: ArticleItemProps) => {
+const ArticleItem = ({articleId, handleNewArticleDialog, openDialog}: ArticleItemProps) => {
+    const article = useTypedSelector(state => selectArticleById(state, articleId))
     const [articleTitle, setArticleTitle] = useState(article.title)
 
-    const {removeBackground} = useActions()
+    // const {removeBackground} = useActions()
 
     const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
         setArticleTitle(prevState => e.target.value)
@@ -28,34 +30,35 @@ const ArticleItem = ({article, handleNewArticleDialog, editArticle}: ArticleItem
             <ArticleHeader title={article.title}
                            article_type={article.article_type}
                            openDialog={handleNewArticleDialog}/>
+            {article.imageId ?
+                <ContentWithImage articleId={articleId} imageId={article.imageId}/>
+                : (
+                    <div className="text-blue-600 text-xs px-2 min-h-[160px]">
+                        <div className="inline-flex w-full mt-6 mb-4 pr-4">
+                            <Checkbox
+                                checked={true}
+                                color='purple'
+                                crossOrigin={undefined}
+                                onChange={() => {
+                                }}/>
+                            <Input type="text"
+                                   color="purple"
+                                   label="Titlu"
+                                   className="w-full text-xs"
+                                   value={articleTitle}
+                                   crossOrigin={undefined}
+                                   onChange={handleTitleChange}/>
+                        </div>
 
-            {article.image ? <ContentWithImage wallpaper={article.image.url} removeBackground={()=>removeBackground({articleId: article.id})}/> : (
-                <div className="text-blue-600 text-xs px-2 min-h-[160px]">
-                    <div className="inline-flex w-full mt-6 mb-4 pr-4">
-                        <Checkbox
-                            checked={true}
-                            color='purple'
-                            crossOrigin={undefined}
-                            onChange={() => {
-                            }}/>
-                        <Input type="text"
-                               color="purple"
-                               label="Titlu"
-                               className="w-full text-xs"
-                               value={articleTitle}
-                               crossOrigin={undefined}
-                               onChange={handleTitleChange}/>
+                        <Checkbox label={article.subtitle}
+                                  color="purple"
+                                  onChange={() => {
+                                  }}
+                                  crossOrigin={undefined}/>
                     </div>
+                )}
 
-                    <Checkbox label={article.subtitle}
-                              color="purple"
-                              onChange={() => {
-                              }}
-                              crossOrigin={undefined}/>
-                </div>
-            )}
-
-            <ArticleFooter article={article} editArticle={() => editArticle(article.id)}/>
+            <ArticleFooter articleId={article.id} openDialog={openDialog}/>
         </Card>
     );
 };

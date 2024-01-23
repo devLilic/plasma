@@ -24,7 +24,7 @@ class ArticleResource extends JsonResource {
             "article_type" => $this->article_type,
             "playlist_id" => $this->playlist_id,
             "playlist_order" => $this->playlist_order,
-            "image" => $this->image_id ? ImageResource::collection(Image::find($this->image_id)) : null
+            "imageId" => $this->image_id
         ];
     }
 }

@@ -1,25 +1,31 @@
 import React, {useState} from 'react';
 import {Button, Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
-import {Article} from "@/types";
 import GoogleIcon from "@/Components/UI/Svg/GoogleIcon";
 import SearchImageIcon from "@/Components/UI/Svg/SearchImageIcon";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
+import {selectArticleById} from "@/Store/article/article.slice";
+import {useActions} from "@/Hooks/useActions";
 
 interface ArticleFooterProps {
-    article: Article
-    editArticle: () => void
+    articleId: number,
+    openDialog: () => void
 }
 
-const ArticleFooter = ({article, editArticle}: ArticleFooterProps) => {
+const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
+    const article = useTypedSelector(state => selectArticleById(state, articleId))
+    const {setCurrent} = useActions()
     const [query, setQuery] = useState(article.title)
-    const [showIntro, setShowIntro] = useState(false)
-
-    const makeLinkQuery = (q: string) => {
-        return `https://www.google.com/search?q=${q.split(' ').join('+')}&source=lnms&tbm=isch`
-    }
 
     const visitGoogle = () => {
-        const url = makeLinkQuery(query);
-        window.open(url, '_blank', 'noopener,noreferrer')
+        window.open(
+            `https://www.google.com/search?q=${query.split(' ').join('+')}&source=lnms&tbm=isch`,
+            '_blank',
+            'noopener,noreferrer')
+    }
+
+    const editArticle = () => {
+        setCurrent({id: articleId})
+        openDialog()
     }
 
     return (
@@ -57,10 +63,6 @@ const ArticleFooter = ({article, editArticle}: ArticleFooterProps) => {
                         placeholder={undefined}
                         onClick={editArticle}
                 ><SearchImageIcon/></Button>
-            </div>
-            <div className='relative w-full'>
-                {showIntro &&
-                    <p className='border border-purple-600 -ml-2 -mr-2 rounded-lg shadow-2xl z-50 px-2 py-1 mt-1 absolute top-0 left-0 bg-white'>{article.intro}</p>}
             </div>
         </div>
     );

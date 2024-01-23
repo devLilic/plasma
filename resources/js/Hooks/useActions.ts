@@ -1,15 +1,16 @@
 import {useDispatch} from "react-redux";
-import {articleActions} from "@/Store/article/article.slice";
+import {articlesActions} from "@/Store/article/article.slice";
 import {bindActionCreators} from "@reduxjs/toolkit";
+import {fetchImages, imagesActions, searchImages} from "@/Store/image/image.slice";
 
 
 const allActions = {
-    ...articleActions
+    ...articlesActions,
+    ...imagesActions,
+    fetchImages,
+    searchImages
 }
 export const useActions = () => {
     const dispatch = useDispatch()
-
     return bindActionCreators(allActions, dispatch)
 }
-
-

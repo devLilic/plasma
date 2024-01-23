@@ -1,14 +1,22 @@
 import React from 'react';
 import TagsList from "@/Components/LocalImages/TagsList";
-import {Image} from "@/types";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
+import {selectImageById} from "@/Store/image/image.slice";
 import {useActions} from "@/Hooks/useActions";
 
 interface ImageItemProps {
-    image: Image
-    selectImage: () => void
+    imageId: number
+    handleDialog: () => void
 }
 
-const ImageItem = ({image, selectImage}: ImageItemProps) => {
+const ImageItem = ({imageId, handleDialog}: ImageItemProps) => {
+    const image = useTypedSelector(state => selectImageById(state, imageId))
+    const currentArticleId = useTypedSelector(state => state.articles.current)
+    const {setBackgroundImage} = useActions()
+    const selectImage = () => {
+        setBackgroundImage({id: currentArticleId, changes: {imageId}})
+        handleDialog()
+    }
     return (
         <div className='text-center'>
             <img src={image.url}

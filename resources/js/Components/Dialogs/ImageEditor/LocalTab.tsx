@@ -1,29 +1,45 @@
-import React, {ChangeEvent, useState} from 'react';
+import React, {ChangeEvent, useEffect, useState} from 'react';
 import {Input} from "@material-tailwind/react";
-import {useGetImagesQuery} from "@/Store/image/image.api";
-import LocalImages from "@/Components/LocalImages/LocalImages";
+import ImagesList from "@/Components/LocalImages/ImagesList";
+import {useActions} from "@/Hooks/useActions";
 
-interface LocalTabProps{
-    handleModal: ()=>void
+interface LocalTabProps {
+    handleModal: () => void
 }
 
 const LocalTab = ({handleModal}: LocalTabProps) => {
-    const {data, isLoading, error} = useGetImagesQuery(0)
-
     const [searchTag, setSearchTag] = useState('')
-    const handleSearchTag = (e: ChangeEvent<HTMLInputElement>) => setSearchTag(prevState => e.target.value)
 
-    const localImages = data ? (<LocalImages images={data} isLoading={isLoading} handleModal={handleModal}/>) : "";
+    const {fetchImages, searchImages} = useActions()
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            if (searchTag.length > 1) {
+                searchImages(searchTag)
+            } else {
+                fetchImages()
+            }
+        }, 1000);
+        return () => {
+            clearTimeout(timer)
+        }
+    }, [searchTag])
+
+    const handleSearchTag = (e: ChangeEvent<HTMLInputElement>) => {
+        setSearchTag(prevState => e.target.value)
+    }
 
     return (
         <>
-            <div className="mb-6 w-4/12 mx-auto">
+            <div className="mb-5 w-4/12 mx-auto">
                 <Input label='Caută imagini după tag'
                        value={searchTag}
                        onChange={handleSearchTag}
                        crossOrigin={undefined}/>
             </div>
             <div className='flex'>
+                <div className="w-full">
+                    <ImagesList handleDialog={handleModal}/>
+                </div>
                 {/*<div className={imagesCtx.relevant.images.length ? 'w-2/12' : ''}>*/}
                 {/*    <LocalImages title='Relevante'*/}
                 {/*                 images={imagesCtx.relevant.images}*/}
@@ -32,9 +48,7 @@ const LocalTab = ({handleModal}: LocalTabProps) => {
                 {/*                 className='grid-cols-1 h-96'*/}
                 {/*    />*/}
                 {/*</div>*/}
-                <div className="w-full">
-                    {localImages}
-                </div>
+
                 {/*    <LocalImages title={localImagesTitle}*/}
                 {/*                 images={imagesCtx.local.images}*/}
                 {/*                 onSelectImage={onSelectImage}*/}

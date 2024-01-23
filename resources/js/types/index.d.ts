@@ -25,7 +25,7 @@ export interface Article {
     article_type: "BETA" | "OFF"
     playlist_id: number
     playlist_order: number
-    image: Image | null
+    imageId: number | null
     current?: boolean
 }
 

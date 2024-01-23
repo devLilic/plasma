@@ -14,12 +14,19 @@ class TagSeeder extends Seeder {
      */
     public function run(): void
     {
-        $image = Image::first();
+        $images = Image::all();
 
-        $tag = Tag::firstOrCreate([
-            'title' => 'test_tag'
-        ]);
+        $tags = [
+            Tag::firstOrCreate(['title' => 'EU']),
+            Tag::firstOrCreate(['title' => 'coloana']),
+            Tag::firstOrCreate(['title' => 'incendiu']),
+            Tag::firstOrCreate(['title' => 'sedinta']),
+            Tag::firstOrCreate(['title' => 'deces']),
+            Tag::firstOrCreate(['title' => 'virus']),
+        ];
 
-        $image->tags()->attach($tag);
+        foreach ($tags as $index => $tag) {
+            $images[$index]->tags()->attach($tag);
+        }
     }
 }

@@ -39,7 +39,7 @@ const PlaylistPage = ({auth, playlists}: PlaylistPageProps) => {
             <Head title="Playlist"/>
 
             <div className="flex flex-row justify-around items-start">
-                <Card className="flex-1">
+                <Card className="flex-1" placeholder={undefined}>
                     <form>
                         <div className="flex flex-col w-full h-48 items-center justify-center bg-grey-lighter">
                             <UploadButton title="Încarcă playlist" handleChange={handleChange}/>
@@ -49,7 +49,7 @@ const PlaylistPage = ({auth, playlists}: PlaylistPageProps) => {
                         </div>
                     </form>
                 </Card>
-                <Card className='flex w-1/2 ml-2 items-center'>
+                <Card className='flex w-1/2 ml-2 items-center' placeholder={undefined}>
                     <ListOfPlaylists playlists={playlists}/>
                 </Card>
             </div>

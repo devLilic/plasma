@@ -1,46 +1,59 @@
-import {createSlice, current, PayloadAction} from "@reduxjs/toolkit";
-import {Article, Image} from "@/types";
+import {createEntityAdapter, createSlice, PayloadAction} from "@reduxjs/toolkit";
+import {Article} from "@/types";
+import {TypeRootState} from "@/Store/store";
+import {useSelector} from "react-redux";
 
+const articlesAdapter = createEntityAdapter<Article>()
 
-interface InitialState {
-    articles: Article[]
+interface ArticlesState {
+    current: number,
+    status: "idle" | "pending" | "succeeded" | "failed"
+    error: string | null
 }
 
-const initialState: InitialState = {
-    articles: [],
-}
+const initialState = articlesAdapter.getInitialState<ArticlesState>({
+    current: 0,
+    status: "idle",
+    error: null
+})
 
-
-export const articleSlice = createSlice({
-    name: "article",
+export const articlesSlice = createSlice({
+    name: "articles",
     initialState,
     reducers: {
         setArticles: (state, action: PayloadAction<Article[]>) => {
-            state.articles = action.payload
+            articlesAdapter.setAll(state, action.payload)
         },
         setCurrent: (state, action: PayloadAction<{ id: number }>) => {
-            state.articles.map(article => {
-                article.current = article.id === action.payload.id;
-            })
+            state.current = action.payload.id
         },
-        setBackgroundImage: (state, action: PayloadAction<{ image: Image }>) => {
-            state.articles.map(article => {
-                if (article.current) {
-                    article.image = action.payload.image
-                }
-            })
-        },
-        removeBackground: (state, action: PayloadAction<{articleId: number}>) => {
-            state.articles.map(article => {
-                if (article.id === action.payload.articleId) {
-                    article.image = null
-                }
-            })
-        },
-        addArticle: (state, action) => {
-        }
-    }
+        setBackgroundImage: articlesAdapter.updateOne,
+        removeBackground: articlesAdapter.updateOne
+        // removeBackground: (state, action: PayloadAction<{ articleId: number }>) => {
+        //     state.articles.map(article => {
+        //         if (article.id === action.payload.articleId) {
+        //             article.image = null
+        //         }
+        //     })
+        // },
+        // addArticle: (state, action) => {
+        // }
+    },
+    // extraReducers: builder => {
+    //     builder
+    //         .addCase(fetchArticlesByPlaylistId.fulfilled, (state, action) => {
+    //             state.status = 'succeeded'
+    //             articlesAdapter.upsertMany
+    //         })
+    // }
 })
 
-export const articleReducer = articleSlice.reducer
-export const articleActions = articleSlice.actions
+
+export const {
+    selectAll: selectAllArticles,
+    selectById: selectArticleById,
+    selectIds: selectArticlesIds
+} = articlesAdapter.getSelectors<TypeRootState>(state => state.articles)
+
+export const articlesReducer = articlesSlice.reducer
+export const articlesActions = articlesSlice.actions

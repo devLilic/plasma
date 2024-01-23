@@ -12,6 +12,7 @@ import {
 } from "@material-tailwind/react";
 import LocalTab from "@/Components/Dialogs/ImageEditor/LocalTab";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
+import {selectArticleById} from "@/Store/article/article.slice";
 
 interface ImageEditorDialogProps {
     isOpen: boolean,
@@ -19,8 +20,7 @@ interface ImageEditorDialogProps {
 }
 
 const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
-
-    const article = useTypedSelector(state => state.article.articles.find(article => article.current));
+    const article = useTypedSelector(state => selectArticleById(state, state.articles.current));
     return (
         <Dialog size='xl' open={isOpen} handler={handleDialog} placeholder={undefined}>
             <DialogHeader className='text-lg bg-gray-100 rounded-t-2xl border flex justify-between'
@@ -44,7 +44,7 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                     </Popover>}
                 </div>
             </DialogHeader>
-            <DialogBody className='border-t border-b min-h-[600px]' placeholder={undefined}>
+            <DialogBody className='border-t border-b min-h-[500px]' placeholder={undefined}>
                 <Tabs value='local'>
                     <TabsHeader placeholder={undefined} indicatorProps={{
                         className: "bg-purple-300"
