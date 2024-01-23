@@ -9,13 +9,22 @@ import {TypeRootState} from "@/Store/store";
 
 const imagesAdapter = createEntityAdapter<Image>()
 
+const initialState = imagesAdapter.getInitialState({
+    loading: false,
+    error: null
+})
+
 export const imagesSlice = createSlice({
     name: "images",
-    initialState: imagesAdapter.getInitialState(),
+    initialState,
     reducers: {},
     extraReducers: builder => {
         builder
+            .addCase(fetchImages.pending, (state, action) => {
+                state.loading = true
+            })
             .addCase(fetchImages.fulfilled, (state, action) => {
+                state.loading = false
                 imagesAdapter.upsertMany(state, action.payload)
             })
             .addCase(searchImages.fulfilled, imagesAdapter.setAll)

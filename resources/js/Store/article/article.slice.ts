@@ -2,6 +2,7 @@ import {createEntityAdapter, createSlice, PayloadAction} from "@reduxjs/toolkit"
 import {Article} from "@/types";
 import {TypeRootState} from "@/Store/store";
 import {useSelector} from "react-redux";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
 
 const articlesAdapter = createEntityAdapter<Article>()
 

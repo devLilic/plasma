@@ -3,6 +3,7 @@ import TagsList from "@/Components/LocalImages/TagsList";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {selectImageById} from "@/Store/image/image.slice";
 import {useActions} from "@/Hooks/useActions";
+import {selectArticleById} from "@/Store/article/article.slice";
 
 interface ImageItemProps {
     imageId: number
@@ -14,7 +15,7 @@ const ImageItem = ({imageId, handleDialog}: ImageItemProps) => {
     const currentArticleId = useTypedSelector(state => state.articles.current)
     const {setBackgroundImage} = useActions()
     const selectImage = () => {
-        setBackgroundImage({id: currentArticleId, changes: {imageId}})
+        setBackgroundImage({id: currentArticleId, changes: {image}})
         handleDialog()
     }
     return (

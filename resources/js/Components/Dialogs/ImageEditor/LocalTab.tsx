@@ -2,6 +2,8 @@ import React, {ChangeEvent, useEffect, useState} from 'react';
 import {Input} from "@material-tailwind/react";
 import ImagesList from "@/Components/LocalImages/ImagesList";
 import {useActions} from "@/Hooks/useActions";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
+import Loading from "@/Components/UI/Svg/Loading";
 
 interface LocalTabProps {
     handleModal: () => void
@@ -9,6 +11,7 @@ interface LocalTabProps {
 
 const LocalTab = ({handleModal}: LocalTabProps) => {
     const [searchTag, setSearchTag] = useState('')
+    const loading = useTypedSelector(state => state.images.loading)
 
     const {fetchImages, searchImages} = useActions()
     useEffect(() => {
@@ -38,7 +41,8 @@ const LocalTab = ({handleModal}: LocalTabProps) => {
             </div>
             <div className='flex'>
                 <div className="w-full">
-                    <ImagesList handleDialog={handleModal}/>
+                    {loading && <Loading />}
+                    {!loading && <ImagesList handleDialog={handleModal}/>}
                 </div>
                 {/*<div className={imagesCtx.relevant.images.length ? 'w-2/12' : ''}>*/}
                 {/*    <LocalImages title='Relevante'*/}

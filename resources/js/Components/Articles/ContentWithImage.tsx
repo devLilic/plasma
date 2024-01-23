@@ -2,18 +2,18 @@ import React from 'react';
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {selectImageById} from "@/Store/image/image.slice";
 import {useActions} from "@/Hooks/useActions";
+import {Image} from "@/types";
 
 interface IContentWithImageProps {
-    imageId: number,
+    image: Image,
     articleId: number
 }
 
-const ContentWithImage = ({articleId, imageId}: IContentWithImageProps) => {
-    const image = useTypedSelector(state => selectImageById(state, imageId))
+const ContentWithImage = ({articleId, image}: IContentWithImageProps) => {
     const {removeBackground} = useActions()
 
     const handleRemoveBackground = () => {
-        removeBackground({id: articleId, changes: {imageId: null}})
+        removeBackground({id: articleId, changes: {image: null}})
     }
     return (
         <div className='relative'>

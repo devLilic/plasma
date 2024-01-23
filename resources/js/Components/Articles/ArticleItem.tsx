@@ -30,8 +30,8 @@ const ArticleItem = ({articleId, handleNewArticleDialog, openDialog}: ArticleIte
             <ArticleHeader title={article.title}
                            article_type={article.article_type}
                            openDialog={handleNewArticleDialog}/>
-            {article.imageId ?
-                <ContentWithImage articleId={articleId} imageId={article.imageId}/>
+            {article.image ?
+                <ContentWithImage articleId={articleId} image={article.image}/>
                 : (
                     <div className="text-blue-600 text-xs px-2 min-h-[160px]">
                         <div className="inline-flex w-full mt-6 mb-4 pr-4">
