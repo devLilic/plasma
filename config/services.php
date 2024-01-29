@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'google_search' => [
+        'url' => 'https://www.googleapis.com/customsearch/v1',
+        'key' => env('GOOGLE_SEARCH_KEY'),
+        'cx' => env('GOOGLE_SEARCH_CX'),
+    ]
+
 ];

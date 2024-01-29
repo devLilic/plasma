@@ -3,7 +3,6 @@ import TagsList from "@/Components/LocalImages/TagsList";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {selectImageById} from "@/Store/image/image.slice";
 import {useActions} from "@/Hooks/useActions";
-import {selectArticleById} from "@/Store/article/article.slice";
 
 interface ImageItemProps {
     imageId: number

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\API\V1\ExternalImagesController;
 use App\Http\Controllers\API\V1\ImagesController;
 use App\Http\Controllers\API\V1\PlaylistController;
 use Illuminate\Http\Request;
@@ -26,3 +27,6 @@ Route::get('/images', [ImagesController::class, 'index']);
 
 
 Route::get('/playlists/{playlist}', [PlaylistController::class, 'show']);
+
+Route::get('resources', [ExternalImagesController::class, 'getImages']);
+Route::post('crop', [ExternalImagesController::class, 'crop']);

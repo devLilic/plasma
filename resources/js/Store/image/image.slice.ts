@@ -54,6 +54,22 @@ export const searchImages = createAsyncThunk(
     }
 )
 
+export const removeImage = createAsyncThunk(
+    'images/removeImage',
+    async (query, {rejectWithValue}) => {
+        try {
+            const response = await axios.delete('/api/images', {
+                params: {
+                    query
+                }
+            })
+            return response.data
+        } catch (error) {
+            return rejectWithValue('Error deleting image')
+        }
+    }
+)
+
 export const {
     selectIds: selectImagesIds,
     selectAll: selectAllImages,

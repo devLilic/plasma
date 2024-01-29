@@ -1,11 +1,13 @@
 import {configureStore} from "@reduxjs/toolkit";
 import {articlesReducer} from "@/Store/article/article.slice";
 import {imagesReducer} from "@/Store/image/image.slice";
+import {externalImagesReducer} from "@/Store/image/externalImage.slice";
 
 export const store = configureStore({
     reducer: {
         articles: articlesReducer,
         images: imagesReducer,
+        externalImages: externalImagesReducer
     },
     // middleware: getDefaultMiddleware =>
     //     getDefaultMiddleware().concat(imageApi.middleware)

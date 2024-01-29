@@ -1,3 +1,5 @@
+import {Crop, PercentCrop} from "react-image-crop";
+
 export interface User {
     id: number;
     name: string;
@@ -39,4 +41,23 @@ export interface Image {
 export interface Tag {
     id: number
     title: string
+}
+
+export interface ExternalImage {
+    id: string
+    url: string
+    article: string
+    site: string
+    width: number
+    height: number
+}
+
+export interface SelectedExternalImage {
+    url: string
+    readyToCrop: boolean
+    cropSection: {
+        crop: Crop
+        percentCrop: PercentCrop
+    },
+    croppedUrl: string | null
 }

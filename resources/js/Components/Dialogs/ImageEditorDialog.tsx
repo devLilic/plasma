@@ -13,6 +13,7 @@ import {
 import LocalTab from "@/Components/Dialogs/ImageEditor/LocalTab";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {selectArticleById} from "@/Store/article/article.slice";
+import GoogleTab from "@/Components/Dialogs/ImageEditor/GoogleTab";
 
 interface ImageEditorDialogProps {
     isOpen: boolean,
@@ -49,9 +50,12 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                     <TabsHeader placeholder={undefined} indicatorProps={{
                         className: "bg-purple-300"
                     }}>
-                        <Tab key="local" activeClassName='text-white' value="local" placeholder={undefined}>Imagini locale</Tab>
-                        <Tab key="external" activeClassName='text-white'  value="external" placeholder={undefined}>Google</Tab>
-                        <Tab key="upload" activeClassName='text-white' value="upload" placeholder={undefined}>Upload</Tab>
+                        <Tab key="local" activeClassName='text-white' value="local" placeholder={undefined}>Imagini
+                            locale</Tab>
+                        <Tab key="external" activeClassName='text-white' value="external"
+                             placeholder={undefined}>Google</Tab>
+                        <Tab key="upload" activeClassName='text-white' value="upload"
+                             placeholder={undefined}>Upload</Tab>
                     </TabsHeader>
                     <TabsBody
                         placeholder={undefined}>
@@ -59,7 +63,7 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                             <LocalTab handleModal={handleDialog}/>
                         </TabPanel>
                         <TabPanel key='external' value='external' className='w-full'>
-                            Google
+                            <GoogleTab handleModal={handleDialog}/>
                         </TabPanel>
                         <TabPanel key='upload' value='upload' className='w-full'>
                             Upload
