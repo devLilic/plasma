@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\ImageResource;
 use App\Models\Image;
 use Carbon\Carbon;
 use Facades\App\Services\Images\GoogleImages;
@@ -15,12 +16,10 @@ class ExternalImagesController extends Controller
 {
     public function getImages(Request $request)
     {
-//        $request->validate([
-//            'query' => 'string|required'
-//        ]);
-        $img = GoogleImages::getImages($request->query);
-//            dd($img);
-        return GoogleImages::getImages($request->query);
+        $request->validate([
+            'query' => 'string|required'
+        ]);
+        return GoogleImages::getImages($request->query->get('query'));
     }
 
     public function cropImage(ImageProcessor $image, $percentCrop)
@@ -42,7 +41,7 @@ class ExternalImagesController extends Controller
     public function crop(Request $request)
     {
         try {
-            $file = Http::get($request->url);
+            $file = Http::get($request->data['url']);
             if ($file->failed()) {
                 throw new \Exception($file->reason(), $file->status());
             }
@@ -60,7 +59,7 @@ class ExternalImagesController extends Controller
         $imgProcessor = new ImageProcessor($image);
         imagedestroy($image);
 
-        $cropped = $this->cropImage($imgProcessor, $request->section);
+        $cropped = $this->cropImage($imgProcessor, $request->data['section']);
 
         $uploaded_today = Image::whereDate('created_at', Carbon::today())->count();
         $order_number = $uploaded_today + 1;
@@ -78,12 +77,16 @@ class ExternalImagesController extends Controller
         imagejpeg($cropped->imageResource, $path);
 
         $image = Image::create([
-            'url' => $fileName
+            'url' => $fileName,
+            'sourceUrl' => $request->data['url']
         ]);
 
-        return json_encode(['image' => [
+
+        return json_encode([
             'id' => $image->id,
-            'url' => Storage::disk('images')->url($image->url)
-        ]]);
+            'url' => Storage::disk('images')->url($image->url),
+            'sourceUrl' => $image->sourceUrl,
+            'isNew' => $image->isNew
+        ]);
     }
 }

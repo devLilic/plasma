@@ -1,7 +1,7 @@
 import {useDispatch} from "react-redux";
-import {articlesActions} from "@/Store/article/article.slice";
+import {articlesActions, setBackgroundImage, removeBackgroundImage, addNewArticle} from "@/Store/article/article.slice";
 import {bindActionCreators} from "@reduxjs/toolkit";
-import {fetchImages, imagesActions, searchImages} from "@/Store/image/image.slice";
+import {fetchImages, imagesActions, removeImage, searchImages} from "@/Store/image/image.slice";
 import {externalImagesActions, fetchExternalImages, cropExternalImage} from "@/Store/image/externalImage.slice";
 
 
@@ -12,7 +12,11 @@ const allActions = {
     fetchImages,
     searchImages,
     fetchExternalImages,
-    cropExternalImage
+    cropExternalImage,
+    removeImage,
+    setBackgroundImage,
+    removeBackgroundImage,
+    addNewArticle
 }
 export const useActions = () => {
     const dispatch = useDispatch()

@@ -54,6 +54,13 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
                                checked={newArticleType === 'OFF'}
                                crossOrigin={undefined}
                                onChange={changeType}/>
+                        <Radio id='LIVE'
+                               name='article_type'
+                               value='LIVE'
+                               label='LIVE'
+                               checked={newArticleType === 'LIVE'}
+                               crossOrigin={undefined}
+                               onChange={changeType}/>
                     </div>
                 </div>
             </DialogBody>

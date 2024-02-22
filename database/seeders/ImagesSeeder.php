@@ -23,7 +23,7 @@ class ImagesSeeder extends Seeder {
         ];
         foreach ($images as $image) {
             Image::create([
-                "url" => $image
+                "url" => $image,
             ]);
         }
 

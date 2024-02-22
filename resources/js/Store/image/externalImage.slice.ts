@@ -1,16 +1,23 @@
 import {createAsyncThunk, createEntityAdapter, createSlice, nanoid, PayloadAction} from "@reduxjs/toolkit";
-import axios from "axios";
 import {TypeRootState} from "@/Store/store";
-import {ExternalImage, SelectedExternalImage} from "@/types";
-import apiRequest from "@/Helpers/Api";
-
+import {CropImageWithTagsQuery, ExternalImage, SelectedExternalImage} from "@/types";
+import {externalImagesApi} from "@/API/externalImages.api";
+import {articlesActions, setBackgroundImage} from "@/Store/article/article.slice";
+import {addTags, imagesActions} from "@/Store/image/image.slice";
+import {ErrorPayload} from "vite";
 
 const externalImagesAdapter = createEntityAdapter<ExternalImage>()
+
+interface LoaddedArticle {
+    id: number,
+    images: ExternalImage[]
+}
 
 interface InitialState {
     loading: boolean,
     error: string | null
     query: string
+    cache: LoaddedArticle[]
     selected: SelectedExternalImage
 }
 
@@ -18,6 +25,7 @@ const initialState = externalImagesAdapter.getInitialState<InitialState>({
     loading: false,
     error: null,
     query: '',
+    cache: [],
     selected: {
         url: '',
         readyToCrop: false,
@@ -53,23 +61,25 @@ const externalImageSlice = createSlice({
         },
         setCropSection: (state, action) => {
             state.selected.cropSection.percentCrop = action.payload
+        },
+        setExternalUrlLink: (state, action: PayloadAction<string>) => {
+            state.selected.url = action.payload
+        },
+        changeQuery: (state, action: PayloadAction<string>) => {
+            state.query = action.payload
         }
     },
     extraReducers: builder =>
         builder
-            .addCase(fetchExternalImages.pending, (state, action) => {
+            .addCase(fetchExternalImages.pending, (state) => {
                 state.loading = true
             })
             .addCase(fetchExternalImages.fulfilled, (state, action) => {
                 state.loading = false
-                const images = action.payload.images.map((image: ExternalImage) => {
-                    image.id = nanoid()
-                    return image
-                })
-                externalImagesAdapter.setAll(state, images)
+                externalImagesAdapter.setAll(state, action.payload.images)
             })
-            .addCase(cropExternalImage.fulfilled, (state, action) => {
-                state.entities.upsertOne
+            .addCase(fetchExternalImages.rejected, state => {
+                state.loading = false
             })
 })
 
@@ -77,35 +87,38 @@ export const {
     selectAll: selectAllExternalImages
 } = externalImagesAdapter.getSelectors<TypeRootState>(state => state.externalImages)
 
-
 export const externalImagesReducer = externalImageSlice.reducer
 export const externalImagesActions = externalImageSlice.actions
 
 export const fetchExternalImages = createAsyncThunk(
     'externalImages/fetchExternalImages',
-    async (query, {rejectWithValue}) => {
+    async (query: string, {rejectWithValue}) => {
         try {
-            const response = await axios.get('/api/resources', {
-                params: {
-                    query
-                }
-            })
-            return response.data
+            const response = await externalImagesApi.fetch(query)
+            if(response.images){
+                const images = response.images.map((image: ExternalImage) => {
+                    image.id = nanoid()
+                    return image
+                })
+                return {images, next_page: response.next_page}
+            }
         } catch (error) {
-            return rejectWithValue('Error searching images')
+            return rejectWithValue(error)
         }
     }
 )
 
 export const cropExternalImage = createAsyncThunk(
     'externalImages/cropExternalImage',
-    async (image: SelectedExternalImage, {rejectWithValue}) => {
+    async (query: CropImageWithTagsQuery, {dispatch, rejectWithValue}) => {
         try {
-            let data = {url: image.url, section: image.cropSection.percentCrop}
-            const response = await axios.post('/api/crop', data)
-            return response.data
+            const croppedImage = await externalImagesApi.crop(query)
+
+            dispatch(setBackgroundImage({article_id: query.article_id, image_id: croppedImage.id}))
+            dispatch(addTags({id: croppedImage.id, tags: query.tags}))
+
         } catch (error) {
-            return rejectWithValue('Error searching images')
+            return rejectWithValue(error)
         }
     }
 )

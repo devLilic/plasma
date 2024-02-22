@@ -10,10 +10,10 @@ interface IContentWithImageProps {
 }
 
 const ContentWithImage = ({articleId, image}: IContentWithImageProps) => {
-    const {removeBackground} = useActions()
+    const {removeBackgroundImage} = useActions()
 
     const handleRemoveBackground = () => {
-        removeBackground({id: articleId, changes: {image: null}})
+        removeBackgroundImage({article_id: articleId})
     }
     return (
         <div className='relative'>

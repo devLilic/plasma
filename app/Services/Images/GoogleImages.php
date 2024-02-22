@@ -7,9 +7,10 @@ use Illuminate\Support\Facades\Log;
 
 class GoogleImages {
 
+    private $images = [];
+
     public function getImages($query)
     {
-
         $config = [
             'key' => config('services.google_search.key'),
             'cx' => config('services.google_search.cx'),
@@ -18,17 +19,11 @@ class GoogleImages {
             'dateRestrict' => 'm[12]',
             'searchType' => 'image',
 //        'sort' => 'date-sdate',
-//            'q' => trim($query),
-            'q' => 'test'
+            'q' => trim($query),
         ];
 
-
-        if (request('startIndex')) {
-            $config['start'] = request('startIndex');
-        }
-
-        $response = Http::get(config('services.google_search.url'),  $config)->json();
-//        $response = $this->testData();
+//        $response = Http::get(config('services.google_search.url'),  $config)->json();
+        $response = $this->testData();
 
         if (array_key_exists('error', $response)) {
             Log::error('GOOGLE_ERROR: ' . json_encode($response['error']));
@@ -39,12 +34,13 @@ class GoogleImages {
                     'Ceva s-a intamplat si nu mai pot accesa Google'
             ];
         }
-        $images = [];
+
+//        dd($response);
         foreach ($response['items'] as $image) {
             if ($image['displayLink'] === 'www.facebook.com' || $image['image']['width'] < $image['image']['height']) {
                 continue;
             }
-            array_push($images, [
+            array_push($this->images, [
                 'url' => $image['link'],
                 'article' => $image['image']['contextLink'],
                 'site' => $image['displayLink'],
@@ -53,9 +49,8 @@ class GoogleImages {
             ]);
         }
 
-
         return [
-            'images' => $images,
+            'images' => $this->images,
             'next_page' => $response['queries']['nextPage'][0]
         ];
     }

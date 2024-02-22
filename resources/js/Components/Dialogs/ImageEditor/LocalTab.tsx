@@ -12,6 +12,7 @@ interface LocalTabProps {
 const LocalTab = ({handleModal}: LocalTabProps) => {
     const [searchTag, setSearchTag] = useState('')
     const loading = useTypedSelector(state => state.images.loading)
+    const error = useTypedSelector(state => state.images.error)
 
     const {fetchImages, searchImages} = useActions()
     useEffect(() => {
@@ -39,10 +40,11 @@ const LocalTab = ({handleModal}: LocalTabProps) => {
                        onChange={handleSearchTag}
                        crossOrigin={undefined}/>
             </div>
-            <div className='flex'>
+            <div className='flex max-h-[330px] overflow-y-scroll'>
                 <div className="w-full">
-                    {loading && <Loading />}
-                    {!loading && <ImagesList handleDialog={handleModal}/>}
+                    {loading && <Loading/>}
+                    {!loading && error !== '' && <h2>{error}</h2>}
+                    {!loading && error === '' && <ImagesList handleDialog={handleModal}/>}
                 </div>
                 {/*<div className={imagesCtx.relevant.images.length ? 'w-2/12' : ''}>*/}
                 {/*    <LocalImages title='Relevante'*/}

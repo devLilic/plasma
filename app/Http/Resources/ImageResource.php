@@ -18,6 +18,7 @@ class ImageResource extends JsonResource {
         return [
             "id" => $this->id,
             "url" => asset("images/$this->url"),
+            "sourceUrl" => $this->sourceUrl,
             "isNew" => (boolean) $this->isNew,
             "tags" => TagResource::collection($this->whenLoaded('tags'))
         ];

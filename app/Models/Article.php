@@ -16,4 +16,9 @@ class Article extends Model {
     {
         return $this->belongsTo(Playlist::class);
     }
+
+    public function image()
+    {
+        return $this->belongsTo(Image::class);
+    }
 }

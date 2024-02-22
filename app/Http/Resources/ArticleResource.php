@@ -17,6 +17,7 @@ class ArticleResource extends JsonResource {
     {
         return [
             "id" => $this->id,
+            "block_title" => $this->title,
             "title" => $this->title,
             "subtitle" => $this->subtitle,
             "intro" => $this->intro,
@@ -24,7 +25,8 @@ class ArticleResource extends JsonResource {
             "article_type" => $this->article_type,
             "playlist_id" => $this->playlist_id,
             "playlist_order" => $this->playlist_order,
-            "image" => ImageResource::make(Image::find($this->image_id))
+            "image" => ImageResource::make(Image::find($this->image_id)),
+            "search_by" => ""
         ];
     }
 }

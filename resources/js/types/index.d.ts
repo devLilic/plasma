@@ -20,6 +20,7 @@ export interface Playlist {
 
 export interface Article {
     id: number
+    block_title: string
     title: string
     subtitle: string
     slugs: string
@@ -29,11 +30,13 @@ export interface Article {
     playlist_order: number
     image: Image | null
     current?: boolean
+    search_by: "title" | "subtitle"
 }
 
 export interface Image {
     id: number
     url: string
+    sourceUrl: string
     isNew: boolean
     tags: Tag[]
 }
@@ -60,4 +63,19 @@ export interface SelectedExternalImage {
         percentCrop: PercentCrop
     },
     croppedUrl: string | null
+}
+
+export interface CropExternalImageQuery{
+    url: string,
+    section: PercentCrop
+    article_id: number
+}
+
+export interface CropImageWithTagsQuery extends CropExternalImageQuery{
+    tags: string
+}
+
+export interface SetBackgroundQuery{
+    article_id: number,
+    image_id: number
 }

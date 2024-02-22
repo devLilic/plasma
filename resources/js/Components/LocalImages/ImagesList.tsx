@@ -10,16 +10,17 @@ interface ImagesListProps {
 const ImagesList = ({handleDialog}: ImagesListProps) => {
     const imagesIds = useTypedSelector(selectImagesIds);
 
-    return (
-        <div className="overflow-y-scroll grid gap-x-3 gap-y-4 grid-cols-6 ">
-            {imagesIds.map(imageId =>
-                <ImageItem key={imageId}
-                           imageId={imageId}
-                           handleDialog={handleDialog}
-                />
-            )}
-        </div>
-    );
+    const noImages = <h2 className='font-bold text-red-500 text-center'>Nu exista imagini pentru aceasta cautare</h2>
+
+    const imagesList = <div className="overflow-y-scroll grid gap-x-3 gap-y-4 grid-cols-6 ">
+        {imagesIds.map(imageId =>
+            <ImageItem key={imageId}
+                       imageId={imageId}
+                       handleDialog={handleDialog}
+            />
+        )}</div>
+
+    return imagesIds.length ? imagesList : noImages
 };
 
 export default ImagesList;

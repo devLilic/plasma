@@ -14,13 +14,15 @@ interface ArticleFooterProps {
 const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
     const article = useTypedSelector(state => selectArticleById(state, articleId))
     const {setCurrent} = useActions()
-    const [query, setQuery] = useState(article.title)
+    const query = article.search_by === "title" ? article.title : article.subtitle
 
     const visitGoogle = () => {
+        setCurrent({id: articleId})
         window.open(
             `https://www.google.com/search?q=${query.split(' ').join('+')}&source=lnms&tbm=isch`,
             '_blank',
             'noopener,noreferrer')
+        openDialog()
     }
 
     const editArticle = () => {
@@ -36,7 +38,8 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
                     <PopoverHandler>
                         <Button variant="outlined"
                                 color='purple'
-                                className='my-1 py-0'
+                                size='sm'
+                                className='my-2 py-0'
                                 placeholder={undefined}
                         >Intro</Button>
                     </PopoverHandler>
@@ -51,6 +54,7 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
 
                 <Button variant="outlined"
                         color='purple'
+                        size='sm'
                         className='my-1 py-0'
                         placeholder={undefined}
                         onClick={visitGoogle}
@@ -58,6 +62,7 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
 
                 <Button variant='outlined'
                         color='purple'
+                        size='sm'
                         className='my-1 py-0'
                         type='button'
                         placeholder={undefined}

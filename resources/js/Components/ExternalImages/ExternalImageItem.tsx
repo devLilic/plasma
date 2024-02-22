@@ -17,7 +17,7 @@ const ExternalImageItem = ({image, selectExternalImage}: ExternalImageItemProps)
             </div>
             <a href={image.article}
                target='_blank'
-               className='absolute top-1 right-1 p-1 rounded block bg-amber-50'
+               className='absolute top-1 right-1 p-1 rounded block hover:bg-amber-50'
                title={image.site}
             >
                 <ExternalLink />

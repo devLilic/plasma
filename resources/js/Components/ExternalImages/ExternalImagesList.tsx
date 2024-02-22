@@ -1,18 +1,18 @@
-import React, {useEffect} from 'react';
+import React, {FC, useEffect} from 'react';
 import {Button} from "@material-tailwind/react";
 import ExternalImageItem from "@/Components/ExternalImages/ExternalImageItem";
 import {selectAllExternalImages} from "@/Store/image/externalImage.slice";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {useActions} from "@/Hooks/useActions";
 
-const ExternalImagesList = () => {
+const ExternalImagesList: FC = () => {
     const images = useTypedSelector(selectAllExternalImages)
     const {selectExternalImage} = useActions()
     const loadMore = ()=> {}
 
     return (
-        <div className='w-7/12 overflow-y-scroll pr-2 h-96'>
-            <div className="grid grid-cols-5 grid-rows-3 gap-y-3 gap-x-3">
+        <div className='overflow-y-scroll pr-2 h-96'>
+            <div className="grid grid-cols-3 border grid-rows-3 gap-y-1 gap-x-1">
                 {images && images.map(
                     image => <ExternalImageItem
                         key={image.id}
