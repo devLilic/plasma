@@ -38,6 +38,7 @@ Route::prefix('/v1')->group(function (){
 
     Route::post('/article', [ArticleController::class, 'store']);
     Route::patch('/article', [ArticleController::class, 'update']);
+    Route::delete('/article', [ArticleController::class, 'destroy']);
     Route::delete('/remove-bg', [ArticleController::class, 'removeBg']);
 
 });

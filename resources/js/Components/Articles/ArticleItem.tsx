@@ -11,11 +11,11 @@ import {selectArticleById} from "@/Store/article/article.slice";
 
 interface ArticleItemProps {
     articleId: number,
-    handleNewArticleDialog: () => void
     openDialog: () => void
+    confirm: () => void
 }
 
-const ArticleItem = ({articleId, handleNewArticleDialog, openDialog}: ArticleItemProps) => {
+const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
     const article = useTypedSelector(state => selectArticleById(state, articleId))
 
     const {
@@ -33,9 +33,12 @@ const ArticleItem = ({articleId, handleNewArticleDialog, openDialog}: ArticleIte
 
     return (
         <Card placeholder={undefined} className='w-[270px] m-2'>
-            <ArticleHeader title={article.block_title}
-                           article_type={article.article_type}
-                           openDialog={handleNewArticleDialog}/>
+            <ArticleHeader
+                id={article.id}
+                title={article.block_title}
+                article_type={article.article_type}
+                confirm={confirm}
+            />
             {article.image?.url ?
                 <ContentWithImage articleId={articleId} image={article.image}/>
                 : (

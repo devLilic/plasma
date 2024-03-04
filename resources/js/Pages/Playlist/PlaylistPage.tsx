@@ -2,22 +2,29 @@ import React, {ChangeEvent, useEffect, useState} from 'react';
 import UploadButton from "@/Components/UI/UploadButton/UploadButton";
 import {Head, useForm} from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {PageProps, Playlist, User} from "@/types";
-import {Card, List} from "@material-tailwind/react";
+import {Article, Playlist, User} from "@/types";
+import {Card} from "@material-tailwind/react";
 import ListOfPlaylists from "@/Components/Playlist/ListOfPlaylists";
+import {useActions} from "@/Hooks/useActions";
 
 interface PlaylistPageProps{
     auth: {
         user: User
     }
     playlists: Playlist[]
+    articles: Article[]
 }
 
-const PlaylistPage = ({auth, playlists}: PlaylistPageProps) => {
+const PlaylistPage = ({auth, playlists, articles}: PlaylistPageProps) => {
     const [isFileTypeOK, setIsFileTypeOK] = useState(false);
+    const {setArticles} = useActions()
     const {data, setData, post} = useForm({
         file: {},
     });
+
+    useEffect(() => {
+        setArticles(articles)
+    }, []);
 
     useEffect(() => {
         if (isFileTypeOK) {

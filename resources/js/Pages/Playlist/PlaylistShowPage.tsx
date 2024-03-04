@@ -14,9 +14,10 @@ interface PlaylistShowPageProps {
 }
 
 const PlaylistShowPage = ({auth, articles}: PlaylistShowPageProps) => {
-    const {setArticles, fetchImages} = useActions()
+    const {setArticles, fetchImages, setPlaylist} = useActions()
     useEffect(() => {
         setArticles(articles)
+        setPlaylist(articles[0].playlist_id)
         fetchImages()
     }, []);
     return (

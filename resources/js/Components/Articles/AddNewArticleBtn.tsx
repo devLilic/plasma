@@ -1,16 +1,26 @@
 import React from 'react';
 import {Button} from "@material-tailwind/react";
-import {addNewArticle} from "@/Store/article/article.slice";
+import {useActions} from "@/Hooks/useActions";
+import {Article} from "@/types";
+import {useTypedSelector} from "@/Hooks/useTypedSelector";
 
 interface AddNewArticleBtnProps {
-    position: number,
-    handleDialog: ()=>void
+    handleDialog: ()=>void,
+    articleID?: number
 }
 
-const AddNewArticleBtn = ({position, handleDialog}: AddNewArticleBtnProps) => {
+const AddNewArticleBtn = ({handleDialog, articleID}: AddNewArticleBtnProps) => {
+    const {changeNewArticlePosition} = useActions()
+
+    const article_order = articleID ? useTypedSelector(state => state.articles.entities[articleID].playlist_order) : 0
+    const handleNwArticleBtn = () => {
+        changeNewArticlePosition(article_order+1)
+        handleDialog()
+    }
+
     return (
         <Button
-            onClick={()=> handleDialog()}
+            onClick={handleNwArticleBtn}
             className='text-white
             flex items-center
             p-0

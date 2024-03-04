@@ -33,8 +33,9 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
     return (
         <div
             className='mb-3 px-2 flex flex-col items-center justify-center border-t border-blue-500 border-dashed pt-3'>
+
             <div className='flex justify-between w-full'>
-                <Popover>
+                {article.intro && <Popover>
                     <PopoverHandler>
                         <Button variant="outlined"
                                 color='purple'
@@ -46,11 +47,7 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
                     <PopoverContent className="z-20 bg-yellow-100 max-w-[300px]"
                                     placeholder={undefined}
                     >{article.intro}</PopoverContent>
-                </Popover>
-                {/*<Button variant="outlined"*/}
-                {/*        size="sm"*/}
-                {/*        onClick={() => setShowIntro(prevState => !prevState)}*/}
-                {/*>Intro</Button>*/}
+                </Popover>}
 
                 <Button variant="outlined"
                         color='purple'

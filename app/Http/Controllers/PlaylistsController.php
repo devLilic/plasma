@@ -12,16 +12,19 @@ use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 
-class PlaylistsController extends Controller
-{
+class PlaylistsController extends Controller {
+
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
         $playlists = Playlist::orderBy('created_at', 'DESC')->take(6)->get();
+        $articles = ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get());
+
         return Inertia::render('Playlist/PlaylistPage', [
-            'playlists' => $playlists
+            'playlists' => $playlists,
+            'articles' => $articles,
         ]);
     }
 
@@ -57,7 +60,8 @@ class PlaylistsController extends Controller
                 'playlist_order' => $playlist_order++
             ]);
         }
-        return redirect()->to("/playlists/".$playlist->id);
+
+        return redirect()->to("/playlists/" . $playlist->id);
     }
 
     /**
@@ -66,9 +70,10 @@ class PlaylistsController extends Controller
     public function show(string $id)
     {
         $playlist = Playlist::find($id);
-        if(!$playlist) {
+        if (!$playlist) {
             return redirect()->to("/playlists");
         }
+
         return Inertia::render('Playlist/PlaylistShowPage', [
             'articles' => ArticleResource::collection(Article::where('playlist_id', $id)->get())
         ]);
