@@ -20,21 +20,17 @@ class PlaylistsController extends Controller {
     public function index()
     {
         $playlists = Playlist::orderBy('created_at', 'DESC')->take(6)->get();
-        $articles = ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get());
 
-        return Inertia::render('Playlist/PlaylistPage', [
-            'playlists' => $playlists,
-            'articles' => $articles,
-        ]);
+        return (count($playlists) > 0) ?
+            Inertia::render('Playlist/PlaylistPage', [
+                'playlists' => $playlists,
+                'articles' => ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get()),
+            ]) :
+            Inertia::render('Playlist/PlaylistPage', [
+                'playlists' => $playlists,
+            ]);
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
-    {
-
-    }
 
     /**
      * Store a newly created resource in storage.
@@ -79,27 +75,4 @@ class PlaylistsController extends Controller {
         ]);
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
-    }
 }

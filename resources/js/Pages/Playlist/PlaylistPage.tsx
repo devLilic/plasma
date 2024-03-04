@@ -7,7 +7,7 @@ import {Card} from "@material-tailwind/react";
 import ListOfPlaylists from "@/Components/Playlist/ListOfPlaylists";
 import {useActions} from "@/Hooks/useActions";
 
-interface PlaylistPageProps{
+interface PlaylistPageProps {
     auth: {
         user: User
     }
@@ -23,7 +23,9 @@ const PlaylistPage = ({auth, playlists, articles}: PlaylistPageProps) => {
     });
 
     useEffect(() => {
-        setArticles(articles)
+        if (articles) {
+            setArticles(articles)
+        }
     }, []);
 
     useEffect(() => {
