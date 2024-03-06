@@ -38,8 +38,9 @@ class PlaylistsController extends Controller {
     public function store(FileUploadRequest $request)
     {
         $file = $request->validated('file');
+        $date = today()->toString();
         $playlist = Playlist::create([
-            'title' => Str::of($file->getClientOriginalName())->before('.HTM')->toString()
+            'title' => today()->format('d m Y') . ' ' . Str::of($file->getClientOriginalName())->before('.HTM')->toString()
         ]);
         $content = $request->validated('file')->getContent();
         $articles = ArticlesService::generate($content);

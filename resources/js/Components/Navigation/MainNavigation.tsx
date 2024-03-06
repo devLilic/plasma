@@ -26,7 +26,10 @@ const MainNavigation = ({user}: MainNavigationProps) => {
 
                         <div className="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
                             <NavLink href={route('playlists.index')} active={route().current('playlists.index')}>
-                                Playlisturi
+                                Playlist-uri
+                            </NavLink>
+                            <NavLink href={route('images.index')} active={route().current('images.index')}>
+                                Imagini
                             </NavLink>
                         </div>
                     </div>
@@ -36,6 +39,7 @@ const MainNavigation = ({user}: MainNavigationProps) => {
                               placement="bottom-end">
                             <MenuHandler>
                                 <Button
+                                    placeholder={null}
                                     variant="text"
                                     color="blue-gray"
                                     className="flex items-center gap-1 rounded-full py-0.5 pr-2 pl-0.5 lg:ml-auto"
@@ -50,8 +54,8 @@ const MainNavigation = ({user}: MainNavigationProps) => {
                                     />
                                 </Button>
                             </MenuHandler>
-                            <MenuList className="p-1 hidden sm:block">
-                                <MenuItem className="p-0">
+                            <MenuList className="p-1 hidden sm:block" placeholder={null}>
+                                <MenuItem className="p-0" placeholder={null}>
                                     <Link href={route('profile.edit')}
                                           className="flex items-center gap-2 px-3 py-2 rounded">
                                         <UserCircleIcon className="h-4 w-4" strokeWidth={2}/>

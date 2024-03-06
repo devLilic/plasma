@@ -3,7 +3,7 @@ import UploadSvg from "@/Components/UI/UploadButton/UploadSvg";
 
 interface UploadButtonProps{
     title: string
-    handleChange: (e: ChangeEvent<HTMLFormElement>)=>void
+    handleChange: (e: ChangeEvent<HTMLInputElement>)=>void
 }
 
 const UploadButton = ({title, handleChange}: UploadButtonProps) => {

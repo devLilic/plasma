@@ -15,6 +15,7 @@ const LocalTab = ({handleModal}: LocalTabProps) => {
     const error = useTypedSelector(state => state.images.error)
 
     const {fetchImages, searchImages} = useActions()
+
     useEffect(() => {
         const timer = setTimeout(() => {
             if (searchTag.length > 1) {

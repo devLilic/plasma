@@ -37,6 +37,7 @@ const UpdateProfileInformation = ({mustVerifyEmail, status, className}: UpdatePr
             <form onSubmit={submit} className="mt-6 space-y-6">
                 <div>
                     <Input label="Name"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="name"
                            name="name"
@@ -50,6 +51,7 @@ const UpdateProfileInformation = ({mustVerifyEmail, status, className}: UpdatePr
 
                 <div>
                     <Input label="Email"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="email"
                            type="email"
@@ -86,6 +88,7 @@ const UpdateProfileInformation = ({mustVerifyEmail, status, className}: UpdatePr
 
                 <div className="flex items-center gap-4">
                     <Button size="sm"
+                            placeholder={null}
                             color="blue"
                             disabled={processing}
                             type="submit"

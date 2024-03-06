@@ -43,6 +43,7 @@ const Login = ({status, canResetPassword}: LoginProps) => {
             <form onSubmit={submit}>
                 <div>
                     <Input label="Email"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="email"
                            type="email"
@@ -57,6 +58,7 @@ const Login = ({status, canResetPassword}: LoginProps) => {
 
                 <div className="mt-4">
                     <Input label="Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="password"
                            type="password"
@@ -70,6 +72,7 @@ const Login = ({status, canResetPassword}: LoginProps) => {
 
                 <div className="flex mb-2">
                     <Checkbox
+                        crossOrigin={null}
                         color="purple"
                         label='Remember me'
                         checked={data.remember}
@@ -87,7 +90,9 @@ const Login = ({status, canResetPassword}: LoginProps) => {
                         </Link>
                     )}
 
-                    <Button type="submit" disabled={processing} size={'sm'} color={'blue'} className='ml-4'>Log in</Button>
+                    <Button type="submit"
+                            placeholder={null}
+                            disabled={processing} size={'sm'} color={'blue'} className='ml-4'>Log in</Button>
                 </div>
             </form>
         </GuestLayout>

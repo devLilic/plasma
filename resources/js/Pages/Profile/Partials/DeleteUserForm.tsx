@@ -51,13 +51,17 @@ export default function DeleteUserForm({className = ''}: { className?: string })
             </header>
 
             <Button size="sm"
+                    placeholder={null}
                     color="red"
                     onClick={confirmUserDeletion}
             >Delete Account</Button>
 
-            <Dialog open={confirmingUserDeletion} handler={closeModal} size="sm">
-                <DialogHeader>Are you sure you want to delete your account?</DialogHeader>
-                <DialogBody>
+            <Dialog open={confirmingUserDeletion}
+                    handler={closeModal}
+                    size="sm"
+                    placeholder={null}>
+                <DialogHeader placeholder={null}>Are you sure you want to delete your account?</DialogHeader>
+                <DialogBody placeholder={null}>
                     <p className="mt-1 text-sm text-gray-600">
                         Once your account is deleted, all of its resources and data will be permanently deleted. Please
                         enter your password to confirm you would like to permanently delete your account.
@@ -65,6 +69,7 @@ export default function DeleteUserForm({className = ''}: { className?: string })
 
                     <div className="mt-6">
                         <Input label="Password"
+                               crossOrigin={null}
                                color={"indigo"}
                                id="password"
                                type="password"
@@ -76,15 +81,17 @@ export default function DeleteUserForm({className = ''}: { className?: string })
                         <InputError message={errors.password}/>
                     </div>
                 </DialogBody>
-                <DialogFooter>
+                <DialogFooter placeholder={null}>
                     <Button variant='outlined'
                             size="sm"
+                            placeholder={null}
                             color="light-blue"
                             className="ms-3"
                             onClick={closeModal}
                     >Cancel</Button>
 
                     <Button size="sm"
+                            placeholder={null}
                             color="red"
                             className="ms-3"
                             disabled={processing}

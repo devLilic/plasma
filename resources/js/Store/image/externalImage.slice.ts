@@ -102,6 +102,7 @@ export const fetchExternalImages = createAsyncThunk(
                 })
                 return {images, next_page: response.next_page}
             }
+            return {images: []}
         } catch (error) {
             return rejectWithValue(error)
         }

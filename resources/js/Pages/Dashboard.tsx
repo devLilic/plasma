@@ -11,7 +11,7 @@ const Dashboard = ({auth}: PageProps) => {
             <Head title="Dashboard"/>
 
             <div className="bg-white overflow-hidden shadow-sm sm:rounded-lg p-2">
-                <PlaylistPage/>
+                <PlaylistPage auth={auth}/>
             </div>
         </AuthenticatedLayout>
     );

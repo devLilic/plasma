@@ -38,6 +38,7 @@ const Register = () => {
             <form onSubmit={submit}>
                 <div>
                     <Input label="Name"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="name"
                            name="name"
@@ -53,6 +54,7 @@ const Register = () => {
 
                 <div className="mt-4">
                     <Input label="Email"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="email"
                            type="email"
@@ -67,6 +69,7 @@ const Register = () => {
 
                 <div className="mt-4">
                     <Input label="Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="password"
                            type="password"
@@ -81,6 +84,7 @@ const Register = () => {
 
                 <div className="mt-4">
                     <Input label="Confirm Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="password_confirmation"
                            type="password"
@@ -102,6 +106,7 @@ const Register = () => {
                     </Link>
 
                     <Button size={"sm"}
+                            placeholder={null}
                             color={"blue"}
                             disabled={processing}
                             className="ml-4"

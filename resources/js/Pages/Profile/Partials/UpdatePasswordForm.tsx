@@ -53,6 +53,7 @@ const UpdatePasswordForm = ({className = ''}: { className?: string }) => {
             <form onSubmit={updatePassword} className="mt-6 space-y-6">
                 <div>
                     <Input label="Current Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="current_password"
                            type="password"
@@ -66,6 +67,7 @@ const UpdatePasswordForm = ({className = ''}: { className?: string }) => {
 
                 <div>
                     <Input label="New Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="password"
                            type="password"
@@ -80,6 +82,7 @@ const UpdatePasswordForm = ({className = ''}: { className?: string }) => {
 
                 <div>
                     <Input label="Confirm Password"
+                           crossOrigin={null}
                            color={"indigo"}
                            id="password_confirmation"
                            type="password"
@@ -92,6 +95,7 @@ const UpdatePasswordForm = ({className = ''}: { className?: string }) => {
 
                 <div className="flex items-center gap-4">
                     <Button size="sm"
+                            placeholder={null}
                             color="blue"
                             disabled={processing}
                             type="submit"

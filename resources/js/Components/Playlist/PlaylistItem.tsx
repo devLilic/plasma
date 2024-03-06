@@ -11,6 +11,7 @@ const PlaylistItem = ({playlist}: PlaylistItemProps) => {
     return (
         <a href={`/playlists/${playlist.id}`}>
             <ListItem
+                placeholder={null}
                 className='text-sm bg-transparent border border-green-700 rounded-lg flex justify-between items-center'>
                 <Typography className='w-full'>{playlist.title} </Typography>
             </ListItem>

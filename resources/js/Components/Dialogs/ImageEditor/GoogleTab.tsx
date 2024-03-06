@@ -93,7 +93,9 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
                                    label="Căutare"
                                    onChange={handleQueryChange}
                             />
-                            <Button color='purple' className='ml-2'>Caută</Button>
+                            <Button color='purple'
+                                    placeholder={null}
+                                    className='ml-2'>Caută</Button>
                         </div>
 
                         <div className='w-full'>

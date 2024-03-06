@@ -32,6 +32,7 @@ const ForgotPassword = ({ status }: ForgotPasswordProps) => {
 
             <form onSubmit={submit}>
                 <Input label="Email"
+                       crossOrigin={null}
                        color={"indigo"}
                        id="email"
                        type="email"
@@ -44,6 +45,7 @@ const ForgotPassword = ({ status }: ForgotPasswordProps) => {
 
                 <div className="flex items-center justify-end mt-4">
                     <Button size={"sm"}
+                            placeholder={null}
                             color={"blue"}
                             disabled={processing}
                             type="submit"

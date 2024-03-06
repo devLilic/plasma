@@ -1,18 +1,15 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
+import React, {ChangeEvent, FC, useEffect, useState} from 'react';
 import UploadButton from "@/Components/UI/UploadButton/UploadButton";
 import {Head, useForm} from "@inertiajs/react";
 import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Article, Playlist, User} from "@/types";
+import {Article, PageProps, Playlist} from "@/types";
 import {Card} from "@material-tailwind/react";
 import ListOfPlaylists from "@/Components/Playlist/ListOfPlaylists";
 import {useActions} from "@/Hooks/useActions";
 
-interface PlaylistPageProps {
-    auth: {
-        user: User
-    }
-    playlists: Playlist[]
-    articles: Article[]
+interface PlaylistPageProps extends PageProps{
+    playlists?: Playlist[]
+    articles?: Article[]
 }
 
 const PlaylistPage = ({auth, playlists, articles}: PlaylistPageProps) => {
@@ -34,11 +31,13 @@ const PlaylistPage = ({auth, playlists, articles}: PlaylistPageProps) => {
         }
     }, [isFileTypeOK])
 
-    function handleChange(e: ChangeEvent<HTMLFormElement>) {
+    function handleChange(e: ChangeEvent<HTMLInputElement>) {
         // check if uploaded file is of type HTML
-        const typeOK = e.target.files[0].type === 'text/html'
-        setData("file", e.target.files[0]);
-        setIsFileTypeOK(typeOK)
+        if(e.target.files){
+            const typeOK = e.target.files[0].type === 'text/html'
+            setData("file", e.target.files[0]);
+            setIsFileTypeOK(typeOK)
+        }
     }
 
     return (

@@ -34,6 +34,7 @@ const VerifyEmail = ({status}: VerifyEmailProps) => {
             <form onSubmit={submit}>
                 <div className="mt-4 flex items-center justify-between">
                     <Button size="sm"
+                            placeholder={null}
                             color="blue"
                             disabled={processing}
                             className="ml-4"

@@ -1,8 +1,8 @@
 <?php
 
+use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\PlaylistsController;
 use App\Http\Controllers\ProfileController;
-use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -41,6 +41,7 @@ Route::middleware('auth')->group(function ()
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('playlists', PlaylistsController::class);
+    Route::get("/image", [ImagesController::class, 'index'])->name('images.index');
 
 });
 

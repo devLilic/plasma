@@ -32,6 +32,7 @@ const ConfirmPassword = () => {
             <form onSubmit={submit}>
                 <div className="mt-4">
                     <Input label="Password"
+                           crossOrigin={null}
                            color="indigo"
                            id="password"
                            type="password"
@@ -50,6 +51,7 @@ const ConfirmPassword = () => {
                             disabled={processing}
                             className="ml-4"
                             type="submit"
+                            placeholder={null}
                     >Confirm</Button>
                 </div>
             </form>

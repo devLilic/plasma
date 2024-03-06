@@ -6,18 +6,17 @@ import {List, Typography} from "@material-tailwind/react";
 
 
 interface ListOfPlaylistsProps {
-    playlists: Playlist[]
+    playlists?: Playlist[]
 }
 
 const ListOfPlaylists = ({playlists}: ListOfPlaylistsProps) => {
 
-    const noPlaylist = !playlists.length &&
-        <Typography className="w-full flex justify-center items-center font-bold text-xl">No Playlist</Typography>;
+    const noPlaylist = <Typography className="w-full flex justify-center items-center font-bold text-xl">No Playlist</Typography>;
 
     return (
         <>
             <div className='w-full flex items-stretch min-h-[180px]'>
-                {playlists.length > 0 ? (
+                {playlists?.length ? (
                     <div className="flex flex-col items-start mx-2 w-full">
                         <PlaylistFirstItem playlist={playlists[0]}/>
                         <List

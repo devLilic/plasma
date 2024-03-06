@@ -7,10 +7,6 @@ interface AuthenticatedPageProps extends PropsWithChildren {
 }
 
 const Authenticated = ({user, children}: AuthenticatedPageProps) => {
-    const [isMenuOpen, setIsMenuOpen] = useState(false);
-
-    const closeMenu = () => setIsMenuOpen(false);
-
     return (
         <div className="min-h-screen bg-gray-100">
             <MainNavigation user={user}/>

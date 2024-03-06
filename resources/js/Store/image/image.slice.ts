@@ -3,7 +3,7 @@ import {
     createEntityAdapter,
     createSlice, PayloadAction,
 } from "@reduxjs/toolkit";
-import {Image} from "@/types";
+import {Article, Image} from "@/types";
 import {TypeRootState} from "@/Store/store";
 import {imagesApi} from "@/API/images.api";
 
@@ -19,7 +19,11 @@ const initialState = imagesAdapter.getInitialState({
 export const imagesSlice = createSlice({
     name: "images",
     initialState,
-    reducers: {},
+    reducers: {
+        setImages: (state, action: PayloadAction<Image[]>) => {
+            imagesAdapter.setAll(state, action.payload)
+        },
+    },
     extraReducers: builder => {
         builder
             .addCase(fetchImages.pending, (state) => {
