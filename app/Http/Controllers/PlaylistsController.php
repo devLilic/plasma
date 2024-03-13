@@ -6,6 +6,7 @@ use App\Http\Requests\FileUploadRequest;
 use App\Http\Resources\ArticleResource;
 use App\Models\Article;
 use App\Models\Playlist;
+use App\Models\Tag;
 use Facades\App\Services\Articles\ArticlesService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
@@ -47,7 +48,7 @@ class PlaylistsController extends Controller {
         ]);
         $playlist_order = 1;
         foreach ($articles as $article) {
-            $found_article = $previous_articles->where('subtitle', $article->search_slug)->first();
+            $image = $this->findImage($previous_articles, $article->search_slug);
             Article::create([
                 'title' => $article->title,
                 'subtitle' => $article->search_slug,
@@ -56,11 +57,44 @@ class PlaylistsController extends Controller {
                 'article_type' => $article->type,
                 'playlist_id' => $playlist->id,
                 'playlist_order' => $playlist_order++,
-                'image_id' => $found_article ? $found_article->image_id : null
+                'image_id' => $image ?: null
             ]);
         }
 
         return redirect()->to("/playlists/" . $playlist->id);
+    }
+
+    private function findImage($previous_articles, $slug)
+    {
+        $found_article = $previous_articles->where('subtitle', $slug)->first();
+        if ($found_article) {
+            return $found_article->image_id;
+        }
+
+        $slug_words = explode(" ", trim($slug));
+        $filtered = [];
+        foreach($slug_words as $word){
+            if (! (int) $word && strlen($word) > 2){
+                array_push($filtered, $word);
+            }
+        }
+        $slug = implode(' ', $filtered);
+        $found_article = $previous_articles->where('subtitle', $slug)->first();
+        if ($found_article) {
+            return $found_article->image_id;
+        }
+
+        $suggested_images = collect();
+        foreach ($filtered as $word){
+            $tag = Tag::where('title', "LIKE", "%" .$word."%")->first();
+            if ($tag) {
+                $suggested_images->push($tag->images()->latest()->first());
+            }
+        }
+        if(count($suggested_images) !== 0 ){
+            return $suggested_images->sortByDesc('updated_at')->first()->id;
+        }
+        return null;
     }
 
     /**
