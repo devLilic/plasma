@@ -50,10 +50,7 @@ const PlaylistPage = ({auth, playlists, articles}: PlaylistPageProps) => {
                 <Card className="flex-1" placeholder={undefined}>
                     <form>
                         <div className="flex flex-col w-full h-48 items-center justify-center bg-grey-lighter">
-                            <UploadButton title="Încarcă playlist" handleChange={handleChange}/>
-                            <div>
-                                Fișier HTML
-                            </div>
+                            <UploadButton title="Încarcă playlist (xTELEJURNAL.HTM)" handleChange={handleChange}/>
                         </div>
                     </form>
                 </Card>

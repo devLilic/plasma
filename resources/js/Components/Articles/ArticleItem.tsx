@@ -42,8 +42,8 @@ const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
             {article.image?.url ?
                 <ContentWithImage articleId={articleId} image={article.image}/>
                 : (
-                    <div className="text-blue-600 text-xs px-2 min-h-[160px]">
-                        <div className="inline-flex w-full mt-6 mb-4 pr-4">
+                    <div className="text-blue-600 text-xs px-2 min-h-[150px]">
+                        <div className="inline-flex w-full mt-6 pr-4">
                             <Checkbox
                                 label={article.search_by !== "title" ? article.title : ''}
                                 checked={article.search_by === "title"}
@@ -63,7 +63,7 @@ const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
 
                         </div>
 
-                        <div className="inline-flex w-full mt-6 mb-4 pr-4">
+                        <div className="inline-flex w-full mt-6 pr-4">
                             <Checkbox label={article.search_by !== "subtitle" ? article.subtitle : ''}
                                       checked={article.search_by === "subtitle"}
                                       color="purple"

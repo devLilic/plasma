@@ -24,6 +24,7 @@ export const imagesSlice = createSlice({
             imagesAdapter.setAll(state, action.payload)
         },
     },
+
     extraReducers: builder => {
         builder
             .addCase(fetchImages.pending, (state) => {

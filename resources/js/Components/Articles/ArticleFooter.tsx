@@ -1,10 +1,11 @@
-import React, {useState} from 'react';
-import {Button, Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
-import GoogleIcon from "@/Components/UI/Svg/GoogleIcon";
+import React from 'react';
+import { Popover, PopoverContent, PopoverHandler} from "@material-tailwind/react";
 import SearchImageIcon from "@/Components/UI/Svg/SearchImageIcon";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {selectArticleById} from "@/Store/article/article.slice";
 import {useActions} from "@/Hooks/useActions";
+import Button from "@/Components/Material/Button";
+import SearchExternalImages from "@/Components/ExternalImages/SearchExternalImages";
 
 interface ArticleFooterProps {
     articleId: number,
@@ -16,12 +17,8 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
     const {setCurrent} = useActions()
     const query = article.search_by === "title" ? article.title : article.subtitle
 
-    const visitGoogle = () => {
-        setCurrent({id: articleId})
-        window.open(
-            `https://www.google.com/search?q=${query.split(' ').join('+')}&source=lnms&tbm=isch`,
-            '_blank',
-            'noopener,noreferrer')
+    const onSearchQuery = () => {
+        setCurrent({id: article.id})
         openDialog()
     }
 
@@ -36,12 +33,10 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
 
             <div className='flex justify-between w-full'>
                 {article.intro && <Popover>
-                    <PopoverHandler>
+                    <PopoverHandler className='p-1 my-1'>
                         <Button variant="outlined"
                                 color='purple'
-                                size='sm'
-                                className='my-2 py-0'
-                                placeholder={undefined}
+                                className='my-2'
                         >Intro</Button>
                     </PopoverHandler>
                     <PopoverContent className="z-20 bg-yellow-100 max-w-[300px]"
@@ -49,20 +44,13 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
                     >{article.intro}</PopoverContent>
                 </Popover>}
 
-                <Button variant="outlined"
-                        color='purple'
-                        size='sm'
-                        className='my-1 py-0'
-                        placeholder={undefined}
-                        onClick={visitGoogle}
-                ><GoogleIcon/></Button>
+                <SearchExternalImages query={query} withModal={onSearchQuery}/>
 
                 <Button variant='outlined'
                         color='purple'
                         size='sm'
                         className='my-1 py-0'
                         type='button'
-                        placeholder={undefined}
                         onClick={editArticle}
                 ><SearchImageIcon/></Button>
             </div>

@@ -38,15 +38,16 @@ class PlaylistsController extends Controller {
     public function store(FileUploadRequest $request)
     {
         $file = $request->validated('file');
-        $date = today()->toString();
-        $playlist = Playlist::create([
-            'title' => today()->format('d m Y') . ' ' . Str::of($file->getClientOriginalName())->before('.HTM')->toString()
-        ]);
+        $previous_articles = Playlist::latest()->first()->articles;
         $content = $request->validated('file')->getContent();
         $articles = ArticlesService::generate($content);
 
+        $playlist = Playlist::create([
+            'title' => today()->format('d m Y') . ' ' . Str::of($file->getClientOriginalName())->before('.HTM')->toString()
+        ]);
         $playlist_order = 1;
         foreach ($articles as $article) {
+            $found_article = $previous_articles->where('subtitle', $article->search_slug)->first();
             Article::create([
                 'title' => $article->title,
                 'subtitle' => $article->search_slug,
@@ -54,7 +55,8 @@ class PlaylistsController extends Controller {
                 'intro' => $article->content,
                 'article_type' => $article->type,
                 'playlist_id' => $playlist->id,
-                'playlist_order' => $playlist_order++
+                'playlist_order' => $playlist_order++,
+                'image_id' => $found_article ? $found_article->image_id : null
             ]);
         }
 

@@ -8,7 +8,7 @@ import {ErrorPayload} from "vite";
 
 const externalImagesAdapter = createEntityAdapter<ExternalImage>()
 
-interface LoaddedArticle {
+interface LoadedArticle {
     id: number,
     images: ExternalImage[]
 }
@@ -17,7 +17,7 @@ interface InitialState {
     loading: boolean,
     error: string | null
     query: string
-    cache: LoaddedArticle[]
+    cache: LoadedArticle[]
     selected: SelectedExternalImage
 }
 

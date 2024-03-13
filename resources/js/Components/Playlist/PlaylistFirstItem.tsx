@@ -20,7 +20,7 @@ const PlaylistFirstItem = ({playlist}: PlaylistFirstItemProps) => {
     }
     useEffect(() => {
         calculatePercent()
-    }, []);
+    }, [articles.length]);
 
     return (
         <div

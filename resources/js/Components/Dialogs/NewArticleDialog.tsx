@@ -1,7 +1,13 @@
 import React, {ChangeEvent} from 'react';
-import {Button, Dialog, DialogBody, DialogFooter, DialogHeader, Input, Radio} from "@material-tailwind/react";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {useActions} from "@/Hooks/useActions";
+import Input from "@/Components/Material/Input";
+import Radio from "@/Components/Material/Radio";
+import Button from "@/Components/Material/Button";
+import Dialog from "@/Components/Material/Dialog";
+import DialogHeader from "@/Components/Material/DialogHeader";
+import DialogBody from "@/Components/Material/DialogBody";
+import DialogFooter from "@/Components/Material/DialogFooter";
 
 interface NewArticleDialogProps {
     isOpen: boolean
@@ -50,10 +56,9 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
     return (
         <Dialog size="xs"
                 open={isOpen}
-                handler={handleDialog}
-                placeholder={undefined}>
-            <DialogHeader className='bg-green-50 rounded-t-2xl' placeholder={undefined}>Articol nou</DialogHeader>
-            <DialogBody placeholder={undefined}>
+                handler={handleDialog}>
+            <DialogHeader className='bg-green-50 rounded-t-2xl'>Articol nou</DialogHeader>
+            <DialogBody>
                 <div className='w-full flex flex-col justify-center items-center'>
                     <div className='w-full mb-3'>
                         <Input label='Titlu'
@@ -61,8 +66,7 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
                                value={newArticleTitle}
                                required={true}
                                autoFocus={true}
-                               onChange={handleNewArticleTitle}
-                               crossOrigin={undefined}/>
+                               onChange={handleNewArticleTitle}/>
                     </div>
                     <div className='py-2 h-15 flex justify-around w-8/12'>
                         <Radio id='BETA'
@@ -70,36 +74,31 @@ const NewArticleDialog = ({isOpen, handleDialog}: NewArticleDialogProps) => {
                                value='BETA'
                                label='BETA'
                                checked={newArticleType === 'BETA'}
-                               crossOrigin={undefined}
                                onChange={handleNewArticleType}/>
                         <Radio id='OFF'
                                name='article_type'
                                value='OFF'
                                label='OFF'
                                checked={newArticleType === 'OFF'}
-                               crossOrigin={undefined}
                                onChange={handleNewArticleType}/>
                         <Radio id='LIVE'
                                name='article_type'
                                value='LIVE'
                                label='LIVE'
                                checked={newArticleType === 'LIVE'}
-                               crossOrigin={undefined}
                                onChange={handleNewArticleType}/>
                     </div>
                 </div>
             </DialogBody>
-            <DialogFooter placeholder={undefined}>
+            <DialogFooter>
                 <Button color='green'
                         size='sm'
                         onClick={saveNewArticle}
-                        placeholder={undefined}
                 >Save</Button>
                 <Button variant='outlined'
                         size='sm'
                         className='ml-4'
                         onClick={cancelNewArticle}
-                        placeholder={undefined}
                 >Cancel</Button>
             </DialogFooter>
         </Dialog>

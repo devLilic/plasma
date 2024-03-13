@@ -1,5 +1,5 @@
 import React, {ChangeEvent, useEffect, useState} from 'react';
-import {Button, Input} from "@material-tailwind/react";
+import {Button, Checkbox, Input} from "@material-tailwind/react";
 import Loading from "@/Components/UI/Svg/Loading";
 import 'react-image-crop/dist/ReactCrop.css';
 import ExternalImagesList from "@/Components/ExternalImages/ExternalImagesList";
@@ -7,6 +7,7 @@ import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import {useActions} from "@/Hooks/useActions";
 import CropBlock from "@/Components/Dialogs/ImageEditor/Crop/CropBlock";
 import {PercentCrop} from "react-image-crop";
+import SearchExternalImages from "@/Components/ExternalImages/SearchExternalImages";
 
 interface GoogleTabProps {
     handleModal: () => void
@@ -21,15 +22,20 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
         fetchExternalImages,
         resetCrop,
         setExternalUrlLink,
-        changeQuery
+        changeQuery,
+        changeSearchBy,
+        changeTitle,
+        changeSubtitle
     } = useActions()
 
     const cropImage = useTypedSelector(state => state.externalImages.selected)
     const currentArticleId = useTypedSelector(state => state.articles.current)
-    const currentArticle = useTypedSelector(state => state.articles.entities[state.articles.current][state.articles.search_by ? state.articles.search_by : 'title'])
+    const currentArticleSearchBy = useTypedSelector(state => state.articles.entities[state.articles.current][state.articles.search_by ? state.articles.search_by : 'title'])
+    const article = useTypedSelector(state => state.articles.entities[currentArticleId])
     const selectImageToCrop = useTypedSelector(state => state.externalImages.selected)
     const externalUrl = useTypedSelector(state => state.externalImages.selected.url)
     const externalQuery = useTypedSelector(state => state.externalImages.query)
+    const query = article.search_by === "title" ? article.title : article.subtitle
 
     const [percentCrop, setPercentCrop] = useState<PercentCrop>({
         unit: "%",
@@ -42,12 +48,12 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
 
     useEffect(() => {
         resetCrop()
-    }, [currentArticle]);
+    }, [currentArticleSearchBy]);
 
     useEffect(() => {
-        let query_words = currentArticle.split(' ').filter(word => word.length > 2).join(' ')
+        let query_words = currentArticleSearchBy.split(' ').filter(word => word.length > 2).join(' ')
         changeQuery(query_words);
-        fetchExternalImages(query_words)
+        // fetchExternalImages(query_words)
     }, []);
 
     const handleExternalUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
@@ -71,6 +77,13 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
         changeQuery(e.target.value)
     }
 
+    const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        changeTitle({id: article.id, changes: {title: e.target.value}})
+    }
+    const handleSubtitleChange = (e: ChangeEvent<HTMLInputElement>) => {
+        changeSubtitle({id: article.id, changes: {subtitle: e.target.value}})
+    }
+
     return (
         <>
             {error && <div
@@ -83,27 +96,69 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
             </div>}
             {!error && !loading && <div>
                 <h2 className='text-xl text-gray-900 py-2 text-center'>
-                    Rezultate pentru "{externalQuery}"
+                    {article.block_title}
                 </h2>
-                <div className='flex items-start justify-between'>
-                    <div className='w-7/12 flex flex-wrap mr-2 '>
-                        <div className='flex flex-1 mb-2'>
-                            <Input crossOrigin={undefined}
-                                   value={externalQuery}
-                                   label="Căutare"
-                                   onChange={handleQueryChange}
-                            />
-                            <Button color='purple'
-                                    placeholder={null}
-                                    className='ml-2'>Caută</Button>
-                        </div>
 
-                        <div className='w-full'>
-                            <ExternalImagesList/>
+                <div className='flex items-start justify-between'>
+                    <div className='w-6/12 flex flex-wrap mr-2'>
+                            <div className="inline-flex w-full pr-4">
+                                <Checkbox
+                                    label={article.search_by !== "title" ? article.title : ''}
+                                    checked={article.search_by === "title"}
+                                    color='purple'
+                                    crossOrigin={undefined}
+                                    onChange={() => {
+                                        changeSearchBy({id: article.id, changes: {search_by: "title"}})
+                                    }}/>
+                                {article.search_by === "title" && <Input type="text"
+                                                                         color="purple"
+                                                                         label="Titlu"
+                                                                         className="w-full text-xs"
+                                                                         value={article.title}
+                                                                         crossOrigin={undefined}
+                                                                         onChange={handleTitleChange}/>
+                                }
+
+                            </div>
+
+                            <div className="inline-flex w-full mt-6 pr-4">
+                                <Checkbox label={article.search_by !== "subtitle" ? article.subtitle : ''}
+                                          checked={article.search_by === "subtitle"}
+                                          color="purple"
+                                          onChange={() => {
+                                              changeSearchBy({id: article.id, changes: {search_by: "subtitle"}})
+                                          }}
+                                          crossOrigin={undefined}/>
+                                {article.search_by === "subtitle" && <Input type="text"
+                                                                            color="purple"
+                                                                            label="Subtitlu"
+                                                                            className="w-full text-xs"
+                                                                            value={article.subtitle}
+                                                                            crossOrigin={undefined}
+                                                                            onChange={handleSubtitleChange}/>
+                                }
+                            </div>
+                        <div className='w-[150px] flex justify-around mx-auto mt-5'>
+                            <SearchExternalImages query={query}/>
+
                         </div>
+                        {/*    <div className='flex flex-1 mb-2'>*/}
+                        {/*        <Input crossOrigin={undefined}*/}
+                        {/*               value={externalQuery}*/}
+                        {/*               label="Căutare"*/}
+                        {/*               onChange={handleQueryChange}*/}
+                        {/*        />*/}
+                        {/*        <Button color='purple'*/}
+                        {/*                placeholder={null}*/}
+                        {/*                className='ml-2'>Caută</Button>*/}
+                        {/*    </div>*/}
+
+                        {/*    <div className='w-full'>*/}
+                        {/*        <ExternalImagesList/>*/}
+                        {/*    </div>*/}
                     </div>
 
-                    <div className='w-5/12'>
+                    <div className='w-6/12'>
                         <div className='flex justify-between items-center pb-2'>
                             <Input
                                 className="py-0"
@@ -111,9 +166,10 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
                                 crossOrigin={undefined}
                                 value={externalUrl}
                                 onChange={handleExternalUrlChange}
+                                autoFocus={true}
                             />
                         </div>
-                        <div className='mx-2'>
+                        <div className='mx-2 max-h-[450px] max-w-[650px]'>
                             {
                                 !selectImageToCrop.croppedUrl &&
                                 selectImageToCrop.url &&
@@ -121,7 +177,7 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
                                            handlePercentCropChange={onPercentCropChange}/>
                             }
                         </div>
-                        <div className='w-full'>
+                        <div className='w-full max-w-[650px]'>
                             {selectImageToCrop.url &&
                                 (<div className='px-2 mt-2 flex justify-between items-center'>
                                     <div className='w-7/12'>
@@ -133,7 +189,7 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
                                         />
                                     </div>
                                     <div>
-                                        <Button placeholder={undefined}
+                                    <Button placeholder={undefined}
                                                 size='sm'
                                                 onClick={onCropImageBtnClick}
                                         >Save</Button>
