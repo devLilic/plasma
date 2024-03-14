@@ -42,7 +42,7 @@ class TextParser implements ParserInterface {
             $title = $this->clear_title($content[0]);
         }
 
-        return substr(trim($title), 0, 200);
+        return substr(trim($title), 0, 100);
     }
 
     public function get_content_for($slugs)
