@@ -30,7 +30,6 @@ class TextParser implements ParserInterface {
             $html1 = $this->fragment($this->code, "<a name=" . $slugs[1] . ">", $this->default_end_tag);
             $html2 = $this->fragment($this->code, "<a name=" . $slugs[2] . ">", $this->default_end_tag);
             $html = strlen($html1) > strlen($html2) ? $html1 : $html2;
-//            dd($slugs[1], $slugs[2], $html1, $html2);
         } else {
             $slug = collect($slugs)->pop();
             $html = $this->fragment($this->code, "<a name=" . $slug . ">", $this->default_end_tag); //<FONT 000000 SIZE=-2>
@@ -43,7 +42,7 @@ class TextParser implements ParserInterface {
             $title = $this->clear_title($content[0]);
         }
 
-        return trim($title);
+        return substr(trim($title), 0, 200);
     }
 
     public function get_content_for($slugs)
