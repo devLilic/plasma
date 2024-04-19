@@ -31,15 +31,23 @@ class PlaylistsController extends Controller {
                 'playlists' => $playlists,
             ]);
     }
-
-
     /**
      * Store a newly created resource in storage.
      */
     public function store(FileUploadRequest $request)
     {
         $file = $request->validated('file');
-        $previous_articles = Playlist::latest()->first()->articles;
+
+        $latest_playlists = Playlist::latest()->take(2)->get();
+        $previous_articles = null;
+        if(count($latest_playlists) == 2){
+            $previous_articles = $latest_playlists[0]->articles->concat($latest_playlists[1]->articles)->unique(function($article){
+                return $article->subtitle;
+            });
+        }else if(count($latest_playlists) == 1) {
+            $previous_articles = $latest_playlists[0]->articles;
+        }
+
         $content = $request->validated('file')->getContent();
         $articles = ArticlesService::generate($content);
 
@@ -48,7 +56,7 @@ class PlaylistsController extends Controller {
         ]);
         $playlist_order = 1;
         foreach ($articles as $article) {
-            $image = $this->findImage($previous_articles, $article->search_slug);
+            $image = $previous_articles ? $this->findImage($previous_articles, $article->search_slug) : null;
             Article::create([
                 'title' => $article->title,
                 'subtitle' => $article->search_slug,

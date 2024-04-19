@@ -79,3 +79,12 @@ export interface SetBackgroundQuery{
     article_id: number,
     image_id: number
 }
+
+
+
+export interface File{
+    lastModified: number
+    name: string
+    size: number
+    type: string
+}

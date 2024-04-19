@@ -41,8 +41,9 @@ Route::middleware('auth')->group(function ()
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
     Route::resource('playlists', PlaylistsController::class);
-    Route::get("/image", [ImagesController::class, 'index'])->name('images.index');
 
+    Route::get("/image", [ImagesController::class, 'index'])->name('images.index');
+    Route::get("/image/create", [ImagesController::class, 'create'])->name('images.create');
 });
 
 require __DIR__ . '/auth.php';

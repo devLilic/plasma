@@ -31,6 +31,9 @@ const MainNavigation = ({user}: MainNavigationProps) => {
                             <NavLink href={route('images.index')} active={route().current('images.index')}>
                                 Imagini
                             </NavLink>
+                            <NavLink href={route('images.create')} active={route().current('images.create')}>
+                                Încarcă
+                            </NavLink>
                         </div>
                     </div>
 

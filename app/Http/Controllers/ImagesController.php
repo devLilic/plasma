@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Resources\ImageResource;
 use App\Models\Image;
+use Illuminate\Http\Request;
 use Inertia\Inertia;
 
 class ImagesController extends Controller
@@ -14,5 +15,15 @@ class ImagesController extends Controller
         return Inertia::render('Images/ImagesPage', [
             'images' => $images,
         ]);
+    }
+
+    public function create()
+    {
+        return Inertia::render('Upload/UploadPage');
+    }
+
+    public function store(Request $request)
+    {
+        dd($request);
     }
 }

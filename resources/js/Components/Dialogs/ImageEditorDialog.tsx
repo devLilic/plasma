@@ -48,14 +48,14 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                 </div>
             </DialogHeader>
             <DialogBody className='border-t border-b min-h-[600px]'>
-                <Tabs value='local'>
+                <Tabs value='external'>
                     <TabsHeader indicatorProps={{
                         className: "bg-purple-300"
                     }}>
-                        <Tab key="local" activeClassName='text-white' value="local">Imagini
-                            locale</Tab>
                         <Tab key="external" activeClassName='text-white' value="external"
-                        >Google</Tab>
+                        >Internet</Tab>
+                        <Tab key="local" activeClassName='text-white' value="local"
+                        >Imagini locale</Tab>
                         <Tab key="upload" activeClassName='text-white' value="upload"
                         >Upload</Tab>
                     </TabsHeader>

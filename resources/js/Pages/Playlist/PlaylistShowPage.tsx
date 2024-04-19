@@ -17,7 +17,9 @@ const PlaylistShowPage = ({auth, articles}: PlaylistShowPageProps) => {
     const {setArticles, fetchImages, setPlaylist} = useActions()
     useEffect(() => {
         setArticles(articles)
-        setPlaylist(articles[0].playlist_id)
+        if(articles.length !== 0){
+            setPlaylist(articles[0].playlist_id)
+        }
         fetchImages()
     }, []);
     return (

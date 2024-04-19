@@ -7,6 +7,7 @@ use App\Http\Resources\ImageResource;
 use App\Models\Article;
 use App\Models\Image;
 use App\Models\Tag;
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
@@ -74,5 +75,29 @@ class ImagesController extends Controller {
         }
 
         return $image;
+    }
+
+    public function upload(Request $request)
+    {
+        $randomString = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 7);
+        $date = Carbon::now()->format('Ymd');
+
+        $uploaded_now = collect();
+        foreach (request('files') as $file) {
+            do {
+                $fileName = "img_{$date}_{$randomString}." . $file->getClientOriginalExtension();
+            } while (Image::where('url', $fileName)->count() !== 0);
+
+            $path = $file->storeAs('', $fileName, 'images');
+
+            $image = Image::create([
+                'url' => $path
+            ]);
+
+            $uploaded_now->push([
+                'id' => $image->id,
+                'url' => asset("images/$image->url")
+            ]);
+        }
     }
 }

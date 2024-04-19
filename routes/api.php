@@ -29,7 +29,6 @@ Route::prefix('/v1')->group(function (){
     Route::get('/images', [ImagesController::class, 'index']);
     Route::delete('/images', [ImagesController::class, 'destroy']);
 
-
     Route::get('/playlists/{playlist}', [PlaylistController::class, 'show']);
 
     Route::get('resources', [ExternalImagesController::class, 'getImages']);
@@ -41,4 +40,5 @@ Route::prefix('/v1')->group(function (){
     Route::delete('/article', [ArticleController::class, 'destroy']);
     Route::delete('/remove-bg', [ArticleController::class, 'removeBg']);
 
+    Route::post('/files', [\App\Http\Controllers\ImagesController::class, 'store']);
 });
