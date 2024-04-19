@@ -34,6 +34,7 @@ const UploadPage = ({auth}: UploadPageProps) => {
             }
         });
 
+        // @ts-ignore
         setData('files', images);
         setTimeout(()=>{
             post("/api/v1/files")
@@ -45,9 +46,9 @@ const UploadPage = ({auth}: UploadPageProps) => {
     const handleUploadAction = (e: ChangeEvent<HTMLInputElement>) => {
         if (e.target.files) {
             let formData = new FormData();
-            selectedFiles.map((file: File) => {
-                formData.append('files[]', file)
-            })
+            // selectedFiles.map((file: File) => {
+            //     formData.append('files[]', file)
+            // })
             uploadNewImageFiles({files: formData})
         }
     }
