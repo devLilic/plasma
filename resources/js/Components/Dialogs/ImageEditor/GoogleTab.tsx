@@ -36,7 +36,7 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
     // const externalQuery = useTypedSelector(state => state.externalImages.query)
     const query = article.search_by === "title" ? article.title : article.subtitle
 
-    const [tags, setTags] = useState<string>(article.block_title)
+    const [tags, setTags] = useState<string>(article.subtitle.toLowerCase())
 
 
     const [percentCrop, setPercentCrop] = useState<PercentCrop>({
