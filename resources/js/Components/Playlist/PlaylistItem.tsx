@@ -1,7 +1,8 @@
 import React from 'react';
-import {ListItem, Progress, Typography} from "@material-tailwind/react";
+import {Typography} from "@material-tailwind/react";
 import {Playlist} from "@/types";
 import {Link} from "@inertiajs/react";
+import ListItem from "@/Components/Material/ListItem";
 
 interface PlaylistItemProps {
     playlist: Playlist
@@ -9,13 +10,11 @@ interface PlaylistItemProps {
 
 const PlaylistItem = ({playlist}: PlaylistItemProps) => {
     return (
-        <a href={`/playlists/${playlist.id}`}>
-            <ListItem
-                placeholder={null}
-                className='text-sm bg-transparent border border-green-700 rounded-lg flex justify-between items-center'>
+        <ListItem className='border border-green-700 rounded-lg flex p-0 overflow-hidden'>
+            <Link href={`/playlists/${playlist.id}`} className="p-3 w-full">
                 <Typography className='w-full'>{playlist.title} </Typography>
-            </ListItem>
-        </a>
+            </Link>
+        </ListItem>
     );
 };
 

@@ -3,7 +3,7 @@ import {
     createEntityAdapter,
     createSlice, PayloadAction,
 } from "@reduxjs/toolkit";
-import {Article, Image} from "@/types";
+import {Image} from "@/types";
 import {TypeRootState} from "@/Store/store";
 import {imagesApi} from "@/API/images.api";
 

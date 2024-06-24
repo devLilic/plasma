@@ -1,8 +1,8 @@
-import React, {FC} from 'react';
+import React from 'react';
 import {saveAs} from "file-saver";
 import {Article} from "@/types";
-import {Button, ButtonProps} from "@material-tailwind/react";
 import {colors} from "@material-tailwind/react/types/generic";
+import Button from "@/Components/Material/Button";
 
 interface SaveButtonProps {
     articles: Article[]
@@ -11,7 +11,7 @@ interface SaveButtonProps {
 }
 
 
-const SaveButton: FC<SaveButtonProps> = ({articles, color="red", className}: SaveButtonProps) => {
+const SaveButton = ({articles, color="green", className}: SaveButtonProps) => {
 
     const saveImages = () => {
         let counter = 1;
@@ -25,7 +25,6 @@ const SaveButton: FC<SaveButtonProps> = ({articles, color="red", className}: Sav
     return (
         <Button className={className}
                 color={color}
-                placeholder={null}
                 onClick={saveImages}
         >Save</Button>
     );

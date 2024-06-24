@@ -1,7 +1,6 @@
 import React from 'react';
 import {Button} from "@material-tailwind/react";
 import {useActions} from "@/Hooks/useActions";
-import {Article} from "@/types";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 
 interface AddNewArticleBtnProps {
@@ -21,7 +20,7 @@ const AddNewArticleBtn = ({handleDialog, articleID}: AddNewArticleBtnProps) => {
     return (
         <Button
             onClick={handleNwArticleBtn}
-            className='text-white
+            className='text-white maz
             flex items-center
             p-0
             my-5

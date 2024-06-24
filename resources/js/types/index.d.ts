@@ -80,8 +80,6 @@ export interface SetBackgroundQuery{
     image_id: number
 }
 
-
-
 export interface File{
     lastModified: number
     name: string

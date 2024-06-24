@@ -4,7 +4,9 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\FileUploadRequest;
 use App\Http\Resources\ArticleResource;
+use App\Http\Resources\ImageResource;
 use App\Models\Article;
+use App\Models\Image;
 use App\Models\Playlist;
 use App\Models\Tag;
 use Facades\App\Services\Articles\ArticlesService;
@@ -22,15 +24,25 @@ class PlaylistsController extends Controller {
     {
         $playlists = Playlist::orderBy('created_at', 'DESC')->take(6)->get();
 
-        return (count($playlists) > 0) ?
-            Inertia::render('Playlist/PlaylistPage', [
-                'playlists' => $playlists,
-                'articles' => ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get()),
-            ]) :
-            Inertia::render('Playlist/PlaylistPage', [
-                'playlists' => $playlists,
-            ]);
+        $data = ['playlists' => $playlists];
+
+        if (count($playlists) > 0) {
+            $data['articles'] = ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get());
+            $data['images'] = ImageResource::collection(Image::orderBy('created_at', 'DESC')->take(10)->with('tags')->get());
+        }
+
+        return Inertia::render('Playlist/PlaylistPage', $data);
+
+//        return (count($playlists) > 0) ?
+//            Inertia::render('Playlist/PlaylistPage', [
+//                'playlists' => $playlists,
+//                'articles' => ArticleResource::collection(Article::where('playlist_id', $playlists[0]->id)->get()),
+//            ]) :
+//            Inertia::render('Playlist/PlaylistPage', [
+//                'playlists' => $playlists,
+//            ]);
     }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -40,11 +52,12 @@ class PlaylistsController extends Controller {
 
         $latest_playlists = Playlist::latest()->take(2)->get();
         $previous_articles = null;
-        if(count($latest_playlists) == 2){
-            $previous_articles = $latest_playlists[0]->articles->concat($latest_playlists[1]->articles)->unique(function($article){
+        if (count($latest_playlists) == 2) {
+            $previous_articles = $latest_playlists[0]->articles->concat($latest_playlists[1]->articles)->unique(function ($article)
+            {
                 return $article->subtitle;
             });
-        }else if(count($latest_playlists) == 1) {
+        } else if (count($latest_playlists) == 1) {
             $previous_articles = $latest_playlists[0]->articles;
         }
 
@@ -81,8 +94,8 @@ class PlaylistsController extends Controller {
 
         $slug_words = explode(" ", trim($slug));
         $filtered = [];
-        foreach($slug_words as $word){
-            if (! (int) $word && strlen($word) > 2){
+        foreach ($slug_words as $word) {
+            if (!(int) $word && strlen($word) > 2) {
                 array_push($filtered, $word);
             }
         }
@@ -93,15 +106,16 @@ class PlaylistsController extends Controller {
         }
 
         $suggested_images = collect();
-        foreach ($filtered as $word){
-            $tag = Tag::where('title', "LIKE", "%" .$word."%")->first();
+        foreach ($filtered as $word) {
+            $tag = Tag::where('title', "LIKE", "%" . $word . "%")->first();
             if ($tag) {
                 $suggested_images->push($tag->images()->latest()->first());
             }
         }
-        if(count($suggested_images) !== 0 ){
+        if (count($suggested_images) !== 0) {
             return $suggested_images->sortByDesc('updated_at')->first()->id;
         }
+
         return null;
     }
 

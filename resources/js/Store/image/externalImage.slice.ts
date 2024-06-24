@@ -2,9 +2,8 @@ import {createAsyncThunk, createEntityAdapter, createSlice, nanoid, PayloadActio
 import {TypeRootState} from "@/Store/store";
 import {CropImageWithTagsQuery, ExternalImage, SelectedExternalImage} from "@/types";
 import {externalImagesApi} from "@/API/externalImages.api";
-import {articlesActions, setBackgroundImage} from "@/Store/article/article.slice";
-import {addTags, imagesActions} from "@/Store/image/image.slice";
-import {ErrorPayload} from "vite";
+import {setBackgroundImage} from "@/Store/article/article.slice";
+import {addTags} from "@/Store/image/image.slice";
 
 const externalImagesAdapter = createEntityAdapter<ExternalImage>()
 

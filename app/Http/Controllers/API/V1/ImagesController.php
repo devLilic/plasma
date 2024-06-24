@@ -16,7 +16,7 @@ class ImagesController extends Controller {
 
     public function index()
     {
-        return ImageResource::collection(Image::with('tags')->get());
+        return ImageResource::collection(Image::orderBy('created_at', 'DESC')->take(30)->with('tags')->get());
     }
 
     public function search(Request $request)

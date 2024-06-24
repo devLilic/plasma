@@ -36,7 +36,8 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
     // const externalQuery = useTypedSelector(state => state.externalImages.query)
     const query = article.search_by === "title" ? article.title : article.subtitle
 
-    const [tags, setTags] = useState<string>(article.subtitle.toLowerCase())
+    const subtitle = article.subtitle.replace(new RegExp(/\s?off|\s?snc/, "gi"), "");
+    const [tags, setTags] = useState<string>(subtitle.toLowerCase())
 
 
     const [percentCrop, setPercentCrop] = useState<PercentCrop>({
@@ -73,10 +74,6 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
 
     const handleTagsChange = (e: ChangeEvent<HTMLInputElement>) => {
         setTags(e.target.value)
-    }
-
-    const handleQueryChange = (e: ChangeEvent<HTMLInputElement>) => {
-        changeQuery(e.target.value)
     }
 
     const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {

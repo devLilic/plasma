@@ -2,6 +2,9 @@ import React from 'react';
 import Button from "@/Components/Material/Button";
 import GoogleIcon from "@/Components/UI/Svg/GoogleIcon";
 import YandexIcon from "@/Components/UI/Svg/YandexIcon";
+import {IconButton} from "@material-tailwind/react";
+import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
+import { faGoogle, faYandex } from "@fortawesome/free-brands-svg-icons";
 
 interface SearchExternalImagesProps {
     query: string
@@ -24,18 +27,32 @@ const SearchExternalImages = ({query, withModal}: SearchExternalImagesProps) => 
     }
     return (
         <>
-            <Button variant="outlined"
-                    size='sm'
-                    color='purple'
-                    className='my-1 py-2'
-                    onClick={() => searchOn('google')}
-            ><GoogleIcon/></Button>
-            <Button variant="outlined"
-                    color='purple'
-                    size='sm'
-                    className='my-1 py-2'
-                    onClick={() => searchOn("yandex")}
-            ><YandexIcon/></Button>
+            <IconButton placeholder={undefined}
+                        variant='outlined'
+                        color='purple'
+                        className='my-1 px-2 py-2'
+                        onClick={() => searchOn('google')}>
+                    <FontAwesomeIcon icon={faGoogle} size='lg'/>
+            </IconButton>
+            <IconButton placeholder={undefined}
+                        variant='outlined'
+                        color='purple'
+                        className='my-1 px-2 py-2'
+                        onClick={() => searchOn('yandex')}>
+                <FontAwesomeIcon icon={faYandex} size='lg' className='font-bold text-xl'/>
+            </IconButton>
+            {/*<Button variant="outlined"*/}
+            {/*        size='sm'*/}
+            {/*        color='purple'*/}
+            {/*        className='my-1 py-2'*/}
+            {/*        onClick={() => searchOn('google')}*/}
+            {/*><GoogleIcon/></Button>*/}
+            {/*<Button variant="outlined"*/}
+            {/*        color='purple'*/}
+            {/*        size='sm'*/}
+            {/*        className='my-1 py-2'*/}
+            {/*        onClick={() => searchOn("yandex")}*/}
+            {/*><YandexIcon/></Button>*/}
         </>
     );
 };

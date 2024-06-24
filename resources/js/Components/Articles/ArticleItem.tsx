@@ -1,9 +1,7 @@
-import React, {ChangeEvent, useState} from 'react';
-import {Article} from "@/types";
+import React, {ChangeEvent} from 'react';
 import {Card, Checkbox, Input} from "@material-tailwind/react";
 import ArticleHeader from "@/Components/Articles/ArticleHeader";
 import ArticleFooter from "@/Components/Articles/ArticleFooter";
-import {useSelector} from "react-redux";
 import {useTypedSelector} from "@/Hooks/useTypedSelector";
 import ContentWithImage from "@/Components/Articles/ContentWithImage";
 import {useActions} from "@/Hooks/useActions";
