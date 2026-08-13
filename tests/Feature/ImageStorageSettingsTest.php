@@ -66,5 +66,12 @@ class ImageStorageSettingsTest extends TestCase
 
         $response->assertOk();
         $this->assertSame('configured-image-contents', $response->streamedContent());
+
+        $this->get(route('images.file', [
+            'path' => $image->url,
+            'download_name' => '1_titlu-articol.jpg',
+        ]))
+            ->assertOk()
+            ->assertDownload('1_titlu-articol.jpg');
     }
 }

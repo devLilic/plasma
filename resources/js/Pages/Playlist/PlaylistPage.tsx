@@ -9,9 +9,9 @@ import {Article, Image, PageProps, PaginatedResource, Playlist} from '@/types';
 import {useActions} from '@/Hooks/useActions';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectAllImages} from '@/Store/image/image.slice';
-import {saveAs} from 'file-saver';
 import SavedImageEditorDialog from '@/Components/Dialogs/SavedImageEditorDialog';
 import Pagination from '@/Components/UI/Pagination';
+import {imageFilename, saveImageAs} from '@/Utils/imageDownload';
 
 interface PlaylistPageProps extends PageProps {
     playlists?: Playlist[]
@@ -60,7 +60,7 @@ const PlaylistPage = ({auth, playlists, articles, images, filters}: PlaylistPage
 
     const saveImage = (image: Image) => {
         const fileName = searchTag || image.tags.map(tag => tag.title).join('_') || `${image.id}_autosave`;
-        saveAs(image.url, `${fileName}.jpg`);
+        saveImageAs(image.url, imageFilename(fileName));
     };
 
     return (

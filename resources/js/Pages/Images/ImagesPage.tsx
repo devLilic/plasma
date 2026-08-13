@@ -1,7 +1,6 @@
 import React, {useEffect, useState} from 'react';
 import {Head, Link, router} from '@inertiajs/react';
 import {ArrowDownTrayIcon, ArrowUpTrayIcon, MagnifyingGlassIcon, PencilSquareIcon, PhotoIcon} from '@heroicons/react/24/outline';
-import {saveAs} from 'file-saver';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import TagsList from '@/Components/LocalImages/TagsList';
 import {Image, PageProps, PaginatedResource} from '@/types';
@@ -10,6 +9,7 @@ import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectAllImages} from '@/Store/image/image.slice';
 import SavedImageEditorDialog from '@/Components/Dialogs/SavedImageEditorDialog';
 import Pagination from '@/Components/UI/Pagination';
+import {imageFilename, saveImageAs} from '@/Utils/imageDownload';
 
 interface ImagesPageProps extends PageProps {
     images: PaginatedResource<Image>
@@ -40,7 +40,7 @@ const ImagesPage = ({auth, images, filters}: ImagesPageProps) => {
 
     const saveImage = (image: Image) => {
         const fileName = searchTag || image.tags.map(tag => tag.title).join('_') || `${image.id}_autosave`;
-        saveAs(image.url, `${fileName}.jpg`);
+        saveImageAs(image.url, imageFilename(fileName));
     };
 
     return (

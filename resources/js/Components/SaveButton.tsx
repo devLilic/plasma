@@ -1,8 +1,8 @@
 import React, {ReactNode} from 'react';
-import {saveAs} from "file-saver";
 import {Article} from "@/types";
 import {colors} from "@material-tailwind/react/types/generic";
 import Button from "@/Components/Material/Button";
+import {imageFilename, saveImageAs} from '@/Utils/imageDownload';
 
 interface SaveButtonProps {
     articles: Article[]
@@ -15,14 +15,14 @@ interface SaveButtonProps {
 const SaveButton = ({articles, color="blue", className, children}: SaveButtonProps) => {
 
     const saveImages = () => {
-        let counter = 1;
-        articles.map(article => {
+        articles.forEach(article => {
             if (article.image) {
-                saveAs(`${article.image.url}`, `${counter}_${article.subtitle}.jpg`)
+                const title = article.subtitle?.trim() || article.title?.trim() || 'articol';
+                const filename = imageFilename(`${article.playlist_order}_${title}`);
+                saveImageAs(article.image.url, filename);
             }
-            counter++
-        })
-    }
+        });
+    };
     return (
         <Button className={`ios-primary-button ${className ?? ''}`}
                 color={color}
