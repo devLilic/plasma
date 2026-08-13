@@ -4,6 +4,7 @@ namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Storage;
 
 class ImageResource extends JsonResource
@@ -25,7 +26,9 @@ class ImageResource extends JsonResource
             'url' => Storage::disk('images')->exists($this->url) ? $localUrl : ($this->sourceUrl ?: $localUrl),
             'sourceUrl' => $this->sourceUrl,
             'isNew' => (bool) $this->isNew,
-            'lastUsedAt' => $this->last_used_at?->toISOString(),
+            'lastUsedAt' => $this->last_used_at
+                ? Carbon::parse($this->last_used_at)->toISOString()
+                : null,
             'tags' => TagResource::collection($this->whenLoaded('tags')),
         ];
     }

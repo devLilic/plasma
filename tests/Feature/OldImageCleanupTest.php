@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Http\Resources\ImageResource;
 use App\Models\Article;
 use App\Models\Image;
 use App\Models\Playlist;
@@ -33,6 +34,21 @@ class OldImageCleanupTest extends TestCase
             ->assertJsonCount(1)
             ->assertJsonPath('0.id', $old->id)
             ->assertJsonPath('0.lastUsedAt', $old->last_used_at->toISOString());
+    }
+
+    public function test_image_resource_serializes_a_string_last_used_at_value(): void
+    {
+        $image = Image::create([
+            'url' => 'string-date.jpg',
+            'last_used_at' => '2026-05-10 12:30:00',
+        ]);
+        $image->mergeCasts(['last_used_at' => 'string']);
+
+        $this->assertSame('2026-05-10 12:30:00', $image->last_used_at);
+        $this->assertSame(
+            '2026-05-10T12:30:00.000000Z',
+            ImageResource::make($image)->resolve()['lastUsedAt'],
+        );
     }
 
     public function test_cleanup_deletes_only_selected_stale_images_and_preserves_tags(): void
