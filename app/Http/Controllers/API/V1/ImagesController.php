@@ -8,9 +8,9 @@ use App\Models\Image;
 use App\Models\Tag;
 use App\Services\Images\ExternalImageService;
 use App\Services\Images\ImageDeletionService;
+use App\Services\Images\ImageStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 
@@ -39,7 +39,7 @@ class ImagesController extends Controller
         return ImageResource::collection($images);
     }
 
-    public function update(Request $request, Image $image, ExternalImageService $externalImages)
+    public function update(Request $request, Image $image, ExternalImageService $externalImages, ImageStorage $storage)
     {
         $validated = $request->validate([
             'data.tags' => ['sometimes', 'nullable', 'string', 'max:500'],
@@ -77,7 +77,7 @@ class ImagesController extends Controller
         });
 
         if ($newContents !== null) {
-            Storage::disk('images')->put($image->url, $newContents);
+            $storage->disk()->put($image->url, $newContents);
         }
 
         return ImageResource::make($image->fresh()->load('tags'));

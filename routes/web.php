@@ -1,8 +1,10 @@
 <?php
 
 use App\Http\Controllers\ImagesController;
+use App\Http\Controllers\ImageStorageSettingsController;
 use App\Http\Controllers\PlaylistsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\StoredImageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
@@ -35,6 +37,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile/image-storage', [ImageStorageSettingsController::class, 'update'])->name('profile.image-storage.update');
 
     Route::resource('playlists', PlaylistsController::class)
         ->only(['index', 'store', 'show', 'destroy'])
@@ -42,6 +45,7 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/image', [ImagesController::class, 'index'])->name('images.index');
     Route::get('/image/create', [ImagesController::class, 'create'])->name('images.create');
+    Route::get('/images/{path}', StoredImageController::class)->where('path', '.*')->name('images.file');
 });
 
 require __DIR__.'/auth.php';

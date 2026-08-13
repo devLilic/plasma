@@ -5,8 +5,9 @@ import UpdateProfileInformationForm from './Partials/UpdateProfileInformationFor
 import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import OldImagesCleanup from './Partials/OldImagesCleanup';
+import ImageStorageSettings from './Partials/ImageStorageSettings';
 
-export default function Edit({ auth, mustVerifyEmail, status }: PageProps<{ mustVerifyEmail: boolean, status?: string }>) {
+export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath }: PageProps<{ mustVerifyEmail: boolean, status?: string, imageStoragePath: string }>) {
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -19,6 +20,7 @@ export default function Edit({ auth, mustVerifyEmail, status }: PageProps<{ must
                         <h1 className="ios-title">Setări</h1>
                         <p className="ios-subtitle">Gestionează biblioteca media, datele contului și securitatea.</p>
                     </div>
+                    <ImageStorageSettings initialPath={imageStoragePath}/>
                     <OldImagesCleanup />
                     <div className="ios-card p-5 sm:p-8">
                         <UpdateProfileInformationForm

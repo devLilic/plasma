@@ -5,10 +5,11 @@ namespace App\Services\Images;
 use App\Models\Article;
 use App\Models\Image;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 
 class ImageDeletionService
 {
+    public function __construct(private readonly ImageStorage $storage) {}
+
     public function delete(Image $image): void
     {
         $path = $image->url;
@@ -19,6 +20,6 @@ class ImageDeletionService
             $image->delete();
         });
 
-        Storage::disk('images')->delete($path);
+        $this->storage->disk()->delete($path);
     }
 }

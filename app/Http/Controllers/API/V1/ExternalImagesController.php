@@ -8,14 +8,14 @@ use App\Models\Article;
 use App\Models\Image;
 use App\Models\Tag;
 use App\Services\Images\ExternalImageService;
+use App\Services\Images\ImageStorage;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class ExternalImagesController extends Controller
 {
-    public function crop(Request $request, ExternalImageService $externalImages)
+    public function crop(Request $request, ExternalImageService $externalImages, ImageStorage $storage)
     {
         $validated = $request->validate([
             'data.url' => ['required', 'url:http,https', 'max:2048'],
@@ -29,7 +29,7 @@ class ExternalImagesController extends Controller
         $data = $validated['data'];
         $contents = $externalImages->crop($data['url'], $data['section']);
         $filename = Str::uuid().'.jpg';
-        Storage::disk('images')->put($filename, $contents);
+        $storage->disk()->put($filename, $contents);
 
         try {
             $image = DB::transaction(function () use ($data, $filename) {
@@ -45,7 +45,7 @@ class ExternalImagesController extends Controller
                 return $image;
             });
         } catch (\Throwable $exception) {
-            Storage::disk('images')->delete($filename);
+            $storage->disk()->delete($filename);
 
             throw $exception;
         }

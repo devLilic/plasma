@@ -2,10 +2,10 @@
 
 namespace App\Http\Resources;
 
+use App\Services\Images\ImageStorage;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Carbon;
-use Illuminate\Support\Facades\Storage;
 
 class ImageResource extends JsonResource
 {
@@ -16,14 +16,15 @@ class ImageResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
-        $localUrl = Storage::disk('images')->url($this->url);
+        $storage = app(ImageStorage::class);
+        $localUrl = route('images.file', ['path' => $this->url]);
         if ($this->updated_at) {
             $localUrl .= '?v='.$this->updated_at->getTimestamp();
         }
 
         return [
             'id' => $this->id,
-            'url' => Storage::disk('images')->exists($this->url) ? $localUrl : ($this->sourceUrl ?: $localUrl),
+            'url' => $storage->disk()->exists($this->url) ? $localUrl : ($this->sourceUrl ?: $localUrl),
             'sourceUrl' => $this->sourceUrl,
             'isNew' => (bool) $this->isNew,
             'lastUsedAt' => $this->last_used_at
