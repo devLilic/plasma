@@ -34,6 +34,7 @@ export default function SavedImageEditorDialog({image, isOpen, onClose}: Props) 
         setSection('tags');
         setTagTitles(image?.tags.map(tag => tag.title) ?? []);
         setCrop(emptyCrop);
+        setSaving(false);
         setConfirmingDelete(false);
         setError('');
     }, [image, isOpen]);
@@ -79,6 +80,7 @@ export default function SavedImageEditorDialog({image, isOpen, onClose}: Props) 
             onClose();
         } catch {
             setError('Imaginea nu a putut fi ștearsă.');
+        } finally {
             setSaving(false);
         }
     };
