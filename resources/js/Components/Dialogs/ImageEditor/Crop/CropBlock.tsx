@@ -1,111 +1,43 @@
-import React, {useState, useRef, useEffect} from 'react'
-import ReactCrop, {Crop, PercentCrop, PixelCrop} from 'react-image-crop'
-import 'react-image-crop/dist/ReactCrop.css'
-import {useActions} from "@/Hooks/useActions";
+import React, {useRef, useState} from 'react';
+import ReactCrop, {Crop, PercentCrop, PixelCrop} from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 interface CropBlockProps {
-    url: string
-    handlePercentCropChange: (percentCrop: PercentCrop) => void
+    url: string;
+    handlePercentCropChange: (percentCrop: PercentCrop) => void;
+    maxHeight?: string;
 }
 
-const defaultState: { crop: Crop, percentCrop: PercentCrop } = {
-    crop: {
-        unit: 'px',
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0
-    },
-    percentCrop: {
-        unit: '%',
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0
-    }
-}
+const defaultCrop: Crop = {unit: 'px', x: 0, y: 0, width: 0, height: 0};
+const defaultPercentCrop: PercentCrop = {unit: '%', x: 0, y: 0, width: 0, height: 0};
 
-const CropBlock = ({url, handlePercentCropChange}: CropBlockProps) => {
-    const [crop, setCrop] = useState<Crop>({
-        unit: "px",
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0
-    });
-    const img = useRef<HTMLImageElement | null>(null);
+export default function CropBlock({url, handlePercentCropChange, maxHeight}: CropBlockProps) {
+    const [crop, setCrop] = useState<Crop>(defaultCrop);
+    const imageRef = useRef<HTMLImageElement>(null);
     const aspect = 16 / 9;
 
     const handleImageLoad = () => {
-        if (img.current) {
-            const [
-                width,
-                height,
-                percentWidth,
-                percentHeight
-            ] = calculateSizes(img.current); // width and height in %
-            setCrop(() => ({
-                ...defaultState.crop,
-                width,
-                height
-            }))
-            handlePercentCropChange({
-                ...defaultState.percentCrop,
-                width: percentWidth,
-                height: percentHeight
-            })
+        if (!imageRef.current) return;
+        let height = imageRef.current.clientHeight;
+        let width = Math.floor(height * aspect);
+        if (width > imageRef.current.clientWidth) {
+            width = imageRef.current.clientWidth;
+            height = Math.floor(width / aspect);
         }
-    }
+        setCrop({...defaultCrop, width, height});
+        handlePercentCropChange({...defaultPercentCrop, width: width / imageRef.current.clientWidth * 100, height: height / imageRef.current.clientHeight * 100});
+    };
 
-    // handle drag or move Crop selection
-    const handleEditCropArea = (crop: PixelCrop, percentCrop: PercentCrop) => {
-        setCrop(prevState => ({
-            ...prevState,
-            x: Math.floor(Math.abs(crop.x)),
-            y: Math.floor(Math.abs(crop.y)),
-            width: Math.floor(crop.width),
-            height: Math.floor(crop.height)
-        }))
-
-        handlePercentCropChange({
-            ...defaultState.percentCrop,
-            x: percentCrop.x,
-            y: percentCrop.y,
-            width: percentCrop.width < 0 ? 0 : (percentCrop.width > 100 ? 100 : percentCrop.width),
-            height: percentCrop.height < 0 ? 0 : (percentCrop.height > 100 ? 100 : percentCrop.height)
-        })
-    }
-
-    const calculateSizes = (image: HTMLImageElement) => {
-        let height = image.clientHeight
-        let width = Math.floor(height * 16 / 9);
-
-        if (width > image.clientWidth) {
-            width = image.clientWidth;
-            height = Math.floor(width * 9 / 16);
-        }
-        let percentWidth = width / image.clientWidth * 100;
-        let percentHeight = height / image.clientHeight * 100;
-
-        return [width, height, percentWidth, percentHeight];
-    }
+    const handleCropChange = (nextCrop: PixelCrop, percentCrop: PercentCrop) => {
+        setCrop({...nextCrop, x: Math.floor(Math.abs(nextCrop.x)), y: Math.floor(Math.abs(nextCrop.y)), width: Math.floor(nextCrop.width), height: Math.floor(nextCrop.height)});
+        handlePercentCropChange({...defaultPercentCrop, x: percentCrop.x, y: percentCrop.y, width: Math.min(100, Math.max(0, percentCrop.width)), height: Math.min(100, Math.max(0, percentCrop.height))});
+    };
 
     return (
-        <div className='flex flex-col items-top justify-center'>
-            <div>
-                <ReactCrop crop={crop}
-                           onChange={handleEditCropArea}
-                           onComplete={handleEditCropArea}
-                           aspect={aspect}>
-                    <img src={url}
-                         ref={img}
-                         onLoad={handleImageLoad}
-                    />
-                </ReactCrop>
-
-            </div>
+        <div className="flex w-full items-start justify-center overflow-hidden rounded-2xl" style={{maxHeight}}>
+            <ReactCrop crop={crop} onChange={handleCropChange} onComplete={handleCropChange} aspect={aspect}>
+                <img src={url} ref={imageRef} onLoad={handleImageLoad} style={{display: 'block', width: 'auto', height: 'auto', maxWidth: '100%', maxHeight, objectFit: 'contain'}}/>
+            </ReactCrop>
         </div>
-    )
+    );
 }
-
-export default CropBlock;

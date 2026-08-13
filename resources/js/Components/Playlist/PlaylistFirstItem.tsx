@@ -1,48 +1,49 @@
-import React, {useCallback, useEffect, useState} from 'react';
-import {Playlist} from "@/types";
-import SaveButton from "@/Components/SaveButton";
-import {useTypedSelector} from "@/Hooks/useTypedSelector";
-import {selectAllArticles} from "@/Store/article/article.slice";
-import Progress from "@/Components/Material/Progress";
-import ListItem from "@/Components/Material/ListItem";
-import {Link} from "@inertiajs/react";
-import {Typography} from "@material-tailwind/react";
+import React, {useEffect, useState} from 'react';
+import {Link} from '@inertiajs/react';
+import {ArrowDownTrayIcon, ChevronRightIcon, SparklesIcon, TrashIcon} from '@heroicons/react/24/outline';
+import {Playlist} from '@/types';
+import SaveButton from '@/Components/SaveButton';
+import {useTypedSelector} from '@/Hooks/useTypedSelector';
+import {selectAllArticles} from '@/Store/article/article.slice';
 
 interface PlaylistFirstItemProps {
     playlist: Playlist
+    onDelete: (playlist: Playlist) => void
 }
 
-const PlaylistFirstItem = ({playlist}: PlaylistFirstItemProps) => {
-    const [progress, setProgress] = useState(0)
-
-    const articles = useTypedSelector(selectAllArticles)
+const PlaylistFirstItem = ({playlist, onDelete}: PlaylistFirstItemProps) => {
+    const [progress, setProgress] = useState(0);
+    const articles = useTypedSelector(selectAllArticles);
 
     useEffect(() => {
-        const calculatePercent = () => {
-            const allArticles = articles.length
-            const done = articles.filter(article => article.image).length
-            setProgress(done / allArticles * 100);
-        }
-        calculatePercent()
-    }, [articles.length]);
+        const done = articles.filter(article => article.image).length;
+        setProgress(articles.length ? (done / articles.length) * 100 : 0);
+    }, [articles]);
 
     return (
-        <ListItem
-            className='bg-blue-50 border border-green-700 rounded-lg flex items-start p-0'>
-
-            <Link className='flex-grow p-4 flex-col text-center'
-                  href={`/playlists/${playlist.id}`}>
-                <Typography className='mb-4 text-lg font-bold'>{playlist.title}</Typography>
-                <Progress value={progress}
-                          color={'green'}
-                          variant={'gradient'}
-                          className={' h-4 border border-green-800'}/>
+        <div className="bg-gradient-to-br from-[#007aff]/[0.09] to-[#5856d6]/[0.04] p-4">
+            <div className="mb-3 flex items-center justify-between">
+                <span className="ios-pill gap-1"><SparklesIcon className="h-3.5 w-3.5"/>Recent</span>
+                <span className="flex items-center gap-2">
+                    <span className="text-xs font-medium text-[#6e6e73]">{Math.round(progress)}% complet</span>
+                    <button type="button" onClick={() => onDelete(playlist)} aria-label={`Șterge playlistul ${playlist.title}`} className="flex h-8 w-8 items-center justify-center rounded-xl bg-white/70 text-[#ff3b30] transition hover:bg-white focus:outline-none focus:ring-4 focus:ring-[#ff3b30]/15">
+                        <TrashIcon className="h-4 w-4"/>
+                    </button>
+                </span>
+            </div>
+            <Link href={`/playlists/${playlist.id}`} className="group flex items-center gap-3">
+                <span className="min-w-0 flex-1">
+                    <span className="block truncate text-[15px] font-semibold text-[#1c1c1e]">{playlist.title}</span>
+                    <span className="mt-2 block h-1.5 overflow-hidden rounded-full bg-black/10">
+                        <span className="block h-full rounded-full bg-[#34c759] transition-all" style={{width: `${progress}%`}}/>
+                    </span>
+                </span>
+                <ChevronRightIcon className="h-5 w-5 text-[#8e8e93] transition group-hover:translate-x-0.5"/>
             </Link>
-
-            <SaveButton articles={articles}
-                        className={"self-stretch my-4 mr-2 ml-2 border-green-500 bg-green-100 border text-sm text-green-500 hover:bg-green-500 hover:text-white"}/>
-
-        </ListItem>
+            <SaveButton articles={articles} className="mt-4 w-full !bg-white/80 !text-[#007aff] hover:!bg-white">
+                <ArrowDownTrayIcon className="h-4 w-4"/> Descarcă imaginile
+            </SaveButton>
+        </div>
     );
 };
 

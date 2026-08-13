@@ -1,211 +1,102 @@
 import React, {ChangeEvent, useEffect, useState} from 'react';
-import {Button, Checkbox, Input} from "@material-tailwind/react";
-import Loading from "@/Components/UI/Svg/Loading";
-import 'react-image-crop/dist/ReactCrop.css';
-import ExternalImagesList from "@/Components/ExternalImages/ExternalImagesList";
-import {useTypedSelector} from "@/Hooks/useTypedSelector";
-import {useActions} from "@/Hooks/useActions";
-import CropBlock from "@/Components/Dialogs/ImageEditor/Crop/CropBlock";
-import {PercentCrop} from "react-image-crop";
-import SearchExternalImages from "@/Components/ExternalImages/SearchExternalImages";
+import {CheckIcon} from '@heroicons/react/24/solid';
+import {LinkIcon, ScissorsIcon} from '@heroicons/react/24/outline';
+import {PercentCrop} from 'react-image-crop';
+import {useTypedSelector} from '@/Hooks/useTypedSelector';
+import {useActions} from '@/Hooks/useActions';
+import CropBlock from '@/Components/Dialogs/ImageEditor/Crop/CropBlock';
+import SearchExternalImages from '@/Components/ExternalImages/SearchExternalImages';
+import {useDispatch} from 'react-redux';
+import {AppDispatch} from '@/Store/store';
+import {cropExternalImage as cropExternalImageThunk} from '@/Store/image/externalImage.slice';
 
 interface GoogleTabProps {
     handleModal: () => void
 }
 
 const GoogleTab = ({handleModal}: GoogleTabProps) => {
-
-    const {cropExternalImage} = useActions()
-    const {error, loading} = useTypedSelector(state => state.externalImages)
-    const {
-        // fetchExternalImages,
-        resetCrop,
-        setExternalUrlLink,
-        changeQuery,
-        changeSearchBy,
-        changeTitle,
-        changeSubtitle
-    } = useActions()
-
-    const cropImage = useTypedSelector(state => state.externalImages.selected)
-    const currentArticleId = useTypedSelector(state => state.articles.current)
-    const currentArticleSearchBy = useTypedSelector(state => state.articles.entities[state.articles.current][state.articles.search_by ? state.articles.search_by : 'title'])
-    const article = useTypedSelector(state => state.articles.entities[currentArticleId])
-    const selectImageToCrop = useTypedSelector(state => state.externalImages.selected)
-    const externalUrl = useTypedSelector(state => state.externalImages.selected.url)
-    // const externalQuery = useTypedSelector(state => state.externalImages.query)
-    const query = article.search_by === "title" ? article.title : article.subtitle
-
-    const subtitle = article.subtitle.replace(new RegExp(/\s?off|\s?snc/, "gi"), "");
-    const [tags, setTags] = useState<string>(subtitle.toLowerCase())
-
-
-    const [percentCrop, setPercentCrop] = useState<PercentCrop>({
-        unit: "%",
-        x: 0,
-        y: 0,
-        width: 0,
-        height: 0
-    });
-
+    const {resetCrop, setExternalUrlLink, changeSearchBy, changeTitle, changeSubtitle} = useActions();
+    const dispatch = useDispatch<AppDispatch>();
+    const {error, loading, selected} = useTypedSelector(state => state.externalImages);
+    const articleId = useTypedSelector(state => state.articles.current);
+    const article = useTypedSelector(state => state.articles.entities[articleId]);
+    const searchValue = article.search_by === 'title' ? article.title : article.subtitle;
+    const [tags, setTags] = useState(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
+    const [percentCrop, setPercentCrop] = useState<PercentCrop>({unit: '%', x: 0, y: 0, width: 0, height: 0});
 
     useEffect(() => {
-        resetCrop()
-    }, [currentArticleSearchBy]);
+        resetCrop();
+        setTags(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
+    }, [articleId]);
 
-    useEffect(() => {
-        let query_words = currentArticleSearchBy.split(' ').filter(word => word.length > 2).join(' ')
-        changeQuery(query_words);
-        // fetchExternalImages(query_words)
-    }, []);
+    const saveCrop = async () => {
+        if (!selected.url) return;
+        try {
+            await dispatch(cropExternalImageThunk({url: selected.url, section: percentCrop, tags, article_id: articleId})).unwrap();
+            handleModal();
+        } catch {
+            // Error state is displayed below the URL field.
+        }
+    };
 
-    const handleExternalUrlChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setExternalUrlLink(e.target.value)
-    }
-
-    const onPercentCropChange = (percentCrop: PercentCrop) => {
-        setPercentCrop(percentCrop)
-    }
-
-    const onCropImageBtnClick = () => {
-        cropExternalImage({url: cropImage.url, section: percentCrop, tags, article_id: currentArticleId})
-        handleModal()
-    }
-
-    const handleTagsChange = (e: ChangeEvent<HTMLInputElement>) => {
-        setTags(e.target.value)
-    }
-
-    const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        changeTitle({id: article.id, changes: {title: e.target.value}})
-    }
-    const handleSubtitleChange = (e: ChangeEvent<HTMLInputElement>) => {
-        changeSubtitle({id: article.id, changes: {subtitle: e.target.value}})
-    }
+    const searchField = (kind: 'title' | 'subtitle', value: string, onChange: (event: ChangeEvent<HTMLInputElement>) => void) => {
+        const active = article.search_by === kind;
+        return (
+            <div className={`flex items-center gap-3 rounded-2xl border p-3 ${active ? 'border-[#007aff]/30 bg-[#007aff]/[0.055]' : 'border-transparent bg-[#f2f2f7]'}`}>
+                <button type="button" aria-label={kind === 'title' ? 'Folosește titlul pentru căutare' : 'Folosește subtitlul pentru căutare'} onClick={() => changeSearchBy({id: article.id, changes: {search_by: kind}})} className="shrink-0">
+                    <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${active ? 'border-[#007aff] bg-[#007aff] text-white' : 'border-[#c7c7cc] bg-white'}`}>{active && <CheckIcon className="h-3 w-3"/>}</span>
+                </button>
+                <input aria-label={kind === 'title' ? 'Titlul materialului' : 'Subtitlul materialului'} value={value} onChange={onChange} className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[#1c1c1e] outline-none ring-0 focus:ring-0"/>
+            </div>
+        );
+    };
 
     return (
-        <>
-            {error && <div
-                className='w-full h-96 flex justify-center items-center uppercase text-4xl text-red-500 font-bold'>
-                {error}
-            </div>}
-
-            {loading && <div className='h-96 flex justify-center'>
-                <Loading/>
-            </div>}
-
-            {!error && !loading && <div>
-                <h2 className='text-xl text-gray-900 py-2 text-center'>
-                    {article.block_title}
-                </h2>
-
-                <div className='flex items-start justify-between'>
-                    <div className='w-6/12 flex flex-wrap mr-2 '>
-                        {
-                            !selectImageToCrop.croppedUrl && selectImageToCrop.url ?
-                                <div className='mx-2 max-h-auto max-w-[500px]'>
-                                    {
-                                        !selectImageToCrop.croppedUrl &&
-                                        selectImageToCrop.url &&
-                                        <CropBlock url={cropImage.url}
-                                                   handlePercentCropChange={onPercentCropChange}/>
-                                    }
-                                </div> :
-                                <>
-                                    <div className="inline-flex w-full pr-4">
-                                        <Checkbox
-                                            label={article.search_by !== "title" ? article.title : ''}
-                                            checked={article.search_by === "title"}
-                                            color='purple'
-                                            crossOrigin={undefined}
-                                            onChange={() => {
-                                                changeSearchBy({id: article.id, changes: {search_by: "title"}})
-                                            }}/>
-                                        {article.search_by === "title" && <Input type="text"
-                                                                                 color="purple"
-                                                                                 label="Titlu"
-                                                                                 className="w-full text-xs"
-                                                                                 value={article.title}
-                                                                                 crossOrigin={undefined}
-                                                                                 onChange={handleTitleChange}/>
-                                        }
-
-                                    </div>
-                                    <div className="inline-flex w-full mt-6 pr-4">
-                                        <Checkbox label={article.search_by !== "subtitle" ? article.subtitle : ''}
-                                                  checked={article.search_by === "subtitle"}
-                                                  color="purple"
-                                                  onChange={() => {
-                                                      changeSearchBy({id: article.id, changes: {search_by: "subtitle"}})
-                                                  }}
-                                                  crossOrigin={undefined}/>
-                                        {article.search_by === "subtitle" && <Input type="text"
-                                                                                    color="purple"
-                                                                                    label="Subtitlu"
-                                                                                    className="w-full text-xs"
-                                                                                    value={article.subtitle}
-                                                                                    crossOrigin={undefined}
-                                                                                    onChange={handleSubtitleChange}/>
-                                        }
-                                    </div>
-                                    <div className='w-[150px] flex justify-around mx-auto mt-5'>
-                                        <SearchExternalImages query={query}/>
-                                    </div>
-                                </>
-                        }
-                        {/*    <div className='flex flex-1 mb-2'>*/}
-                        {/*        <Input crossOrigin={undefined}*/}
-                        {/*               value={externalQuery}*/}
-                        {/*               label="Căutare"*/}
-                        {/*               onChange={handleQueryChange}*/}
-                        {/*        />*/}
-                        {/*        <Button color='purple'*/}
-                        {/*                placeholder={null}*/}
-                        {/*                className='ml-2'>Caută</Button>*/}
-                        {/*    </div>*/}
-
-                        {/*    <div className='w-full'>*/}
-                        {/*        <ExternalImagesList/>*/}
-                        {/*    </div>*/}
+        <div className="grid gap-5 lg:grid-cols-[minmax(0,1.2fr)_minmax(280px,0.8fr)]">
+            <section className="min-w-0 rounded-[20px] bg-[#f9f9fb] p-4 sm:p-5">
+                {selected.url ? (
+                    <div>
+                        <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#1c1c1e]"><ScissorsIcon className="h-5 w-5 text-[#007aff]"/>Decupează la formatul 16:9</div>
+                        <div className="overflow-hidden rounded-2xl bg-black/5"><CropBlock url={selected.url} handlePercentCropChange={setPercentCrop}/></div>
                     </div>
-
-                    <div className='w-6/12 min-h-[200px] flex flex-col justify-between items-center pt-3'>
-                        <Input
-                            className="py-0 pb-2"
-                            variant='standard'
-                            label='URL'
-                            color='purple'
-                            crossOrigin={undefined}
-                            value={externalUrl}
-                            onChange={handleExternalUrlChange}
-                            autoFocus={true}
-                        />
-                        {selectImageToCrop.url &&
-                            <>
-                                <div className='w-full'>
-                                    <Input crossOrigin={undefined}
-                                           variant='standard'
-                                           label='Tags'
-                                           className=''
-                                           color='purple'
-                                           value={tags}
-                                           onChange={handleTagsChange}
-                                    />
-                                </div>
-                                <div>
-                                    <Button placeholder={undefined}
-                                            className='py-3'
-                                            color='purple'
-                                            size='sm'
-                                            onClick={onCropImageBtnClick}
-                                    >Save</Button>
-                                </div>
-                            </>
-                        }
+                ) : (
+                    <div>
+                        <p className="mb-3 text-sm font-semibold text-[#1c1c1e]">Termen pentru căutare</p>
+                        <div className="space-y-2.5">
+                            {searchField('title', article.title, event => changeTitle({id: article.id, changes: {title: event.target.value}}))}
+                            {searchField('subtitle', article.subtitle, event => changeSubtitle({id: article.id, changes: {subtitle: event.target.value}}))}
+                        </div>
+                        <div className="mt-4 flex items-center gap-2 rounded-2xl border border-[#e5e5ea] bg-white px-4 py-3">
+                            <span className="min-w-0 flex-1 truncate text-sm text-[#6e6e73]">{searchValue}</span>
+                            <SearchExternalImages query={searchValue}/>
+                        </div>
                     </div>
-                </div>
-            </div>}
-        </>
+                )}
+            </section>
+
+            <aside className="min-w-0 flex flex-col rounded-[20px] border border-[#e5e5ea] bg-white p-4 sm:p-5">
+                <label>
+                    <span className="mb-2 flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.08em] text-[#8e8e93]"><LinkIcon className="h-4 w-4"/>URL imagine</span>
+                    <input value={selected.url} onChange={event => setExternalUrlLink(event.target.value)} placeholder="Lipește adresa imaginii" className="ios-search !pl-4"/>
+                    {error && <p className="mt-2 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-xs text-[#ff3b30]">{error}</p>}
+                </label>
+                {selected.url ? (
+                    <>
+                        <label className="mt-4">
+                            <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.08em] text-[#8e8e93]">Etichete</span>
+                            <input value={tags} onChange={event => setTags(event.target.value)} placeholder="separate prin virgulă" className="ios-search !pl-4"/>
+                        </label>
+                        <button type="button" onClick={saveCrop} disabled={loading} className="ios-primary-button mt-auto pt-3 disabled:cursor-wait disabled:opacity-60">{loading ? 'Se salvează…' : 'Salvează imaginea'}</button>
+                    </>
+                ) : (
+                    <div className="flex flex-1 flex-col items-center justify-center px-4 py-10 text-center">
+                        <LinkIcon className="mb-3 h-9 w-9 text-[#c7c7cc]"/>
+                        <p className="text-sm font-semibold text-[#1c1c1e]">Lipește linkul imaginii</p>
+                        <p className="mt-1 text-xs leading-5 text-[#8e8e93]">Imaginea va putea fi decupată înainte de salvare.</p>
+                    </div>
+                )}
+            </aside>
+        </div>
     );
 };
 

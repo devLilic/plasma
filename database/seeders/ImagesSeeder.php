@@ -3,11 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Image;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 
-class ImagesSeeder extends Seeder {
-
+class ImagesSeeder extends Seeder
+{
     /**
      * Run the database seeds.
      */
@@ -23,7 +22,7 @@ class ImagesSeeder extends Seeder {
         ];
         foreach ($images as $image) {
             Image::create([
-                "url" => $image,
+                'url' => $image,
             ]);
         }
 

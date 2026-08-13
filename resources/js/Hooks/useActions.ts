@@ -4,31 +4,31 @@ import {
     setBackgroundImage,
     removeBackgroundImage,
     addNewArticle,
-    deleteArticle
+    deleteArticle,
+    saveArticleContent,
 } from "@/Store/article/article.slice";
 import {bindActionCreators} from "@reduxjs/toolkit";
-import {fetchImages, imagesActions, removeImage, searchImages} from "@/Store/image/image.slice";
-import {externalImagesActions, fetchExternalImages, cropExternalImage} from "@/Store/image/externalImage.slice";
-import {filesActions, uploadNewImageFiles} from "@/Store/files.slice";
+import {fetchImages, imagesActions, removeImage, searchImages, updateImage} from "@/Store/image/image.slice";
+import {externalImagesActions, cropExternalImage} from "@/Store/image/externalImage.slice";
+import {AppDispatch} from '@/Store/store';
 
 
 const allActions = {
     ...articlesActions,
     ...imagesActions,
     ...externalImagesActions,
-    ...filesActions,
     fetchImages,
     searchImages,
-    fetchExternalImages,
     cropExternalImage,
+    updateImage,
     removeImage,
     setBackgroundImage,
     removeBackgroundImage,
     addNewArticle,
     deleteArticle,
-    uploadNewImageFiles
+    saveArticleContent
 }
 export const useActions = () => {
-    const dispatch = useDispatch()
+    const dispatch = useDispatch<AppDispatch>()
     return bindActionCreators(allActions, dispatch)
 }

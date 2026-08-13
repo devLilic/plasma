@@ -1,40 +1,32 @@
 import React from 'react';
-import {Article} from "@/types";
-import {Button} from "@material-tailwind/react";
-import DeleteIcon from "@/Components/UI/Svg/DeleteIcon";
-import {useActions} from "@/Hooks/useActions";
+import {TrashIcon} from '@heroicons/react/24/outline';
+import {Article} from '@/types';
+import {useActions} from '@/Hooks/useActions';
 
 interface ArticleHeaderProps {
     id: number
     title: string
-    article_type: Article["article_type"]
+    article_type: Article['article_type']
     confirm: () => void
 }
 
-
 const ArticleHeader = ({id, title, article_type, confirm}: ArticleHeaderProps) => {
-    const {markForDelete} = useActions()
-    const titleEdited = title.length > 30 ? title.slice(0, 40) + "..." : title
-
-    const handleDeleteBtnClick = () => {
-        markForDelete(id)
-        confirm()
-    }
+    const {markForDelete} = useActions();
+    const remove = () => {
+        markForDelete(id);
+        confirm();
+    };
 
     return (
-        <div
-            className={`w-full text-sm font-bold bg-purple-300 rounded-t-xl text-white flex justify-between items-center relative`}>
-            <span
-                className='text-4xl absolute text-purple-700 left-2 opacity-40'>{article_type === "OFF" ? "O" : "B"}</span>
-            <div className='px-2 ml-8 text-xs h-[60px] flex items-center z-10 tracking-wider mr-3'>
-                {titleEdited.toUpperCase()}
-            </div>
-            <Button variant='outlined'
-                    placeholder={null}
-                    onClick={handleDeleteBtnClick}
-                    className='relative right-1 !overflow-visible top-0 outline-none border-0 z-20 text-xs p-2 m-0 hover:bg-red-400 text-blue-800 hover:text-white'
-            ><DeleteIcon/></Button>
-        </div>
+        <header className="flex min-h-[76px] items-center gap-3 border-b border-[#e5e5ea] px-4 py-4">
+            <span className={`inline-flex h-8 min-w-8 items-center justify-center rounded-[10px] px-2 text-[11px] font-bold ${article_type === 'OFF' ? 'bg-[#ff9500]/10 text-[#ff9500]' : 'bg-[#5856d6]/10 text-[#5856d6]'}`}>
+                {article_type === 'OFF' ? 'OFF' : 'BETA'}
+            </span>
+            <h3 className="line-clamp-2 min-w-0 flex-1 text-sm font-semibold leading-5 text-[#1c1c1e]">{title || 'Material fără titlu'}</h3>
+            <button type="button" onClick={remove} className="ios-danger-button" aria-label="Șterge materialul">
+                <TrashIcon className="h-4 w-4"/>
+            </button>
+        </header>
     );
 };
 

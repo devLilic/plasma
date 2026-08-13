@@ -2,12 +2,12 @@
 
 namespace App\Http\Resources;
 
-use App\Models\Tag;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Storage;
 
-class ImageResource extends JsonResource {
-
+class ImageResource extends JsonResource
+{
     /**
      * Transform the resource into an array.
      *
@@ -15,12 +15,18 @@ class ImageResource extends JsonResource {
      */
     public function toArray(Request $request): array
     {
+        $localUrl = Storage::disk('images')->url($this->url);
+        if ($this->updated_at) {
+            $localUrl .= '?v='.$this->updated_at->getTimestamp();
+        }
+
         return [
-            "id" => $this->id,
-            "url" => asset("images/$this->url"),
-            "sourceUrl" => $this->sourceUrl,
-            "isNew" => (boolean) $this->isNew,
-            "tags" => TagResource::collection($this->whenLoaded('tags'))
+            'id' => $this->id,
+            'url' => Storage::disk('images')->exists($this->url) ? $localUrl : ($this->sourceUrl ?: $localUrl),
+            'sourceUrl' => $this->sourceUrl,
+            'isNew' => (bool) $this->isNew,
+            'lastUsedAt' => $this->last_used_at?->toISOString(),
+            'tags' => TagResource::collection($this->whenLoaded('tags')),
         ];
     }
 }

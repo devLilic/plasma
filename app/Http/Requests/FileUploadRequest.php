@@ -24,7 +24,7 @@ class FileUploadRequest extends FormRequest
     public function rules()
     {
         return [
-            'file' => 'required|file|mimetypes:text/html'
+            'file' => 'required|file|mimetypes:text/html',
         ];
     }
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, {ReactNode} from 'react';
 import {saveAs} from "file-saver";
 import {Article} from "@/types";
 import {colors} from "@material-tailwind/react/types/generic";
@@ -8,10 +8,11 @@ interface SaveButtonProps {
     articles: Article[]
     color?: colors
     className?: string
+    children?: ReactNode
 }
 
 
-const SaveButton = ({articles, color="green", className}: SaveButtonProps) => {
+const SaveButton = ({articles, color="blue", className, children}: SaveButtonProps) => {
 
     const saveImages = () => {
         let counter = 1;
@@ -23,10 +24,10 @@ const SaveButton = ({articles, color="green", className}: SaveButtonProps) => {
         })
     }
     return (
-        <Button className={className}
+        <Button className={`ios-primary-button ${className ?? ''}`}
                 color={color}
                 onClick={saveImages}
-        >Save</Button>
+        >{children ?? 'Descarcă'}</Button>
     );
 };
 

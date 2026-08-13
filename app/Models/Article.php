@@ -6,8 +6,8 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class Article extends Model {
-
+class Article extends Model
+{
     use HasFactory;
 
     protected $fillable = ['title', 'subtitle', 'slugs', 'intro', 'article_type', 'playlist_id', 'playlist_order', 'image_id'];

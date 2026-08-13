@@ -17,33 +17,31 @@ use Inertia\Inertia;
 |
 */
 
-Route::get('/', function ()
-{
+Route::get('/', function () {
     return redirect()->to('playlists');
-//    return Inertia::render('Welcome', [
-//        'canLogin' => Route::has('login'),
-//        'canRegister' => Route::has('register'),
-//        'laravelVersion' => Application::VERSION,
-//        'phpVersion' => PHP_VERSION,
-//    ]);
+    //    return Inertia::render('Welcome', [
+    //        'canLogin' => Route::has('login'),
+    //        'canRegister' => Route::has('register'),
+    //        'laravelVersion' => Application::VERSION,
+    //        'phpVersion' => PHP_VERSION,
+    //    ]);
 });
 
-
-Route::get('/dashboard', function ()
-{
-    return Inertia::render('Dashboard');
+Route::get('/dashboard', function () {
+    return redirect()->route('playlists.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function ()
-{
+Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-    Route::resource('playlists', PlaylistsController::class);
+    Route::resource('playlists', PlaylistsController::class)
+        ->only(['index', 'store', 'show', 'destroy'])
+        ->where(['playlist' => '[0-9]+']);
 
-    Route::get("/image", [ImagesController::class, 'index'])->name('images.index');
-    Route::get("/image/create", [ImagesController::class, 'create'])->name('images.create');
+    Route::get('/image', [ImagesController::class, 'index'])->name('images.index');
+    Route::get('/image/create', [ImagesController::class, 'create'])->name('images.create');
 });
 
-require __DIR__ . '/auth.php';
+require __DIR__.'/auth.php';

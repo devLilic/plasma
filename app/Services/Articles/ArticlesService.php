@@ -2,12 +2,13 @@
 
 namespace App\Services\Articles;
 
-use Facades\App\Services\Parser\TextParser;
 use Facades\App\Services\Parser\ListParser;
+use Facades\App\Services\Parser\TextParser;
 
-class ArticlesService {
-
+class ArticlesService
+{
     protected array $articles = [];
+
     protected string $html;
 
     public function all(): array
@@ -17,16 +18,18 @@ class ArticlesService {
 
     public function generate($htmlCode): array
     {
+        $this->articles = [];
         $this->html = $htmlCode;
         $titles = ListParser::parse($this->html)->get();
 
         foreach ($titles as $search => $slugs) {
             $article = new Article($search, $slugs);
-            $article->title = TextParser::parse($this->html)->get_title_for($article->slugs);
+            $article->title = TextParser::parse($this->html)->get_title_for($article->slugs, $article->search_slug);
             $article->content = TextParser::parse($this->html)->get_content_for($article->slugs);
             $this->articles[] = $article;
         }
-//        dd($this->articles);
+
+        //        dd($this->articles);
         return $this->articles;
     }
 }

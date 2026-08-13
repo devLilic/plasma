@@ -25,7 +25,7 @@ export interface Article {
     subtitle: string
     slugs: string
     intro: string
-    article_type: "BETA" | "OFF"
+    article_type: "BETA" | "OFF" | "LIVE"
     playlist_id: number
     playlist_order: number
     image: Image | null
@@ -36,14 +36,40 @@ export interface Article {
 export interface Image {
     id: number
     url: string
-    sourceUrl: string
+    sourceUrl: string | null
     isNew: boolean
+    lastUsedAt: string | null
     tags: Tag[]
 }
 
 export interface Tag {
     id: number
     title: string
+}
+
+export interface PaginationLink {
+    url: string | null
+    label: string
+    active: boolean
+}
+
+export interface PaginatedResource<T> {
+    data: T[]
+    links: {
+        first: string | null
+        last: string | null
+        prev: string | null
+        next: string | null
+    }
+    meta: {
+        current_page: number
+        from: number | null
+        last_page: number
+        links: PaginationLink[]
+        per_page: number
+        to: number | null
+        total: number
+    }
 }
 
 export interface ExternalImage {

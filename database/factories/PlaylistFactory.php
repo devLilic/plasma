@@ -2,10 +2,11 @@
 
 namespace Database\Factories;
 
+use App\Models\Model;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
+ * @extends Factory<Model>
  */
 class PlaylistFactory extends Factory
 {
@@ -18,7 +19,7 @@ class PlaylistFactory extends Factory
     {
         return [
             'title' => $this->faker->words(3, true),
-            'play_date' => now()->format("Y-m-d H:i")
+            'play_date' => now()->format('Y-m-d H:i'),
         ];
     }
 }

@@ -1,10 +1,6 @@
 import React from 'react';
-import Button from "@/Components/Material/Button";
-import GoogleIcon from "@/Components/UI/Svg/GoogleIcon";
-import YandexIcon from "@/Components/UI/Svg/YandexIcon";
-import {IconButton} from "@material-tailwind/react";
-import {FontAwesomeIcon} from "@fortawesome/react-fontawesome";
-import { faGoogle, faYandex } from "@fortawesome/free-brands-svg-icons";
+import {FontAwesomeIcon} from '@fortawesome/react-fontawesome';
+import {faGoogle, faYandex} from '@fortawesome/free-brands-svg-icons';
 
 interface SearchExternalImagesProps {
     query: string
@@ -12,47 +8,23 @@ interface SearchExternalImagesProps {
 }
 
 const SearchExternalImages = ({query, withModal}: SearchExternalImagesProps) => {
-    const searchOn = (engine: "google" | 'yandex') => {
-        let url = ''
-        let search_query = query.split(' ').join('+')
-        if (engine === 'google') {
-            url = `https://www.google.com/search?q=${search_query}&source=lnms&tbm=isch&tbs=isz:l`
-        } else if (engine === 'yandex') {
-            url = `https://yandex.com/images/search?isize=large&text=${search_query}`
-        }
-        window.open(url, '_blank', 'noopener,noreferrer')
-        if (withModal){
-            withModal()
-        }
-    }
+    const searchOn = (engine: 'google' | 'yandex') => {
+        const searchQuery = encodeURIComponent(query);
+        const url = engine === 'google'
+            ? `https://www.google.com/search?q=${searchQuery}&source=lnms&tbm=isch&tbs=isz:lt,islt:vga,iar:w`
+            : `https://yandex.com/images/search?isize=large&text=${searchQuery}`;
+        window.open(url, '_blank', 'noopener,noreferrer');
+        withModal?.();
+    };
+
     return (
         <>
-            <IconButton placeholder={undefined}
-                        variant='outlined'
-                        color='purple'
-                        className='my-1 px-2 py-2'
-                        onClick={() => searchOn('google')}>
-                    <FontAwesomeIcon icon={faGoogle} size='lg'/>
-            </IconButton>
-            <IconButton placeholder={undefined}
-                        variant='outlined'
-                        color='purple'
-                        className='my-1 px-2 py-2'
-                        onClick={() => searchOn('yandex')}>
-                <FontAwesomeIcon icon={faYandex} size='lg' className='font-bold text-xl'/>
-            </IconButton>
-            {/*<Button variant="outlined"*/}
-            {/*        size='sm'*/}
-            {/*        color='purple'*/}
-            {/*        className='my-1 py-2'*/}
-            {/*        onClick={() => searchOn('google')}*/}
-            {/*><GoogleIcon/></Button>*/}
-            {/*<Button variant="outlined"*/}
-            {/*        color='purple'*/}
-            {/*        size='sm'*/}
-            {/*        className='my-1 py-2'*/}
-            {/*        onClick={() => searchOn("yandex")}*/}
-            {/*><YandexIcon/></Button>*/}
+            <button type="button" onClick={() => searchOn('google')} className="ios-secondary-button !min-h-9 !px-2.5" aria-label="Caută imagine pe Google">
+                <FontAwesomeIcon icon={faGoogle}/>
+            </button>
+            <button type="button" onClick={() => searchOn('yandex')} className="ios-secondary-button !min-h-9 !px-2.5" aria-label="Caută imagine pe Yandex">
+                <FontAwesomeIcon icon={faYandex}/>
+            </button>
         </>
     );
 };

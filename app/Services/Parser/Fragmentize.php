@@ -2,7 +2,8 @@
 
 namespace App\Services\Parser;
 
-trait Fragmentize {
+trait Fragmentize
+{
     public function fragment($text, $startTag, $endTag = null): string
     {
         $start = stripos($text, $startTag) + strlen($startTag);
@@ -14,5 +15,4 @@ trait Fragmentize {
 
         return trim($result);
     }
-
 }

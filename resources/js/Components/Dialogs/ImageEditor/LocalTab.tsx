@@ -1,54 +1,37 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
-// import {Input} from "@material-tailwind/react";
-import ImagesList from "@/Components/LocalImages/ImagesList";
-import {useActions} from "@/Hooks/useActions";
-import {useTypedSelector} from "@/Hooks/useTypedSelector";
-import Loading from "@/Components/UI/Svg/Loading";
-import Input from "@/Components/Material/Input";
+import React, {useEffect, useState} from 'react';
+import {MagnifyingGlassIcon} from '@heroicons/react/24/outline';
+import ImagesList from '@/Components/LocalImages/ImagesList';
+import {useActions} from '@/Hooks/useActions';
+import {useTypedSelector} from '@/Hooks/useTypedSelector';
+import Loading from '@/Components/UI/Svg/Loading';
 
 interface LocalTabProps {
     handleModal: () => void
 }
 
 const LocalTab = ({handleModal}: LocalTabProps) => {
-    const [searchTag, setSearchTag] = useState('')
-    const loading = useTypedSelector(state => state.images.loading)
-    const error = useTypedSelector(state => state.images.error)
-
-    const {fetchImages, searchImages} = useActions()
+    const [searchTag, setSearchTag] = useState('');
+    const loading = useTypedSelector(state => state.images.loading);
+    const error = useTypedSelector(state => state.images.error);
+    const {fetchImages, searchImages} = useActions();
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            if (searchTag.length > 1) {
-                searchImages(searchTag)
-            } else {
-                fetchImages()
-            }
-        }, 1000);
-        return () => {
-            clearTimeout(timer)
-        }
-    }, [searchTag])
-
-    const handleSearchTag = (e: ChangeEvent<HTMLInputElement>) => {
-        setSearchTag(prevState => e.target.value)
-    }
+        const timer = setTimeout(() => searchTag.length > 1 ? searchImages(searchTag) : fetchImages(100), 500);
+        return () => clearTimeout(timer);
+    }, [searchTag]);
 
     return (
-        <>
-            <div className="mb-5 w-4/12 mx-auto">
-                <Input label='Caută imagini după tag'
-                       value={searchTag}
-                       onChange={handleSearchTag}/>
+        <div>
+            <div className="relative mx-auto mb-5 max-w-md">
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3 h-5 w-5 text-[#8e8e93]"/>
+                <input className="ios-search" value={searchTag} onChange={event => setSearchTag(event.target.value)} placeholder="Caută după etichetă"/>
             </div>
-            <div className='flex max-h-[430px] overflow-y-scroll'>
-                <div className="w-full">
-                    {loading && <Loading/>}
-                    {!loading && error !== '' && <h2>{error}</h2>}
-                    {!loading && error === '' && <ImagesList handleDialog={handleModal}/>}
-                </div>
+            <div className="max-h-[430px] overflow-y-auto pr-1">
+                {loading && <div className="flex min-h-60 items-center justify-center"><Loading/></div>}
+                {!loading && error && <div className="rounded-2xl bg-[#ff3b30]/10 px-4 py-8 text-center text-sm text-[#ff3b30]">{error}</div>}
+                {!loading && !error && <ImagesList handleDialog={handleModal}/>}
             </div>
-        </>
+        </div>
     );
 };
 

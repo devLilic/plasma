@@ -13,9 +13,9 @@ return new class extends Migration
     {
         Schema::create('images', function (Blueprint $table) {
             $table->id();
-            $table->string('sourceUrl')->nullable();
+            $table->text('sourceUrl')->nullable();
             $table->string('url')->unique();
-            $table->boolean('isNew')->default(TRUE);
+            $table->boolean('isNew')->default(true);
             $table->timestamps();
         });
     }

@@ -2,11 +2,12 @@
 
 namespace Database\Factories;
 
+use App\Models\Model;
 use App\Models\Playlist;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\Model>
+ * @extends Factory<Model>
  */
 class ArticleFactory extends Factory
 {
@@ -18,6 +19,7 @@ class ArticleFactory extends Factory
     public function definition(): array
     {
         $playlist = Playlist::factory()->create();
+
         return [
             'subtitle' => $this->faker->word,
             'article_type' => 'BETA',

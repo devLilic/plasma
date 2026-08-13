@@ -84,6 +84,7 @@ export const articlesSlice = createSlice({
             .addCase(removeBackgroundImage.fulfilled, articlesAdapter.upsertOne)
             .addCase(addNewArticle.fulfilled, articlesAdapter.setAll)
             .addCase(deleteArticle.fulfilled, articlesAdapter.removeOne)
+            .addCase(saveArticleContent.fulfilled, articlesAdapter.upsertOne)
 })
 
 
@@ -136,6 +137,17 @@ export const deleteArticle = createAsyncThunk(
         try {
             await articlesApi.removeArticle(query)
             return query.id
+        } catch (error) {
+            return rejectWithValue(error)
+        }
+    }
+)
+
+export const saveArticleContent = createAsyncThunk(
+    'articles/saveArticleContent',
+    async (query: {id: number, title: string, subtitle: string}, {rejectWithValue}) => {
+        try {
+            return await articlesApi.updateContent(query.id, query.title, query.subtitle)
         } catch (error) {
             return rejectWithValue(error)
         }

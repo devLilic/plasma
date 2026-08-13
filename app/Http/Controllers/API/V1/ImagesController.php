@@ -4,100 +4,118 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ImageResource;
-use App\Models\Article;
 use App\Models\Image;
 use App\Models\Tag;
-use Carbon\Carbon;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Services\Images\ExternalImageService;
+use App\Services\Images\ImageDeletionService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\ValidationException;
 
-class ImagesController extends Controller {
-
-    public function index()
+class ImagesController extends Controller
+{
+    public function index(Request $request)
     {
-        return ImageResource::collection(Image::orderBy('created_at', 'DESC')->take(30)->with('tags')->get());
+        $limit = min(max($request->integer('limit', 30), 1), 100);
+
+        return ImageResource::collection(Image::latest()->limit($limit)->with('tags')->get());
     }
 
     public function search(Request $request)
     {
-        $request->validate([
-            'query' => 'required|string|min:2|max:20'
+        $validated = $request->validate([
+            'query' => ['required', 'string', 'min:2', 'max:80'],
         ]);
 
-        $query = $request->input('query');
-        $tags = Tag::where('title', 'like', "%$query%")->get();
-        $images = collect();
-        foreach ($tags as $tag) {
-            $tag->images()->with('tags')->get()->map(function ($image) use ($images)
-            {
-                if (!$images->contains($image)) {
-                    $images->add($image);
-                }
-            });
-        }
+        $images = Image::query()
+            ->whereHas('tags', fn ($query) => $query->where('title', 'like', '%'.$validated['query'].'%'))
+            ->with('tags')
+            ->latest()
+            ->limit(100)
+            ->get();
 
         return ImageResource::collection($images);
     }
 
-    public function destroy(Request $request)
+    public function update(Request $request, Image $image, ExternalImageService $externalImages)
     {
-        try {
-            $image = Image::where('id', $request->id)->firstOrFail();
-            $id = $image->id;
-            $image->tags()->detach();
-            Article::where('image_id', $image->id)->update(['image_id' => null]);
-            Storage::disk('images')->delete($image->url);
-            $image->delete();
-            if ($id !== 0) {
-                return ['id' => $id];
-            }
-        } catch (ModelNotFoundException $e) {
-            return ['error' => 'File not found ' . $e];
+        $validated = $request->validate([
+            'data.tags' => ['sometimes', 'nullable', 'string', 'max:500'],
+            'data.section' => ['sometimes', 'array'],
+            'data.section.x' => ['required_with:data.section', 'numeric', 'between:0,100'],
+            'data.section.y' => ['required_with:data.section', 'numeric', 'between:0,100'],
+            'data.section.width' => ['required_with:data.section', 'numeric', 'gt:0', 'lte:100'],
+            'data.section.height' => ['required_with:data.section', 'numeric', 'gt:0', 'lte:100'],
+        ]);
+        $data = $validated['data'];
+        $newContents = null;
+
+        if (! array_key_exists('tags', $data) && ! isset($data['section'])) {
+            throw ValidationException::withMessages(['data' => 'Nu există modificări de salvat.']);
         }
+
+        if (isset($data['section'])) {
+            if (! $image->sourceUrl) {
+                throw ValidationException::withMessages(['data.section' => 'Imaginea nu are o sursă externă pentru recrop.']);
+            }
+            $newContents = $externalImages->crop($image->sourceUrl, $data['section']);
+        }
+
+        DB::transaction(function () use ($image, $data) {
+            if (array_key_exists('tags', $data)) {
+                $tagIds = collect(preg_split('/[,;\r\n]+/', $data['tags'] ?? '') ?: [])
+                    ->map(fn ($tag) => Str::of($tag)->trim()->lower()->limit(80, '')->toString())
+                    ->filter()
+                    ->unique()
+                    ->map(fn ($title) => Tag::firstOrCreate(['title' => $title])->id)
+                    ->values();
+                $image->tags()->sync($tagIds);
+            }
+            $image->touch();
+        });
+
+        if ($newContents !== null) {
+            Storage::disk('images')->put($image->url, $newContents);
+        }
+
+        return ImageResource::make($image->fresh()->load('tags'));
     }
 
-    public function addTags(Request $request)
+    public function destroy(Image $image)
     {
-        $image = Image::find($request['data']['id']);
-        $words = explode(",", $request['data']['tags']);
-        $tagIds = [];
-        foreach ($words as $word) {
-            $word = trim($word);
-            if ($word !== ''){
-                $tag = Tag::firstOrCreate(["title" => $word]);
-                $tagIds[] = $tag->id;
-            }
-        }
+        app(ImageDeletionService::class)->delete($image);
 
-        if(count($tagIds)){
-            $image->tags()->sync($tagIds);
-        }
-
-        return $image;
+        return response()->json(['id' => $image->id]);
     }
 
-    public function upload(Request $request)
+    public function stale()
     {
-        $randomString = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'), 0, 7);
-        $date = Carbon::now()->format('Ymd');
+        $images = Image::query()
+            ->where('last_used_at', '<', now()->subMonthsNoOverflow(2))
+            ->with('tags')
+            ->orderBy('last_used_at')
+            ->get();
 
-        $uploaded_now = collect();
-        foreach (request('files') as $file) {
-            do {
-                $fileName = "img_{$date}_{$randomString}." . $file->getClientOriginalExtension();
-            } while (Image::where('url', $fileName)->count() !== 0);
+        return ImageResource::collection($images);
+    }
 
-            $path = $file->storeAs('', $fileName, 'images');
+    public function cleanStale(Request $request, ImageDeletionService $imageDeletion)
+    {
+        $validated = $request->validate([
+            'data.image_ids' => ['required', 'array', 'min:1', 'max:500'],
+            'data.image_ids.*' => ['integer', 'distinct', 'exists:images,id'],
+        ]);
 
-            $image = Image::create([
-                'url' => $path
-            ]);
+        $images = Image::query()
+            ->whereIn('id', $validated['data']['image_ids'])
+            ->where('last_used_at', '<', now()->subMonthsNoOverflow(2))
+            ->get();
 
-            $uploaded_now->push([
-                'id' => $image->id,
-                'url' => asset("images/$image->url")
-            ]);
-        }
+        $deletedIds = $images->pluck('id')->values();
+        $images->each(fn (Image $image) => $imageDeletion->delete($image));
+
+        return response()->json(['deleted_ids' => $deletedIds]);
     }
 }

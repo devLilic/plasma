@@ -1,35 +1,36 @@
 import React, {useEffect} from 'react';
-import {Head} from "@inertiajs/react";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Article, User} from "@/types";
-import {Card} from "@material-tailwind/react";
-import ArticlesList from "@/Components/Articles/ArticlesList";
-import {useActions} from "@/Hooks/useActions";
+import {Head, Link} from '@inertiajs/react';
+import {ChevronLeftIcon} from '@heroicons/react/24/outline';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import {Article, User} from '@/types';
+import ArticlesList from '@/Components/Articles/ArticlesList';
+import {useActions} from '@/Hooks/useActions';
 
 interface PlaylistShowPageProps {
-    auth: {
-        user: User
-    }
+    auth: {user: User}
     articles: Article[]
 }
 
 const PlaylistShowPage = ({auth, articles}: PlaylistShowPageProps) => {
-    const {setArticles, fetchImages, setPlaylist} = useActions()
+    const {setArticles, fetchImages, setPlaylist} = useActions();
+    const playlistId = articles[0]?.playlist_id;
+
     useEffect(() => {
-        setArticles(articles)
-        if(articles.length !== 0){
-            setPlaylist(articles[0].playlist_id)
-        }
-        fetchImages()
+        setArticles(articles);
+        if (playlistId) setPlaylist(playlistId);
+        fetchImages();
     }, []);
+
     return (
         <AuthenticatedLayout user={auth.user}>
-            <Head title="Playlist"/>
-
-            <div className="flex flex-row justify-around items-start">
-                <Card className="flex-1" placeholder={undefined}>
-                    <ArticlesList />
-                </Card>
+            <Head title="Editor playlist"/>
+            <div className="ios-page">
+                <nav className="mb-4" aria-label="Navigare playlist">
+                    <Link href={route('playlists.index')} className="inline-flex items-center gap-1 text-sm font-semibold text-[#007aff] transition hover:text-[#006ee6]">
+                        <ChevronLeftIcon className="h-4 w-4"/>Playlisturi
+                    </Link>
+                </nav>
+                <ArticlesList/>
             </div>
         </AuthenticatedLayout>
     );

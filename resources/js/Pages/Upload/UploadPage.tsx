@@ -1,71 +1,71 @@
-import React, {ChangeEvent, useEffect, useState} from 'react';
-import {PageProps} from "@/types";
-import AuthenticatedLayout from "@/Layouts/AuthenticatedLayout";
-import {Head, useForm} from "@inertiajs/react";
-import {Card} from "@material-tailwind/react";
-import UploadButton from "@/Components/UI/UploadButton/UploadButton";
-import {useActions} from "@/Hooks/useActions";
+import React, {ChangeEvent, useState} from 'react';
+import {Head, Link, router} from '@inertiajs/react';
+import {CheckCircleIcon, ChevronRightIcon, PhotoIcon} from '@heroicons/react/24/outline';
+import axios from 'axios';
+import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
+import UploadButton from '@/Components/UI/UploadButton/UploadButton';
+import {PageProps} from '@/types';
 
-interface UploadPageProps extends PageProps {
-}
+const UploadPage = ({auth}: PageProps) => {
+    const [uploading, setUploading] = useState(false);
+    const [selectedNames, setSelectedNames] = useState<string[]>([]);
+    const [error, setError] = useState('');
 
-const UploadPage = ({auth}: UploadPageProps) => {
-    const [isFileTypeOK, setIsFileTypeOK] = useState(false);
-
-    const {data, setData, post} = useForm({
-        files: [],
-    });
-
-    useEffect(() => {
-        if (isFileTypeOK) {
-            post('api/files');
+    const handleChange = async (event: ChangeEvent<HTMLInputElement>) => {
+        const files = Array.from(event.target.files ?? []).filter(file => file.type.startsWith('image/'));
+        if (!files.length) {
+            setError('Selectează cel puțin o imagine validă.');
+            return;
         }
-    }, [isFileTypeOK])
 
-    function handleChange(e: ChangeEvent<HTMLInputElement>) {
-        const selectedFiles = e.target.files;
-        const images: File[] = data.files || []
-        if(!selectedFiles){
-            return
+        setError('');
+        setSelectedNames(files.map(file => file.name));
+        setUploading(true);
+        const formData = new FormData();
+        files.forEach(file => formData.append('files[]', file));
+
+        try {
+            await axios.post('/api/v1/files', formData, {headers: {'Content-Type': 'multipart/form-data'}});
+            router.visit(route('images.index'));
+        } catch {
+            setError('Imaginile nu au putut fi încărcate. Încearcă din nou.');
+            setUploading(false);
         }
-        Array.from(selectedFiles).map(file => {
-            if (file.type.startsWith('image/')) {
-                images.push(file)
-            }
-        });
+    };
 
-        // @ts-ignore
-        setData('files', images);
-        setTimeout(()=>{
-            post("/api/v1/files")
-        }, 500);
-    }
-
-    const {addFiles, uploadNewImageFiles} = useActions()
-
-    const handleUploadAction = (e: ChangeEvent<HTMLInputElement>) => {
-        if (e.target.files) {
-            let formData = new FormData();
-            // selectedFiles.map((file: File) => {
-            //     formData.append('files[]', file)
-            // })
-            uploadNewImageFiles({files: formData})
-        }
-    }
     return (
         <AuthenticatedLayout user={auth.user}>
-            <Head title="Upload"/>
-            <div className="flex flex-row justify-around items-start">
-                <Card className="flex-1" placeholder={undefined}>
-                    <div className='my-4 mx-4 flex flex-col items-center justify-around'>
-                        <form className='w-[200px]'>
-                            <UploadButton title='Încarcă imagini' handleChange={handleChange}/>
-                        </form>
-                        <div className='w-full'>
-                            imagini
+            <Head title="Încarcă imagini"/>
+            <div className="ios-page">
+                <div className="mx-auto grid max-w-4xl gap-5 md:grid-cols-[minmax(0,1fr)_280px]">
+                    <section className="ios-card p-5 sm:p-8">
+                        <UploadButton title={uploading ? 'Se încarcă…' : 'Alege imagini'} description="JPG, PNG sau WebP • poți selecta mai multe fișiere" accept="image/jpeg,image/png,image/webp" multiple handleChange={handleChange}/>
+                        {error && <p className="mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
+                        {selectedNames.length > 0 && (
+                            <div className="mt-5 divide-y divide-[#e5e5ea] overflow-hidden rounded-2xl bg-[#f2f2f7]">
+                                {selectedNames.map(name => (
+                                    <div key={name} className="flex items-center gap-3 px-4 py-3">
+                                        <CheckCircleIcon className="h-5 w-5 shrink-0 text-[#34c759]"/>
+                                        <span className="truncate text-sm font-medium text-[#1c1c1e]">{name}</span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </section>
+
+                    <aside className="ios-card h-fit overflow-hidden">
+                        <div className="p-5">
+                            <span className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-[#34c759]/10 text-[#34c759]">
+                                <PhotoIcon className="h-6 w-6"/>
+                            </span>
+                            <h2 className="ios-section-title">Biblioteca ta</h2>
+                            <p className="mt-2 text-sm leading-6 text-[#8e8e93]">După încărcare, imaginile apar imediat în căutarea după etichete.</p>
                         </div>
-                    </div>
-                </Card>
+                        <Link href={route('images.index')} className="flex items-center justify-between border-t border-[#e5e5ea] px-5 py-4 text-sm font-semibold text-[#007aff] hover:bg-[#f2f2f7]">
+                            Vezi toate imaginile<ChevronRightIcon className="h-4 w-4"/>
+                        </Link>
+                    </aside>
+                </div>
             </div>
         </AuthenticatedLayout>
     );

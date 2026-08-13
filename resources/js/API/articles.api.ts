@@ -13,11 +13,13 @@ interface ArticlesApi {
     removeBackground: (query: { article_id: number }) => Promise<Article>
     addArticle: (query: NewArticleQuery) => Promise<Article[]>
     removeArticle: (query: {id: number}) => Promise<any>
+    updateContent: (id: number, title: string, subtitle: string) => Promise<Article>
 }
 
 export const articlesApi: ArticlesApi = {
     setBackground: (query) => ApiRequest.patch('/article', {data: {query}}),
     removeBackground: (query) => ApiRequest.delete('/remove-bg', {data: {...query}}),
     addArticle: (query) => ApiRequest.post('/article', {data: {...query}}),
-    removeArticle: (query) => ApiRequest.delete('/article', {data: {...query}})
+    removeArticle: (query) => ApiRequest.delete('/article', {data: {...query}}),
+    updateContent: (id, title, subtitle) => ApiRequest.patch(`/articles/${id}`, {data: {title, subtitle}})
 }

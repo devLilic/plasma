@@ -4,89 +4,64 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ImageResource;
+use App\Models\Article;
 use App\Models\Image;
-use Carbon\Carbon;
-use Facades\App\Services\Images\GoogleImages;
+use App\Models\Tag;
+use App\Services\Images\ExternalImageService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
-use Nette\Utils\Image as ImageProcessor;
+use Illuminate\Support\Str;
 
 class ExternalImagesController extends Controller
 {
-    public function getImages(Request $request)
+    public function crop(Request $request, ExternalImageService $externalImages)
     {
-        $request->validate([
-            'query' => 'string|required'
+        $validated = $request->validate([
+            'data.url' => ['required', 'url:http,https', 'max:2048'],
+            'data.section.x' => ['required', 'numeric', 'between:0,100'],
+            'data.section.y' => ['required', 'numeric', 'between:0,100'],
+            'data.section.width' => ['required', 'numeric', 'gt:0', 'lte:100'],
+            'data.section.height' => ['required', 'numeric', 'gt:0', 'lte:100'],
+            'data.tags' => ['nullable', 'string', 'max:500'],
+            'data.article_id' => ['required', 'integer', 'exists:articles,id'],
         ]);
-        return GoogleImages::getImages($request->query->get('query'));
-    }
+        $data = $validated['data'];
+        $contents = $externalImages->crop($data['url'], $data['section']);
+        $filename = Str::uuid().'.jpg';
+        Storage::disk('images')->put($filename, $contents);
 
-    public function cropImage(ImageProcessor $image, $percentCrop)
-    {
-        $image_width = $image->width;
-        $image_height = $image->height;
-        $section = [
-            'x' => (int) ($image_width * $percentCrop['x'] / 100),
-            'y' => (int) ($image_height * $percentCrop['y'] / 100),
-            'width' => (int) ($image_width * $percentCrop['width'] / 100),
-            'height' => (int) ($image_height * $percentCrop['height'] / 100),
-        ];
-
-        $image->crop($section['x'], $section['y'], $section['width'], $section['height']);
-
-        return $image;
-    }
-
-    public function crop(Request $request)
-    {
         try {
-            $file = Http::get($request->data['url']);
-            if ($file->failed()) {
-                throw new \Exception($file->reason(), $file->status());
-            }
-        } catch (\Exception $e) {
-            return json_encode(['error' => ['message' => $e->getMessage(), 'code' => $e->getCode()]]);
+            $image = DB::transaction(function () use ($data, $filename) {
+                $image = Image::create([
+                    'url' => $filename,
+                    'sourceUrl' => $data['url'],
+                    'isNew' => true,
+                    'last_used_at' => now(),
+                ]);
+                $this->syncTags($image, $data['tags'] ?? '');
+                Article::findOrFail($data['article_id'])->update(['image_id' => $image->id]);
+
+                return $image;
+            });
+        } catch (\Throwable $exception) {
+            Storage::disk('images')->delete($filename);
+
+            throw $exception;
         }
 
+        return ImageResource::make($image->load('tags'));
+    }
 
-        try{
-            $image = imagecreatefromstring($file->body());
-        } catch (\Exception $e) {
-            return json_encode(['error' => ['message' => $e->getMessage(), 'code' => $e->getCode()]]);
-        }
+    private function syncTags(Image $image, string $input): void
+    {
+        $tagIds = collect(preg_split('/[,;\r\n]+/', $input) ?: [])
+            ->map(fn ($tag) => Str::of($tag)->trim()->lower()->limit(80, '')->toString())
+            ->filter()
+            ->unique()
+            ->map(fn ($title) => Tag::firstOrCreate(['title' => $title])->id)
+            ->values();
 
-        $imgProcessor = new ImageProcessor($image);
-        imagedestroy($image);
-
-        $cropped = $this->cropImage($imgProcessor, $request->data['section']);
-
-        $uploaded_today = Image::whereDate('created_at', Carbon::today())->count();
-        $order_number = $uploaded_today + 1;
-
-        $date = Carbon::now()->format('Ymd');
-
-        do {
-            $fileName = "img_{$date}_{$order_number}.jpg";
-            $order_number++;
-        } while (Image::where('url', $fileName)->count() !== 0);
-
-        $path = Storage::disk('images')->path($fileName);
-
-//        imageflip($image, IMG_FLIP_HORIZONTAL);
-        imagejpeg($cropped->imageResource, $path);
-
-        $image = Image::create([
-            'url' => $fileName,
-            'sourceUrl' => $request->data['url']
-        ]);
-
-
-        return json_encode([
-            'id' => $image->id,
-            'url' => Storage::disk('images')->url($image->url),
-            'sourceUrl' => $image->sourceUrl,
-            'isNew' => $image->isNew
-        ]);
+        $image->tags()->sync($tagIds);
     }
 }

@@ -2,7 +2,10 @@ import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse} from "axios";
 
 export const API: AxiosInstance = axios.create({
     baseURL: '/api/v1',
-    timeout: 15000
+    timeout: 20000,
+    withCredentials: true,
+    withXSRFToken: true,
+    headers: {'X-Requested-With': 'XMLHttpRequest'},
 })
 
 export const responseBody = (response: AxiosResponse) => response.data

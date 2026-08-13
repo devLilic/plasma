@@ -23,6 +23,9 @@ export const imagesSlice = createSlice({
         setImages: (state, action: PayloadAction<Image[]>) => {
             imagesAdapter.setAll(state, action.payload)
         },
+        upsertImage: (state, action: PayloadAction<Image>) => {
+            imagesAdapter.upsertOne(state, action.payload)
+        },
     },
 
     extraReducers: builder => {
@@ -32,13 +35,17 @@ export const imagesSlice = createSlice({
             })
             .addCase(fetchImages.fulfilled, (state, action: PayloadAction<Image[]>) => {
                 state.loading = false
-                imagesAdapter.upsertMany(state, action.payload)
+                imagesAdapter.setAll(state, action.payload)
+            })
+            .addCase(fetchImages.rejected, (state) => {
+                state.loading = false
+                state.error = 'Imaginile nu au putut fi încărcate.'
             })
             .addCase(searchImages.fulfilled, imagesAdapter.setAll)
             .addCase(removeImage.fulfilled, (state, action: PayloadAction<{ id: number }>) => {
                 imagesAdapter.removeOne(state, action.payload.id)
             })
-            .addCase(addTags.fulfilled, (state, action) => {
+            .addCase(updateImage.fulfilled, (state, action) => {
                 imagesAdapter.upsertOne(state, action.payload)
             })
     }
@@ -46,9 +53,9 @@ export const imagesSlice = createSlice({
 
 export const fetchImages = createAsyncThunk(
     'images/fetchImages',
-    async (_, {rejectWithValue}) => {
+    async (limit: number | undefined, {rejectWithValue}) => {
         try {
-            return await imagesApi.fetch()
+            return await imagesApi.fetch(limit)
         } catch (error) {
             return rejectWithValue(error)
         }
@@ -68,10 +75,14 @@ export const removeImage = createAsyncThunk(
     }
 )
 
-export const addTags = createAsyncThunk(
-    'images/addTags',
-    async (query: { id: number, tags: string }, {rejectWithValue}) => {
-        return await imagesApi.addTags(query.id, query.tags)
+export const updateImage = createAsyncThunk(
+    'images/updateImage',
+    async (query: { id: number, tags?: string, section?: import('react-image-crop').PercentCrop }, {rejectWithValue}) => {
+        try {
+            return await imagesApi.update(query.id, query.tags, query.section)
+        } catch (error: any) {
+            return rejectWithValue(error?.response?.data?.message ?? 'Imaginea nu a putut fi actualizată.')
+        }
     }
 )
 
@@ -82,4 +93,3 @@ export const {
 } = imagesAdapter.getSelectors<TypeRootState>(state => state.images)
 export const imagesReducer = imagesSlice.reducer
 export const imagesActions = imagesSlice.actions
-

@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 class Tag extends Model
 {
     use HasFactory;
+
     protected $fillable = ['title'];
 
     public function images(): BelongsToMany

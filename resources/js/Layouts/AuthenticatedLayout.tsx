@@ -1,4 +1,4 @@
-import {PropsWithChildren, useState} from 'react';
+import {PropsWithChildren} from 'react';
 import {User} from '@/types';
 import MainNavigation from "@/Components/Navigation/MainNavigation";
 
@@ -8,16 +8,9 @@ interface AuthenticatedPageProps extends PropsWithChildren {
 
 const Authenticated = ({user, children}: AuthenticatedPageProps) => {
     return (
-        <div className="min-h-screen bg-gray-100">
+        <div className="min-h-screen bg-transparent">
             <MainNavigation user={user}/>
-
-            <main>
-                <div className="py-4">
-                    <div className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-                        {children}
-                    </div>
-                </div>
-            </main>
+            <main>{children}</main>
         </div>
     );
 }

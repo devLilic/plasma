@@ -2,6 +2,7 @@
 
 namespace App\Services\Parser;
 
-interface ParserInterface {
+interface ParserInterface
+{
     public function parse($code);
 }

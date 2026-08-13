@@ -1,3 +1,93 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+    :root {
+        color-scheme: light;
+        font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", Inter, sans-serif;
+        background: #f2f2f7;
+        color: #1c1c1e;
+    }
+
+    body {
+        @apply m-0 min-w-[320px] antialiased;
+        background:
+            radial-gradient(circle at 10% -10%, rgba(10, 132, 255, 0.12), transparent 28rem),
+            #f2f2f7;
+    }
+
+    button, a, input {
+        -webkit-tap-highlight-color: transparent;
+    }
+}
+
+@layer components {
+    .ios-page {
+        @apply mx-auto w-full max-w-[1440px] px-4 pb-28 pt-6 sm:px-6 lg:px-8 lg:pb-12;
+    }
+
+    .ios-page-header {
+        @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
+    }
+
+    .ios-eyebrow {
+        @apply mb-1 text-xs font-semibold uppercase tracking-[0.16em] text-[#007aff];
+    }
+
+    .ios-title {
+        @apply text-3xl font-bold tracking-[-0.035em] text-[#1c1c1e] sm:text-4xl;
+    }
+
+    .ios-subtitle {
+        @apply mt-2 max-w-2xl text-sm leading-6 text-[#6e6e73] sm:text-base;
+    }
+
+    .ios-card {
+        @apply rounded-[22px] border border-white/80 bg-white/90 shadow-[0_10px_35px_rgba(0,0,0,0.06)] backdrop-blur-xl;
+    }
+
+    .ios-card-header {
+        @apply flex items-center justify-between border-b border-[#e5e5ea] px-5 py-4;
+    }
+
+    .ios-section-title {
+        @apply text-lg font-semibold tracking-[-0.02em] text-[#1c1c1e];
+    }
+
+    .ios-search {
+        @apply h-11 w-full rounded-xl border-0 bg-[#f2f2f7] pl-11 pr-4 text-[15px] text-[#1c1c1e] outline-none ring-0 placeholder:text-[#8e8e93] focus:bg-white focus:ring-2 focus:ring-[#007aff]/25;
+    }
+
+    .ios-primary-button {
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-[#007aff] px-4 py-2.5 text-sm font-semibold normal-case tracking-normal text-white shadow-none transition hover:bg-[#006ee6] hover:shadow-[0_6px_18px_rgba(0,122,255,0.22)] focus:outline-none focus:ring-4 focus:ring-[#007aff]/20;
+    }
+
+    .ios-secondary-button {
+        @apply inline-flex min-h-10 items-center justify-center gap-2 rounded-xl bg-[#f2f2f7] px-3 py-2 text-sm font-semibold text-[#007aff] transition hover:bg-[#e5e5ea] focus:outline-none focus:ring-4 focus:ring-[#007aff]/15;
+    }
+
+    .ios-danger-button {
+        @apply inline-flex items-center justify-center rounded-xl bg-[#ff3b30]/10 p-2 text-[#ff3b30] transition hover:bg-[#ff3b30] hover:text-white;
+    }
+
+    .ios-pill {
+        @apply inline-flex items-center rounded-full bg-[#007aff]/10 px-2.5 py-1 text-xs font-medium text-[#007aff];
+    }
+
+    .ios-media-download {
+        @apply absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#007aff]/70 bg-transparent text-[#007aff] shadow-none transition duration-200 hover:scale-105 hover:bg-white/90 hover:shadow-[0_2px_10px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-4 focus:ring-[#007aff]/20 focus-visible:bg-white/90 active:scale-95;
+    }
+
+    .ios-media-download-tooltip {
+        @apply pointer-events-none absolute right-0 top-10 whitespace-nowrap rounded-lg bg-[#1c1c1e]/90 px-2 py-1 text-[11px] font-medium text-white opacity-0 shadow-lg transition group-hover/download:opacity-100 group-focus-visible/download:opacity-100;
+    }
+
+    .ios-media-edit {
+        @apply absolute left-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-[10px] border border-[#5856d6]/70 bg-transparent text-[#5856d6] shadow-none transition duration-200 hover:scale-105 hover:bg-white/90 hover:shadow-[0_2px_10px_rgba(0,0,0,0.12)] focus:outline-none focus:ring-4 focus:ring-[#5856d6]/20 focus-visible:bg-white/90 active:scale-95;
+    }
+
+    .ios-tag-chip {
+        @apply inline-flex max-w-full items-center gap-1 rounded-full border border-[#007aff]/10 bg-[#007aff]/[0.08] px-2.5 py-1 text-[11px] font-medium leading-none text-[#0066d6] transition hover:border-[#007aff]/20 hover:bg-[#007aff]/[0.13];
+    }
+}

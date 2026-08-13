@@ -7,57 +7,93 @@ use App\Models\Article;
 use App\Models\Image;
 use App\Models\Playlist;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
-class ArticleController extends Controller {
-
+class ArticleController extends Controller
+{
     public function store(Request $request)
     {
-//        dd($request);
-        $playlist = Playlist::findOrFail($request['data']['playlist_id']);
+        $validated = $request->validate([
+            'data.playlist_id' => ['required', 'integer', 'exists:playlists,id'],
+            'data.title' => ['required', 'string', 'max:255'],
+            'data.articleType' => ['required', Rule::in(['BETA', 'OFF', 'LIVE'])],
+            'data.position' => ['required', 'integer', 'min:1'],
+        ])['data'];
 
-        $articles = $playlist->articles()->orderBy('playlist_order', 'ASC')->get();
+        $playlist = DB::transaction(function () use ($validated) {
+            $playlist = Playlist::query()->lockForUpdate()->findOrFail($validated['playlist_id']);
+            $playlist->articles()
+                ->where('playlist_order', '>=', $validated['position'])
+                ->increment('playlist_order');
+            $playlist->articles()->create([
+                'title' => $validated['title'],
+                'subtitle' => $validated['title'],
+                'article_type' => $validated['articleType'],
+                'playlist_order' => $validated['position'],
+            ]);
 
-        foreach ($articles as $article) {
-            if ($article->playlist_order >= $request['data']['position']) {
-                $order = $article->playlist_order + 1;
-                $article->update(['playlist_order' => $order]);
-            }
-        }
-        Article::create([
-            'title' => $request['data']['title'],
-            'subtitle' => $request['data']['title'],
-            'article_type' => $request['data']['articleType'],
-            'playlist_id' => $playlist->id,
-            'playlist_order' => $request['data']['position'],
-        ]);
-        return ArticleResource::collection($playlist->articles()->get());
+            return $playlist;
+        });
 
-//        dd($request['data'], $articles);
+        return ArticleResource::collection(
+            $playlist->articles()->with('image.tags')->orderBy('playlist_order')->get()
+        );
     }
 
     public function update(Request $request)
     {
-        $article = Article::findOrFail($request['data']['query']['article_id']);
-        $image = Image::findOrFail($request['data']['query']['image_id']);
-        $image->articles()->save($article);
+        $validated = $request->validate([
+            'data.query.article_id' => ['required', 'integer', 'exists:articles,id'],
+            'data.query.image_id' => ['required', 'integer', 'exists:images,id'],
+        ])['data']['query'];
 
-        return ArticleResource::make($article);
+        $article = Article::findOrFail($validated['article_id']);
+        $image = Image::findOrFail($validated['image_id']);
+        DB::transaction(function () use ($article, $image) {
+            $article->update(['image_id' => $image->id]);
+            $image->update(['last_used_at' => now()]);
+        });
+
+        return ArticleResource::make($article->fresh()->load('image.tags'));
+    }
+
+    public function updateContent(Request $request, Article $article)
+    {
+        $validated = $request->validate([
+            'data.title' => ['required', 'string', 'max:255'],
+            'data.subtitle' => ['required', 'string', 'max:255'],
+        ])['data'];
+        $article->update($validated);
+
+        return ArticleResource::make($article->fresh()->load('image.tags'));
     }
 
     public function destroy(Request $request)
     {
-        $article = Article::find($request->id);
-        $article->delete();
+        $validated = $request->validate([
+            'id' => ['required', 'integer', 'exists:articles,id'],
+        ]);
+
+        DB::transaction(function () use ($validated) {
+            $article = Article::query()->lockForUpdate()->findOrFail($validated['id']);
+            Article::where('playlist_id', $article->playlist_id)
+                ->where('playlist_order', '>', $article->playlist_order)
+                ->decrement('playlist_order');
+            $article->delete();
+        });
 
         return response()->json(['message' => 'OK']);
     }
 
     public function removeBg(Request $request)
     {
-        $article = Article::findOrFail($request['article_id']);
-        $article->image_id = null;
-        $article->save();
+        $validated = $request->validate([
+            'article_id' => ['required', 'integer', 'exists:articles,id'],
+        ]);
+        $article = Article::findOrFail($validated['article_id']);
+        $article->update(['image_id' => null]);
 
-        return ArticleResource::make($article);
+        return ArticleResource::make($article->fresh()->load('image.tags'));
     }
 }
