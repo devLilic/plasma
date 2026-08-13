@@ -4,6 +4,8 @@ use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageStorageSettingsController;
 use App\Http\Controllers\PlaylistsController;
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PlasmaViewerController;
+use App\Http\Controllers\PlasmaViewerMediaController;
 use App\Http\Controllers\StoredImageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,6 +31,10 @@ Route::get('/', function () {
     //    ]);
 });
 
+Route::get('/viewer/media/{article}/{image}', PlasmaViewerMediaController::class)
+    ->middleware('signed')
+    ->name('viewer.media');
+
 Route::get('/dashboard', function () {
     return redirect()->route('playlists.index');
 })->middleware(['auth', 'verified'])->name('dashboard');
@@ -46,6 +52,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/image', [ImagesController::class, 'index'])->name('images.index');
     Route::get('/image/create', [ImagesController::class, 'create'])->name('images.create');
     Route::get('/images/{path}', StoredImageController::class)->where('path', '.*')->name('images.file');
+    Route::get('/plasma-viewer/state', [PlasmaViewerController::class, 'state'])->name('viewer.state');
+    Route::post('/plasma-viewer/commands', [PlasmaViewerController::class, 'command'])->name('viewer.command');
 });
 
 require __DIR__.'/auth.php';

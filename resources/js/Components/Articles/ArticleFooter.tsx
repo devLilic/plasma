@@ -1,5 +1,5 @@
 import React from 'react';
-import {InformationCircleIcon, PhotoIcon} from '@heroicons/react/24/outline';
+import {InformationCircleIcon, PhotoIcon, SignalIcon} from '@heroicons/react/24/outline';
 import {Popover, PopoverContent, PopoverHandler} from '@material-tailwind/react';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectArticleById} from '@/Store/article/article.slice';
@@ -9,9 +9,10 @@ import SearchExternalImages from '@/Components/ExternalImages/SearchExternalImag
 interface ArticleFooterProps {
     articleId: number
     openDialog: () => void
+    openOnAir: () => void
 }
 
-const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
+const ArticleFooter = ({articleId, openDialog, openOnAir}: ArticleFooterProps) => {
     const article = useTypedSelector(state => selectArticleById(state, articleId));
     const {setCurrent} = useActions();
     const query = article.search_by === 'title' ? article.title : article.subtitle;
@@ -35,6 +36,7 @@ const ArticleFooter = ({articleId, openDialog}: ArticleFooterProps) => {
                 </Popover>
             )}
             <SearchExternalImages query={query} withModal={editArticle}/>
+            {article.image && <button type="button" onClick={openOnAir} className="inline-flex min-h-9 items-center gap-1.5 rounded-xl bg-[#ff3b30] px-3 text-xs font-bold text-white shadow-sm transition hover:bg-[#e52f26]" aria-label="Deschide controlul onAIR"><SignalIcon className="h-4 w-4"/>onAIR</button>}
             <button type="button" onClick={editArticle} className="ios-secondary-button ml-auto !min-h-9 !px-2.5" aria-label="Alege imagine din bibliotecă">
                 <PhotoIcon className="h-4 w-4"/>
             </button>

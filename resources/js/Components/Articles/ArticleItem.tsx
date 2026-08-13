@@ -1,4 +1,4 @@
-import React, {ChangeEvent} from 'react';
+import React, {ChangeEvent, useState} from 'react';
 import {CheckIcon} from '@heroicons/react/24/solid';
 import ArticleHeader from '@/Components/Articles/ArticleHeader';
 import ArticleFooter from '@/Components/Articles/ArticleFooter';
@@ -6,6 +6,7 @@ import ContentWithImage from '@/Components/Articles/ContentWithImage';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {useActions} from '@/Hooks/useActions';
 import {selectArticleById} from '@/Store/article/article.slice';
+import OnAirDialog from '@/Components/Dialogs/OnAirDialog';
 
 interface ArticleItemProps {
     articleId: number
@@ -15,6 +16,7 @@ interface ArticleItemProps {
 
 const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
     const article = useTypedSelector(state => selectArticleById(state, articleId));
+    const [isOnAirOpen, setIsOnAirOpen] = useState(false);
     const {changeSearchBy, changeTitle, changeSubtitle, saveArticleContent} = useActions();
     const persistContent = () => saveArticleContent({id: article.id, title: article.title, subtitle: article.subtitle});
 
@@ -43,7 +45,8 @@ const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
                     {field('subtitle', article.subtitle, event => changeSubtitle({id: article.id, changes: {subtitle: event.target.value}}))}
                 </div>
             )}
-            <ArticleFooter articleId={article.id} openDialog={openDialog}/>
+            <ArticleFooter articleId={article.id} openDialog={openDialog} openOnAir={() => setIsOnAirOpen(true)}/>
+            <OnAirDialog article={article} isOpen={isOnAirOpen} onClose={() => setIsOnAirOpen(false)}/>
         </article>
     );
 };
