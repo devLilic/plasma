@@ -32,14 +32,14 @@ const ArticlesList = () => {
 
     return (
         <div>
-            <div className="mb-5 flex flex-col gap-4 rounded-[22px] border border-white/80 bg-white/90 p-5 shadow-[0_10px_35px_rgba(0,0,0,0.06)] backdrop-blur-xl sm:flex-row sm:items-center sm:justify-between">
+            <div className="ios-card mb-5 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
                 <div className="flex items-center gap-3">
-                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#5856d6]/10 text-[#5856d6]">
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#7059ee]/10 text-[#7059ee] ring-1 ring-white/70">
                         <Squares2X2Icon className="h-6 w-6"/>
                     </span>
                     <div>
-                        <h2 className="text-lg font-semibold tracking-[-0.02em] text-[#1c1c1e]">{articles.length} materiale</h2>
-                        <p className="mt-0.5 text-sm text-[#8e8e93]">{completed} cu imagine • {articles.length - completed} de completat</p>
+                        <h2 className="text-lg font-bold tracking-[-0.02em] text-[#172033]">{articles.length} materiale</h2>
+                        <p className="mt-0.5 text-sm text-[#65728a]">{completed} cu imagine • {articles.length - completed} de completat</p>
                     </div>
                 </div>
                 <div className="flex items-center gap-2">

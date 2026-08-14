@@ -40,7 +40,7 @@ const PlaylistFirstItem = ({playlist, onDelete}: PlaylistFirstItemProps) => {
                 </span>
                 <ChevronRightIcon className="h-5 w-5 text-[#8e8e93] transition group-hover:translate-x-0.5"/>
             </Link>
-            <SaveButton articles={articles} className="mt-4 w-full !bg-white/80 !text-[#007aff] hover:!bg-white">
+            <SaveButton articles={articles} className="mt-4 w-full !text-white">
                 <ArrowDownTrayIcon className="h-4 w-4"/> Descarcă imaginile
             </SaveButton>
         </div>

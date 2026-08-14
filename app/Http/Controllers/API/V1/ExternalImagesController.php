@@ -9,13 +9,19 @@ use App\Models\Image;
 use App\Models\Tag;
 use App\Services\Images\ExternalImageService;
 use App\Services\Images\ImageStorage;
+use App\Services\Images\ImageThumbnailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 
 class ExternalImagesController extends Controller
 {
-    public function crop(Request $request, ExternalImageService $externalImages, ImageStorage $storage)
+    public function crop(
+        Request $request,
+        ExternalImageService $externalImages,
+        ImageStorage $storage,
+        ImageThumbnailService $thumbnails,
+    )
     {
         $validated = $request->validate([
             'data.url' => ['required', 'url:http,https', 'max:2048'],
@@ -32,6 +38,8 @@ class ExternalImagesController extends Controller
         $storage->disk()->put($filename, $contents);
 
         try {
+            $thumbnails->generateFromContents($filename, $contents);
+
             $image = DB::transaction(function () use ($data, $filename) {
                 $image = Image::create([
                     'url' => $filename,
@@ -45,6 +53,7 @@ class ExternalImagesController extends Controller
                 return $image;
             });
         } catch (\Throwable $exception) {
+            $thumbnails->delete($filename);
             $storage->disk()->delete($filename);
 
             throw $exception;

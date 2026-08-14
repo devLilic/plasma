@@ -17,14 +17,21 @@ class ImageResource extends JsonResource
     public function toArray(Request $request): array
     {
         $storage = app(ImageStorage::class);
+        $hasLocalFile = $storage->disk()->exists($this->url);
         $localUrl = route('images.file', ['path' => $this->url]);
+        $thumbnailUrl = route('images.thumbnail', ['path' => $this->url]);
         if ($this->updated_at) {
-            $localUrl .= '?v='.$this->updated_at->getTimestamp();
+            $version = '?v='.$this->updated_at->getTimestamp();
+            $localUrl .= $version;
+            $thumbnailUrl .= $version;
         }
+
+        $resolvedUrl = $hasLocalFile ? $localUrl : ($this->sourceUrl ?: $localUrl);
 
         return [
             'id' => $this->id,
-            'url' => $storage->disk()->exists($this->url) ? $localUrl : ($this->sourceUrl ?: $localUrl),
+            'url' => $resolvedUrl,
+            'thumbnailUrl' => $hasLocalFile ? $thumbnailUrl : $resolvedUrl,
             'sourceUrl' => $this->sourceUrl,
             'isNew' => (bool) $this->isNew,
             'lastUsedAt' => $this->last_used_at

@@ -8,7 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class ImageDeletionService
 {
-    public function __construct(private readonly ImageStorage $storage) {}
+    public function __construct(
+        private readonly ImageStorage $storage,
+        private readonly ImageThumbnailService $thumbnails,
+    ) {}
 
     public function delete(Image $image): void
     {
@@ -20,6 +23,7 @@ class ImageDeletionService
             $image->delete();
         });
 
+        $this->thumbnails->delete($path);
         $this->storage->disk()->delete($path);
     }
 }

@@ -37,16 +37,23 @@ const UploadPage = ({auth}: PageProps) => {
         <AuthenticatedLayout user={auth.user}>
             <Head title="Încarcă imagini"/>
             <div className="ios-page">
+                <header className="ios-page-header mx-auto max-w-4xl">
+                    <div>
+                        <p className="ios-eyebrow">Import rapid</p>
+                        <h1 className="ios-title">Adaugă imagini în bibliotecă.</h1>
+                        <p className="ios-subtitle">Selectează unul sau mai multe fișiere, iar Plasma le pregătește pentru căutare și reutilizare.</p>
+                    </div>
+                </header>
                 <div className="mx-auto grid max-w-4xl gap-5 md:grid-cols-[minmax(0,1fr)_280px]">
                     <section className="ios-card p-5 sm:p-8">
                         <UploadButton title={uploading ? 'Se încarcă…' : 'Alege imagini'} description="JPG, PNG sau WebP • poți selecta mai multe fișiere" accept="image/jpeg,image/png,image/webp" multiple handleChange={handleChange}/>
                         {error && <p className="mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
                         {selectedNames.length > 0 && (
-                            <div className="mt-5 divide-y divide-[#e5e5ea] overflow-hidden rounded-2xl bg-[#f2f2f7]">
+                            <div className="mt-5 divide-y divide-[#71809a]/10 overflow-hidden rounded-2xl bg-white/45 ring-1 ring-white/70">
                                 {selectedNames.map(name => (
                                     <div key={name} className="flex items-center gap-3 px-4 py-3">
                                         <CheckCircleIcon className="h-5 w-5 shrink-0 text-[#34c759]"/>
-                                        <span className="truncate text-sm font-medium text-[#1c1c1e]">{name}</span>
+                                        <span className="truncate text-sm font-medium text-[#172033]">{name}</span>
                                     </div>
                                 ))}
                             </div>
@@ -59,9 +66,9 @@ const UploadPage = ({auth}: PageProps) => {
                                 <PhotoIcon className="h-6 w-6"/>
                             </span>
                             <h2 className="ios-section-title">Biblioteca ta</h2>
-                            <p className="mt-2 text-sm leading-6 text-[#8e8e93]">După încărcare, imaginile apar imediat în căutarea după etichete.</p>
+                            <p className="mt-2 text-sm leading-6 text-[#65728a]">După încărcare, imaginile apar imediat în căutarea după etichete.</p>
                         </div>
-                        <Link href={route('images.index')} className="flex items-center justify-between border-t border-[#e5e5ea] px-5 py-4 text-sm font-semibold text-[#007aff] hover:bg-[#f2f2f7]">
+                        <Link href={route('images.index')} className="flex items-center justify-between border-t border-[#71809a]/10 px-5 py-4 text-sm font-semibold text-[#286ee7] hover:bg-white/40">
                             Vezi toate imaginile<ChevronRightIcon className="h-4 w-4"/>
                         </Link>
                     </aside>

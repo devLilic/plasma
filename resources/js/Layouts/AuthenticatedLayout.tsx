@@ -8,7 +8,8 @@ interface AuthenticatedPageProps extends PropsWithChildren {
 
 const Authenticated = ({user, children}: AuthenticatedPageProps) => {
     return (
-        <div className="min-h-screen bg-transparent">
+        <div className="plasma-shell">
+            <div className="plasma-ambient" aria-hidden="true"/>
             <MainNavigation user={user}/>
             <main>{children}</main>
         </div>

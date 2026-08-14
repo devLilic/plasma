@@ -16,6 +16,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
 export interface Playlist {
     id: number
     title: string
+    can_refresh_parsing?: boolean
 }
 
 export interface Article {
@@ -36,6 +37,7 @@ export interface Article {
 export interface Image {
     id: number
     url: string
+    thumbnailUrl: string
     sourceUrl: string | null
     isNew: boolean
     lastUsedAt: string | null

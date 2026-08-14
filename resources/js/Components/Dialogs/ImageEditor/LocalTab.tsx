@@ -23,7 +23,7 @@ const LocalTab = ({handleModal}: LocalTabProps) => {
     return (
         <div>
             <div className="relative mx-auto mb-5 max-w-md">
-                <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3 h-5 w-5 text-[#8e8e93]"/>
+                <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3 h-5 w-5 text-[#7c899d]"/>
                 <input className="ios-search" value={searchTag} onChange={event => setSearchTag(event.target.value)} placeholder="Caută după etichetă"/>
             </div>
             <div className="max-h-[430px] overflow-y-auto pr-1">

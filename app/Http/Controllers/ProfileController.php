@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\Images\ImageStorage;
+use App\Services\Playlists\PlaylistTitleExclusions;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -17,12 +18,16 @@ class ProfileController extends Controller
     /**
      * Display the user's profile form.
      */
-    public function edit(Request $request, ImageStorage $imageStorage): Response
-    {
+    public function edit(
+        Request $request,
+        ImageStorage $imageStorage,
+        PlaylistTitleExclusions $titleExclusions,
+    ): Response {
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
             'status' => session('status'),
             'imageStoragePath' => $imageStorage->root(),
+            'playlistTitleExclusions' => $titleExclusions->terms(),
         ]);
     }
 

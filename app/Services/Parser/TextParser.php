@@ -97,12 +97,12 @@ class TextParser implements ParserInterface
                 continue;
             }
 
-            $inlineTitle = trim($matches[1]);
+            $inlineTitle = $this->sanitizeTitle($matches[1]);
             if ($this->isUsableTitle($inlineTitle, $fallback)) {
                 return mb_strtoupper($inlineTitle);
             }
 
-            $nextParagraph = $paragraphs->get($index + 1, '');
+            $nextParagraph = $this->sanitizeTitle($paragraphs->get($index + 1, ''));
             if ($this->isUsableTitle($nextParagraph, $fallback)) {
                 return mb_strtoupper($nextParagraph);
             }
@@ -115,6 +115,8 @@ class TextParser implements ParserInterface
     private function extractImplicitTitleFrom(Collection $paragraphs, ?string $fallback): ?string
     {
         foreach ($paragraphs as $paragraph) {
+            $paragraph = $this->sanitizeTitle($paragraph);
+
             if ($this->isSectionMarker($paragraph)) {
                 return null;
             }
@@ -131,7 +133,7 @@ class TextParser implements ParserInterface
     {
         $value = trim($value);
         if ($value === ''
-            || preg_match('/^[.\-–—]+$/u', $value)
+            || preg_match('/^[\p{P}\p{S}\s]+$/u', $value)
             || preg_match('/^\d+(?:[.,:\/\-]\d+)*$/u', $value)
             || preg_match('/^(MD|RO)\s+/iu', $value)
             || $this->isSectionMarker($value)) {
@@ -143,6 +145,14 @@ class TextParser implements ParserInterface
         }
 
         return mb_strlen($value) <= 180;
+    }
+
+    private function sanitizeTitle(string $value): string
+    {
+        $value = trim($value);
+        $value = preg_replace('/\s*\?{2,}\s*$/u', '', $value);
+
+        return trim($value);
     }
 
     private function isSectionMarker(string $value): bool

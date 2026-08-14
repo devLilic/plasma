@@ -1,121 +1,33 @@
-import { useEffect, FormEventHandler } from 'react';
+import {FormEventHandler, useEffect} from 'react';
 import GuestLayout from '@/Layouts/GuestLayout';
-import { Head, Link, useForm } from '@inertiajs/react';
-import {Input, Typography, Button} from "@material-tailwind/react";
-import InputError from "@/Components/InputError";
+import {Head, Link, useForm} from '@inertiajs/react';
+import AuthField from '@/Components/Auth/AuthField';
 
-interface RegisterFormData{
-    name: string
-    email: string
-    password: string
-    password_confirmation: string
-}
+interface RegisterFormData { name: string; email: string; password: string; password_confirmation: string }
 
 const Register = () => {
-    const { data, setData, post, processing, errors, reset } = useForm<RegisterFormData>({
-        name: '',
-        email: '',
-        password: '',
-        password_confirmation: '',
-    });
-
-    useEffect(() => {
-        return () => {
-            reset('password', 'password_confirmation');
-        };
-    }, []);
-
-    const submit: FormEventHandler = (e) => {
-        e.preventDefault();
-
-        post(route('register'));
-    };
+    const {data, setData, post, processing, errors, reset} = useForm<RegisterFormData>({name: '', email: '', password: '', password_confirmation: ''});
+    useEffect(() => () => reset('password', 'password_confirmation'), []);
+    const submit: FormEventHandler = event => { event.preventDefault(); post(route('register')); };
 
     return (
         <GuestLayout>
-            <Head title="Register" />
-
-            <form onSubmit={submit}>
-                <div>
-                    <Input label="Name"
-                           crossOrigin={null}
-                           color={"indigo"}
-                           id="name"
-                           name="name"
-                           value={data.name}
-                           autoComplete="name"
-                           autoFocus={true}
-                           onChange={(e) => setData('name', e.target.value)}
-                           required
-                    />
-                    <InputError message={errors.name} />
-
-                </div>
-
-                <div className="mt-4">
-                    <Input label="Email"
-                           crossOrigin={null}
-                           color={"indigo"}
-                           id="email"
-                           type="email"
-                           name="email"
-                           value={data.email}
-                           onChange={(e) => setData('email', e.target.value)}
-                           required
-                    />
-                    <InputError message={errors.email} />
-
-                </div>
-
-                <div className="mt-4">
-                    <Input label="Password"
-                           crossOrigin={null}
-                           color={"indigo"}
-                           id="password"
-                           type="password"
-                           name="password"
-                           value={data.password}
-                           autoComplete="new-password"
-                           onChange={(e) => setData('password', e.target.value)}
-                           required
-                    />
-                    <InputError message={errors.password} />
-                </div>
-
-                <div className="mt-4">
-                    <Input label="Confirm Password"
-                           crossOrigin={null}
-                           color={"indigo"}
-                           id="password_confirmation"
-                           type="password"
-                           name="password_confirmation"
-                           value={data.password_confirmation}
-                           autoComplete="new-password"
-                           onChange={(e) => setData('password_confirmation', e.target.value)}
-                           required
-                    />
-                    <InputError message={errors.password_confirmation} />
-                </div>
-
-                <div className="flex items-center justify-end mt-4">
-                    <Link
-                        href={route('login')}
-                        className="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-                    >
-                        Already registered?
-                    </Link>
-
-                    <Button size={"sm"}
-                            placeholder={null}
-                            color={"blue"}
-                            disabled={processing}
-                            className="ml-4"
-                            type="submit"
-                    >Register</Button>
-                </div>
+            <Head title="Creează cont"/>
+            <div className="mb-7 text-center">
+                <p className="ios-eyebrow">Cont nou</p>
+                <h1 className="text-2xl font-bold tracking-[-0.04em] text-[#172033]">Creează-ți workspace-ul</h1>
+                <p className="mt-2 text-sm leading-6 text-[#65728a]">Organizează vizualurile și playlisturile într-un singur loc.</p>
+            </div>
+            <form onSubmit={submit} className="space-y-4">
+                <AuthField label="Nume" id="name" name="name" value={data.name} autoComplete="name" autoFocus required onChange={event => setData('name', event.target.value)} error={errors.name}/>
+                <AuthField label="Email" id="email" type="email" name="email" value={data.email} required onChange={event => setData('email', event.target.value)} error={errors.email}/>
+                <AuthField label="Parolă" id="password" type="password" name="password" value={data.password} autoComplete="new-password" required onChange={event => setData('password', event.target.value)} error={errors.password}/>
+                <AuthField label="Confirmă parola" id="password_confirmation" type="password" name="password_confirmation" value={data.password_confirmation} autoComplete="new-password" required onChange={event => setData('password_confirmation', event.target.value)} error={errors.password_confirmation}/>
+                <button type="submit" disabled={processing} className="ios-primary-button !mt-6 w-full">{processing ? 'Se creează…' : 'Creează contul'}</button>
+                <Link href={route('login')} className="block rounded-lg text-center text-sm font-semibold text-[#286ee7]">Ai deja cont? Autentifică-te</Link>
             </form>
         </GuestLayout>
     );
-}
+};
 
 export default Register;

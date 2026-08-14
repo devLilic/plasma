@@ -3,7 +3,7 @@ import {DialogFooter as DialogFooterMaterial, DialogFooterProps} from "@material
 
 const DialogFooter = forwardRef((props: DialogFooterProps, ref: ForwardedRef<HTMLDivElement>) =>
     <DialogFooterMaterial {...props}
-                    className={`!gap-2 !border-t !border-[#e5e5ea] !bg-[#f9f9fb] !px-5 !py-4 sm:!px-6 ${props.className ?? ''}`}
+                    className={`!shrink-0 !gap-2 !border-t !border-[#71809a]/10 !bg-white/25 !px-5 !py-4 sm:!px-6 ${props.className ?? ''}`}
                     placeholder={null}
                     ref={ref}/>)
 

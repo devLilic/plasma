@@ -4,6 +4,7 @@ import {Image} from '@/types';
 import {oldImagesApi} from '@/API/oldImages.api';
 import TagsList from '@/Components/LocalImages/TagsList';
 import ConfirmDialog from '@/Components/Dialogs/ConfirmDialog';
+import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
 const formatDate = (value: string | null) => value
     ? new Intl.DateTimeFormat('ro-RO', {day: '2-digit', month: 'short', year: 'numeric'}).format(new Date(value))
@@ -102,7 +103,7 @@ const OldImagesCleanup = () => {
                                 const selected = selectedIds.has(image.id);
                                 return (
                                     <button key={image.id} type="button" onClick={() => toggleImage(image.id)} aria-pressed={selected} className={`group relative overflow-hidden rounded-2xl bg-[#f2f2f7] text-left transition ${selected ? 'ring-2 ring-[#007aff]' : 'opacity-65 hover:opacity-100'}`}>
-                                        <img src={image.url} alt={image.tags.map(tag => tag.title).join(', ') || 'Imagine veche'} className="aspect-[4/3] w-full object-cover"/>
+                                        <ImageWithLoader src={image.thumbnailUrl} alt={image.tags.map(tag => tag.title).join(', ') || 'Imagine veche'} loading="lazy" decoding="async" containerClassName="aspect-[4/3] w-full" className="h-full w-full object-cover"/>
                                         <span className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${selected ? 'border-[#007aff] bg-[#007aff] text-white' : 'border-white bg-black/25 text-transparent'}`}><CheckCircleIcon className="h-4 w-4"/></span>
                                         <div className="space-y-2 p-3">
                                             <p className="text-xs font-medium text-[#6e6e73]">Ultima utilizare: {formatDate(image.lastUsedAt)}</p>

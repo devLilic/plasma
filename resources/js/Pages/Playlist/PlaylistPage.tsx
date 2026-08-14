@@ -1,6 +1,6 @@
 import React, {ChangeEvent, useEffect, useState} from 'react';
 import {Head, router, useForm} from '@inertiajs/react';
-import {ArrowDownTrayIcon, MagnifyingGlassIcon, PencilSquareIcon, PhotoIcon} from '@heroicons/react/24/outline';
+import {ArrowDownTrayIcon, MagnifyingGlassIcon, PhotoIcon} from '@heroicons/react/24/outline';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import UploadButton from '@/Components/UI/UploadButton/UploadButton';
 import ListOfPlaylists from '@/Components/Playlist/ListOfPlaylists';
@@ -12,6 +12,7 @@ import {selectAllImages} from '@/Store/image/image.slice';
 import SavedImageEditorDialog from '@/Components/Dialogs/SavedImageEditorDialog';
 import Pagination from '@/Components/UI/Pagination';
 import {imageFilename, saveImageAs} from '@/Utils/imageDownload';
+import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
 interface PlaylistPageProps extends PageProps {
     playlists?: Playlist[]
@@ -67,15 +68,22 @@ const PlaylistPage = ({auth, playlists, articles, images, filters}: PlaylistPage
         <AuthenticatedLayout user={auth.user}>
             <Head title="Playlisturi"/>
             <div className="ios-page">
+                <header className="ios-page-header">
+                    <div>
+                        <p className="ios-eyebrow">Workspace editorial</p>
+                        <h1 className="ios-title">Construiește fiecare jurnal în ritmul tău.</h1>
+                        <p className="ios-subtitle">Importă playlistul, caută vizualurile potrivite și continuă editarea fără să întrerupi fluxul.</p>
+                    </div>
+                </header>
                 <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_380px]">
                     <section className="ios-card overflow-hidden">
                         <div className="ios-card-header flex-col gap-4 sm:flex-row">
                             <div>
                                 <h2 className="ios-section-title">Biblioteca media</h2>
-                                <p className="mt-1 text-sm text-[#8e8e93]">Imagini recente și rezultate după etichete</p>
+                                <p className="mt-1 text-sm text-[#65728a]">Imagini recente și rezultate după etichete</p>
                             </div>
                             <div className="relative w-full sm:max-w-xs">
-                                <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3 h-5 w-5 text-[#8e8e93]"/>
+                                <MagnifyingGlassIcon className="pointer-events-none absolute left-3.5 top-3 h-5 w-5 text-[#7c899d]"/>
                                 <input className="ios-search" value={searchTag} onChange={event => setSearchTag(event.target.value)} placeholder="Caută după etichetă"/>
                             </div>
                         </div>
@@ -83,10 +91,9 @@ const PlaylistPage = ({auth, playlists, articles, images, filters}: PlaylistPage
                         {renderImages.length ? (
                             <div className="grid grid-cols-2 gap-3 p-4 sm:grid-cols-3 lg:grid-cols-4">
                                 {renderImages.map(image => (
-                                    <article className="group relative overflow-hidden rounded-2xl bg-[#f2f2f7]" key={image.id}>
-                                        <img src={image.url} alt={image.tags?.map(tag => tag.title).join(', ') || 'Imagine media'} className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"/>
-                                        <button type="button" className="ios-media-edit" onClick={() => setEditingImage(image)} aria-label="Editează imaginea">
-                                            <PencilSquareIcon className="h-4 w-4"/>
+                                    <article className="liquid-media-tile group relative overflow-hidden rounded-[20px]" key={image.id}>
+                                        <button type="button" className="block w-full cursor-pointer outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#2878ff]" onClick={() => setEditingImage(image)} aria-label="Editează imaginea">
+                                            <ImageWithLoader src={image.thumbnailUrl} alt={image.tags?.map(tag => tag.title).join(', ') || 'Imagine media'} loading="lazy" decoding="async" containerClassName="aspect-[4/3] w-full" className="h-full w-full object-cover"/>
                                         </button>
                                         <button type="button" className="ios-media-download group/download" onClick={() => saveImage(image)} aria-label="Descarcă imaginea">
                                             <ArrowDownTrayIcon className="h-4 w-4"/>
@@ -98,9 +105,9 @@ const PlaylistPage = ({auth, playlists, articles, images, filters}: PlaylistPage
                             </div>
                         ) : (
                             <div className="flex min-h-72 flex-col items-center justify-center px-6 text-center">
-                                <PhotoIcon className="mb-3 h-10 w-10 text-[#c7c7cc]"/>
-                                <p className="font-semibold text-[#1c1c1e]">Nu sunt imagini disponibile</p>
-                                <p className="mt-1 text-sm text-[#8e8e93]">Încarcă imagini sau încearcă o altă căutare.</p>
+                                <PhotoIcon className="mb-3 h-10 w-10 text-[#99a7bc]"/>
+                                <p className="font-semibold text-[#172033]">Nu sunt imagini disponibile</p>
+                                <p className="mt-1 text-sm text-[#65728a]">Încarcă imagini sau încearcă o altă căutare.</p>
                             </div>
                         )}
                         <Pagination pagination={images}/>
@@ -116,7 +123,7 @@ const PlaylistPage = ({auth, playlists, articles, images, filters}: PlaylistPage
                             <div className="ios-card-header">
                                 <div>
                                     <h2 className="ios-section-title">Activitate recentă</h2>
-                                    <p className="mt-1 text-xs text-[#8e8e93]">Ultimele playlisturi importate</p>
+                                    <p className="mt-1 text-xs text-[#65728a]">Ultimele playlisturi importate</p>
                                 </div>
                             </div>
                             <ListOfPlaylists playlists={playlists}/>

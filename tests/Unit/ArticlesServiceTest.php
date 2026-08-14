@@ -3,10 +3,13 @@
 namespace Tests\Unit;
 
 use App\Services\Articles\ArticlesService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
 class ArticlesServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_it_extracts_titles_from_the_supported_editorial_formats(): void
     {
         $html = file_get_contents(base_path('tests/titles/x3007TELEJURNAL_1300.HTM'));

@@ -8,6 +8,7 @@ use App\Models\Playlist;
 use App\Models\Tag;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Tests\TestCase;
 
 class PlaylistDeletionTest extends TestCase
@@ -16,8 +17,13 @@ class PlaylistDeletionTest extends TestCase
 
     public function test_deleting_a_playlist_removes_articles_but_preserves_images_and_tags(): void
     {
+        Storage::fake('local');
         $user = User::factory()->create();
-        $playlist = Playlist::create(['title' => 'Jurnal']);
+        Storage::disk('local')->put('playlist-sources/jurnal.htm', '<HTML></HTML>');
+        $playlist = Playlist::create([
+            'title' => 'Jurnal',
+            'source_htm_path' => 'playlist-sources/jurnal.htm',
+        ]);
         $image = Image::create(['url' => 'library/preserved.jpg']);
         $tag = Tag::create(['title' => 'energie']);
         $image->tags()->attach($tag);
@@ -39,5 +45,6 @@ class PlaylistDeletionTest extends TestCase
         $this->assertDatabaseHas('images', ['id' => $image->id, 'url' => 'library/preserved.jpg']);
         $this->assertDatabaseHas('tags', ['id' => $tag->id, 'title' => 'energie']);
         $this->assertDatabaseHas('image_tag', ['image_id' => $image->id, 'tag_id' => $tag->id]);
+        Storage::disk('local')->assertMissing('playlist-sources/jurnal.htm');
     }
 }

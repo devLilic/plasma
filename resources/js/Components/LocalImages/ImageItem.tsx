@@ -3,6 +3,7 @@ import TagsList from '@/Components/LocalImages/TagsList';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectImageById} from '@/Store/image/image.slice';
 import {useActions} from '@/Hooks/useActions';
+import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
 interface ImageItemProps {
     imageId: number
@@ -19,9 +20,9 @@ const ImageItem = ({imageId, handleDialog}: ImageItemProps) => {
     };
 
     return (
-        <button type="button" onClick={selectImage} className="group overflow-hidden rounded-2xl bg-[#f2f2f7] text-left ring-[#007aff] transition hover:ring-2 focus:outline-none focus:ring-2">
-            <img src={image.url} alt={image.tags?.map(tag => tag.title).join(', ') || 'Imagine'} className="aspect-[4/3] w-full object-cover transition duration-300 group-hover:scale-[1.03]"/>
-            {image.tags?.length > 0 && <div className="flex flex-wrap gap-1.5 p-2.5"><TagsList tags={image.tags}/></div>}
+        <button type="button" onClick={selectImage} className="liquid-media-tile group flex h-full flex-col items-stretch justify-start overflow-hidden rounded-[20px] text-left ring-[#2878ff] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
+            <ImageWithLoader src={image.thumbnailUrl} alt={image.tags?.map(tag => tag.title).join(', ') || 'Imagine'} loading="lazy" decoding="async" containerClassName="aspect-[4/3] w-full shrink-0" className="h-full w-full object-cover"/>
+            {image.tags?.length > 0 && <div className="flex min-w-0 flex-wrap content-start gap-1.5 p-2.5"><TagsList tags={image.tags}/></div>}
         </button>
     );
 };

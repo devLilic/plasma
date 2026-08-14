@@ -16,12 +16,12 @@ const UploadButton = ({
     multiple = false,
     handleChange,
 }: UploadButtonProps) => (
-    <label className="group flex w-full cursor-pointer flex-col items-center justify-center rounded-[18px] border border-dashed border-[#007aff]/35 bg-[#007aff]/[0.055] px-5 py-7 text-center transition hover:border-[#007aff] hover:bg-[#007aff]/10 focus-within:ring-4 focus-within:ring-[#007aff]/15">
-        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-[#007aff] text-white shadow-[0_7px_20px_rgba(0,122,255,0.22)] transition group-hover:-translate-y-0.5">
+    <label className="group flex w-full cursor-pointer flex-col items-center justify-center rounded-[22px] border border-dashed border-[#2878ff]/30 bg-white/35 px-5 py-8 text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.72)] transition hover:border-[#2878ff]/60 hover:bg-white/55 focus-within:ring-4 focus-within:ring-[#2878ff]/15">
+        <span className="mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-[#29b7e8] via-[#347cf4] to-[#7059ee] text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.45),0_9px_22px_rgba(53,104,224,0.24)] transition group-hover:-translate-y-1">
             <ArrowUpTrayIcon className="h-6 w-6" strokeWidth={2}/>
         </span>
-        <span className="text-sm font-semibold text-[#007aff]">{title}</span>
-        <span className="mt-1 text-xs leading-5 text-[#8e8e93]">{description}</span>
+        <span className="text-sm font-semibold text-[#286ee7]">{title}</span>
+        <span className="mt-1 text-xs leading-5 text-[#65728a]">{description}</span>
         <input type="file" className="sr-only" accept={accept} multiple={multiple} onChange={handleChange}/>
     </label>
 );

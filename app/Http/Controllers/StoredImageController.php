@@ -24,7 +24,10 @@ class StoredImageController extends Controller
         return $storage->disk()->response(
             $path,
             $downloadName ?: null,
-            [],
+            [
+                'Cache-Control' => 'private, max-age=31536000, immutable',
+                'X-Content-Type-Options' => 'nosniff',
+            ],
             $downloadName ? 'attachment' : 'inline',
         );
     }

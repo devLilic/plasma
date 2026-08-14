@@ -5,9 +5,11 @@ namespace App\Http\Controllers;
 use App\Http\Resources\ImageResource;
 use App\Models\Image;
 use App\Services\Images\ImageStorage;
+use App\Services\Images\ImageThumbnailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Throwable;
 
 class ImagesController extends Controller
 {
@@ -32,23 +34,32 @@ class ImagesController extends Controller
         return Inertia::render('Upload/UploadPage');
     }
 
-    public function store(Request $request, ImageStorage $storage)
+    public function store(Request $request, ImageStorage $storage, ImageThumbnailService $thumbnails)
     {
         $validated = $request->validate([
             'files' => ['required', 'array', 'min:1', 'max:20'],
             'files.*' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:10240'],
         ]);
 
-        $images = collect($validated['files'])->map(function ($file) use ($storage) {
+        $images = collect($validated['files'])->map(function ($file) use ($storage, $thumbnails) {
             $filename = Str::uuid().'.'.$file->guessExtension();
             $storage->disk()->putFileAs('', $file, $filename);
 
-            return Image::create([
-                'url' => $filename,
-                'sourceUrl' => null,
-                'isNew' => true,
-                'last_used_at' => now(),
-            ]);
+            try {
+                $thumbnails->generate($filename);
+
+                return Image::create([
+                    'url' => $filename,
+                    'sourceUrl' => null,
+                    'isNew' => true,
+                    'last_used_at' => now(),
+                ]);
+            } catch (Throwable $exception) {
+                $thumbnails->delete($filename);
+                $storage->disk()->delete($filename);
+
+                throw $exception;
+            }
         });
 
         return ImageResource::collection($images);

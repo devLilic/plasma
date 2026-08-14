@@ -33,8 +33,8 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
         <Dialog size="xl" open={isOpen} handler={handleDialog} className="!w-[calc(100%_-_1rem)]">
             <DialogHeader className="!flex !items-center !justify-between !gap-3">
                 <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-[0.12em] text-[#007aff]">Alege imaginea</p>
-                    <h2 className="mt-1 truncate text-base font-semibold tracking-[-0.02em] sm:text-lg">{article?.block_title || 'Material'}</h2>
+                    <p className="text-xs font-bold uppercase tracking-[0.14em] text-[#286ee7]">Alege imaginea</p>
+                    <h2 className="mt-1 truncate text-base font-bold tracking-[-0.025em] sm:text-lg">{article?.block_title || 'Material'}</h2>
                 </div>
                 <div className="flex shrink-0 items-center gap-2">
                     {article?.intro && (
@@ -44,22 +44,22 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                                     <InformationCircleIcon className="h-4 w-4"/><span className="hidden sm:inline">Intro</span>
                                 </button>
                             </PopoverHandler>
-                            <PopoverContent className="z-[10000] max-w-sm rounded-2xl border border-black/5 bg-white/95 p-4 text-sm leading-6 text-[#1c1c1e] shadow-xl backdrop-blur-xl">
+                            <PopoverContent className="z-[10000] max-w-sm rounded-[20px] border border-white/80 bg-white/75 p-4 text-sm leading-6 text-[#172033] shadow-[0_18px_50px_rgba(40,55,94,0.18)] backdrop-blur-2xl">
                                 {article.intro}
                             </PopoverContent>
                         </Popover>
                     )}
-                    <button type="button" onClick={handleDialog} className="flex h-9 w-9 items-center justify-center rounded-full bg-[#f2f2f7] text-[#8e8e93] hover:bg-[#e5e5ea]" aria-label="Închide">
+                    <button type="button" onClick={handleDialog} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/45 text-[#65728a] shadow-sm transition hover:bg-white/80 hover:text-[#172033]" aria-label="Închide">
                         <XMarkIcon className="h-4 w-4"/>
                     </button>
                 </div>
             </DialogHeader>
-            <DialogBody className="!min-h-[min(620px,calc(100vh-12rem))] !overflow-x-hidden !p-3 sm:!p-5">
+            <DialogBody className="!min-h-0 !overflow-x-hidden !p-3 sm:!p-5">
                 <Tabs value="external">
-                    <TabsHeader className="!mx-auto !mb-4 !max-w-xl !rounded-[14px] !bg-[#f2f2f7] !p-1"
-                                indicatorProps={{className: 'rounded-[10px] bg-white shadow-sm'}}>
+                    <TabsHeader className="!mx-auto !mb-5 !max-w-xl !rounded-[16px] !border !border-white/60 !bg-white/30 !p-1"
+                                indicatorProps={{className: 'rounded-[12px] bg-white/90 shadow-[0_5px_16px_rgba(54,73,115,0.1)] ring-1 ring-white'}}>
                         {tabs.map(item => (
-                            <Tab key={item.value} value={item.value} activeClassName="text-[#007aff]" className="!py-2">
+                            <Tab key={item.value} value={item.value} activeClassName="text-[#286ee7]" className="!py-2 text-[#65728a]">
                                 <span className="flex items-center justify-center gap-2 text-xs font-semibold sm:text-sm">
                                     <item.icon className="h-4 w-4"/>{item.label}
                                 </span>
@@ -74,7 +74,7 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                 </Tabs>
             </DialogBody>
             <DialogFooter className="!justify-end">
-                <button type="button" onClick={handleDialog} className="ios-secondary-button !bg-white">Închide</button>
+                <button type="button" onClick={handleDialog} className="ios-secondary-button">Închide</button>
             </DialogFooter>
         </Dialog>
     );

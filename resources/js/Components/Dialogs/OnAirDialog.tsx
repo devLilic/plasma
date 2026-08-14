@@ -3,6 +3,7 @@ import axios from 'axios';
 import {XMarkIcon} from '@heroicons/react/24/outline';
 import {Article} from '@/types';
 import {createPortal} from 'react-dom';
+import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
 interface ViewerTransform {brightness: number; zoom: number; panX: number; panY: number; flipX: boolean}
 interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; error: string | null}
@@ -67,36 +68,36 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     if (!isOpen || !article.image) return null;
     const imageStyle = {filter: `brightness(${transform.brightness}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
 
-    return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/55 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-label="Control onAIR">
-        <div className="max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[24px] bg-[#f2f2f7] shadow-2xl">
-            <header className="sticky top-0 z-10 flex items-center justify-between border-b border-black/5 bg-white/90 px-5 py-4 backdrop-blur-xl">
-                <div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#ff3b30]">onAIR</p><h2 className="text-lg font-semibold text-[#1c1c1e]">{article.title || article.subtitle}</h2></div>
-                <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full bg-[#e5e5ea]" onClick={onClose}><XMarkIcon className="h-5 w-5"/></button>
+    return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Control onAIR">
+        <div className="liquid-dialog max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[30px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
+            <header className="sticky top-0 z-10 flex items-center justify-between border-b border-[#71809a]/10 bg-white/35 px-5 py-4 backdrop-blur-2xl">
+                <div><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e13d37]">onAIR</p><h2 className="text-lg font-bold tracking-[-0.02em] text-[#172033]">{article.title || article.subtitle}</h2></div>
+                <button type="button" className="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/50 text-[#65728a] shadow-sm hover:bg-white/85" onClick={onClose}><XMarkIcon className="h-5 w-5"/></button>
             </header>
             <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <section>
-                    <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><img src={article.image.url} alt="Preview onAIR" className="h-full w-full object-cover" style={imageStyle}/></div>
-                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4">
-                        <div><p className="font-semibold text-[#1c1c1e]">{viewer?.visible ? 'Output activ' : 'Output ascuns'}</p><p className="text-xs text-[#8e8e93]">{viewer?.activeImage?.title ?? 'Nicio imagine în Viewer'}</p></div>
+                    <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><ImageWithLoader src={article.image.url} alt="Preview onAIR" containerClassName="h-full w-full" className="h-full w-full object-cover" style={imageStyle}/></div>
+                    <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-white/75 bg-white/45 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+                        <div><p className="font-semibold text-[#172033]">{viewer?.visible ? 'Output activ' : 'Output ascuns'}</p><p className="text-xs text-[#65728a]">{viewer?.activeImage?.title ?? 'Nicio imagine în Viewer'}</p></div>
                         <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => void command('hide')} className="ios-secondary-button">Ascunde</button><button type="button" disabled={busy} onClick={show} className="min-h-10 rounded-xl bg-[#ff3b30] px-5 font-semibold text-white disabled:opacity-50">{busy ? 'Se trimite…' : 'Afișează onAIR'}</button></div>
                     </div>
                     {error && <p className="mt-3 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm font-medium text-[#c9251c]">{error}</p>}
                 </section>
-                <aside className="space-y-4 rounded-2xl bg-white p-5">
-                    <h3 className="font-semibold text-[#1c1c1e]">Ajustări imagine</h3>
+                <aside className="space-y-4 rounded-[22px] border border-white/75 bg-white/45 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
+                    <h3 className="font-bold text-[#172033]">Ajustări imagine</h3>
                     <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setTransform(current => ({...current, brightness}))}/>
                     <Slider label="Zoom" value={transform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => ({...current, zoom}))}/>
                     <Slider label="Poziție X" value={transform.panX} min={-100} max={100} suffix="%" change={panX => setTransform(current => ({...current, panX}))}/>
                     <Slider label="Poziție Y" value={transform.panY} min={-100} max={100} suffix="%" change={panY => setTransform(current => ({...current, panY}))}/>
                     <label className="flex items-center justify-between text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setTransform(current => ({...current, flipX: event.target.checked}))}/></label>
                     <button type="button" className="ios-secondary-button w-full" onClick={() => void reset()}>Resetează ajustările</button>
-                    <p className="text-xs leading-5 text-[#8e8e93]">După prima trimitere, modificările sunt aplicate live pe fereastra output.</p>
+                    <p className="text-xs leading-5 text-[#65728a]">După prima trimitere, modificările sunt aplicate live pe fereastra output.</p>
                 </aside>
             </div>
         </div>
     </div>, document.body);
 };
 
-const Slider = ({label, value, min, max, step = 1, suffix, change}: {label: string; value: number; min: number; max: number; step?: number; suffix: string; change: (value: number) => void}) => <label className="block text-xs font-semibold text-[#636366]"><span className="mb-1.5 flex justify-between"><span>{label}</span><span>{step < 1 ? value.toFixed(2) : value}{suffix}</span></span><input className="w-full accent-[#007aff]" type="range" value={value} min={min} max={max} step={step} onChange={event => change(Number(event.target.value))}/></label>;
+const Slider = ({label, value, min, max, step = 1, suffix, change}: {label: string; value: number; min: number; max: number; step?: number; suffix: string; change: (value: number) => void}) => <label className="block text-xs font-semibold text-[#65728a]"><span className="mb-1.5 flex justify-between"><span>{label}</span><span>{step < 1 ? value.toFixed(2) : value}{suffix}</span></span><input className="w-full accent-[#2878ff]" type="range" value={value} min={min} max={max} step={step} onChange={event => change(Number(event.target.value))}/></label>;
 
 export default OnAirDialog;

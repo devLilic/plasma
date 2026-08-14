@@ -3,7 +3,7 @@ import {DialogBody as DialogBodyMaterial, DialogBodyProps} from "@material-tailw
 
 const DialogBody = forwardRef((props: DialogBodyProps, ref: ForwardedRef<HTMLDivElement>) =>
     <DialogBodyMaterial {...props}
-                    className={`!overflow-y-auto !px-5 !py-5 !text-[#1c1c1e] sm:!px-6 ${props.className ?? ''}`}
+                    className={`!min-h-0 !flex-1 !overflow-y-auto !overscroll-contain !px-5 !py-5 !text-[#172033] sm:!px-6 ${props.className ?? ''}`}
                     placeholder={null}
                     ref={ref}/>)
 

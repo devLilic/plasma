@@ -8,6 +8,7 @@ use App\Models\Playlist;
 use App\Models\Tag;
 use App\Models\User;
 use App\Services\Images\ExternalImageService;
+use App\Services\Images\ImageThumbnailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -27,6 +28,8 @@ class ImageManagementTest extends TestCase
     public function test_saved_image_tags_can_be_replaced(): void
     {
         $image = Image::create(['url' => 'library/example.jpg', 'sourceUrl' => 'https://example.com/original.jpg']);
+        $image->forceFill(['updated_at' => now()->subDay()])->saveQuietly();
+        $contentVersion = $image->fresh()->updated_at->getTimestamp();
         $oldTag = Tag::create(['title' => 'vechi']);
         $image->tags()->attach($oldTag);
 
@@ -39,6 +42,7 @@ class ImageManagementTest extends TestCase
         $this->assertDatabaseMissing('image_tag', ['image_id' => $image->id, 'tag_id' => $oldTag->id]);
         $this->assertDatabaseHas('tags', ['title' => 'energie']);
         $this->assertDatabaseHas('tags', ['title' => 'moldova']);
+        $this->assertSame($contentVersion, $image->fresh()->updated_at->getTimestamp());
     }
 
     public function test_deleting_image_unassigns_articles_and_removes_file(): void
@@ -47,6 +51,8 @@ class ImageManagementTest extends TestCase
         $tag = Tag::create(['title' => 'energie']);
         $image->tags()->attach($tag);
         Storage::disk('images')->put($image->url, 'image-bytes');
+        $thumbnailPath = app(ImageThumbnailService::class)->pathFor($image->url);
+        Storage::disk('images')->put($thumbnailPath, 'thumbnail-bytes');
         $playlist = Playlist::create(['title' => 'Jurnal']);
         $article = Article::create([
             'title' => 'Titlu',
@@ -66,6 +72,7 @@ class ImageManagementTest extends TestCase
         $this->assertDatabaseMissing('image_tag', ['image_id' => $image->id]);
         $this->assertNull($article->refresh()->image_id);
         Storage::disk('images')->assertMissing('library/example.jpg');
+        Storage::disk('images')->assertMissing($thumbnailPath);
     }
 
     public function test_recrop_request_does_not_change_existing_tags(): void
@@ -73,7 +80,7 @@ class ImageManagementTest extends TestCase
         $this->mock(ExternalImageService::class)
             ->shouldReceive('crop')
             ->once()
-            ->andReturn('new-image-bytes');
+            ->andReturn($this->jpeg());
 
         $image = Image::create(['url' => 'library/example.jpg', 'sourceUrl' => 'https://example.com/source.jpg']);
         $tag = Tag::create(['title' => 'existent']);
@@ -84,6 +91,7 @@ class ImageManagementTest extends TestCase
         ])->assertOk();
 
         $this->assertDatabaseHas('image_tag', ['image_id' => $image->id, 'tag_id' => $tag->id]);
+        $this->assertTrue(app(ImageThumbnailService::class)->isValid($image->url));
     }
 
     public function test_tag_suggestions_match_fragment(): void
@@ -104,7 +112,7 @@ class ImageManagementTest extends TestCase
         $this->mock(ExternalImageService::class)
             ->shouldReceive('crop')
             ->once()
-            ->andReturn('cropped-image-bytes');
+            ->andReturn($this->jpeg());
 
         $playlist = Playlist::create(['title' => 'Jurnal']);
         $article = Article::create([
@@ -129,5 +137,19 @@ class ImageManagementTest extends TestCase
         $this->assertGreaterThan(255, strlen($sourceUrl));
         $this->assertDatabaseHas('images', ['sourceUrl' => $sourceUrl]);
         $this->assertNotNull($article->refresh()->image_id);
+        $this->assertTrue(app(ImageThumbnailService::class)->isValid($article->image->url));
+    }
+
+    private function jpeg(int $width = 1200, int $height = 675): string
+    {
+        $image = imagecreatetruecolor($width, $height);
+        imagefill($image, 0, 0, imagecolorallocate($image, 36, 96, 180));
+
+        ob_start();
+        imagejpeg($image, null, 90);
+        $contents = (string) ob_get_clean();
+        imagedestroy($image);
+
+        return $contents;
     }
 }

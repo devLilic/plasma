@@ -10,7 +10,9 @@ class Playlist extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title'];
+    protected $fillable = ['title', 'source_htm_path'];
+
+    protected $hidden = ['source_htm_path'];
 
     public function articles(): HasMany
     {

@@ -9,10 +9,12 @@ use App\Models\Tag;
 use App\Services\Images\ExternalImageService;
 use App\Services\Images\ImageDeletionService;
 use App\Services\Images\ImageStorage;
+use App\Services\Images\ImageThumbnailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
+use RuntimeException;
 
 class ImagesController extends Controller
 {
@@ -39,7 +41,13 @@ class ImagesController extends Controller
         return ImageResource::collection($images);
     }
 
-    public function update(Request $request, Image $image, ExternalImageService $externalImages, ImageStorage $storage)
+    public function update(
+        Request $request,
+        Image $image,
+        ExternalImageService $externalImages,
+        ImageStorage $storage,
+        ImageThumbnailService $thumbnails,
+    )
     {
         $validated = $request->validate([
             'data.tags' => ['sometimes', 'nullable', 'string', 'max:500'],
@@ -73,11 +81,22 @@ class ImagesController extends Controller
                     ->values();
                 $image->tags()->sync($tagIds);
             }
-            $image->touch();
         });
 
         if ($newContents !== null) {
-            $storage->disk()->put($image->url, $newContents);
+            try {
+                $thumbnails->generateFromContents($image->url, $newContents);
+
+                if (! $storage->disk()->put($image->url, $newContents)) {
+                    throw new RuntimeException('Imaginea recropată nu poate fi salvată.');
+                }
+
+                $image->touch();
+            } catch (\Throwable $exception) {
+                $thumbnails->delete($image->url);
+
+                throw $exception;
+            }
         }
 
         return ImageResource::make($image->fresh()->load('tags'));

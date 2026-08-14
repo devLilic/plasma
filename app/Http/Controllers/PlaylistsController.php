@@ -9,12 +9,15 @@ use App\Models\Article;
 use App\Models\Image;
 use App\Models\Playlist;
 use App\Services\Images\ImageMatcher;
+use App\Services\Playlists\PlaylistSourceStorage;
 use Facades\App\Services\Articles\ArticlesService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Throwable;
 
 class PlaylistsController extends Controller
 {
@@ -57,8 +60,11 @@ class PlaylistsController extends Controller
     /**
      * Store a newly created resource in storage.
      */
-    public function store(FileUploadRequest $request, ImageMatcher $imageMatcher)
-    {
+    public function store(
+        FileUploadRequest $request,
+        ImageMatcher $imageMatcher,
+        PlaylistSourceStorage $sourceStorage,
+    ) {
         $file = $request->validated('file');
 
         $latest_playlists = Playlist::latest()->take(2)->get();
@@ -73,33 +79,133 @@ class PlaylistsController extends Controller
 
         $content = $request->validated('file')->getContent();
         $articles = ArticlesService::generate($content);
+        $sourcePath = $sourceStorage->store($file, $content);
 
-        $playlist = DB::transaction(function () use ($file, $articles, $previous_articles, $imageMatcher) {
-            $playlist = Playlist::create([
-                'title' => today()->format('d m Y').' '.Str::of($file->getClientOriginalName())->before('.HTM')->toString(),
-            ]);
-            $playlist_order = 1;
-            foreach ($articles as $article) {
-                $image = $this->findImage($previous_articles, $article->search_slug, $article->title, $imageMatcher);
-                Article::create([
-                    'title' => $article->title,
-                    'subtitle' => $article->search_slug,
-                    'slugs' => Arr::join($article->slugs, '||'),
-                    'intro' => $article->content,
-                    'article_type' => $article->type,
-                    'playlist_id' => $playlist->id,
-                    'playlist_order' => $playlist_order++,
-                    'image_id' => $image ?: null,
+        try {
+            $playlist = DB::transaction(function () use ($file, $articles, $previous_articles, $imageMatcher, $sourcePath) {
+                $playlist = Playlist::create([
+                    'title' => today()->format('d m Y').' '.Str::of($file->getClientOriginalName())->before('.HTM')->toString(),
+                    'source_htm_path' => $sourcePath,
                 ]);
-                if ($image) {
-                    Image::whereKey($image)->update(['last_used_at' => now()]);
-                }
-            }
+                $this->synchronizeArticles($playlist, $articles, $previous_articles, $imageMatcher);
 
-            return $playlist;
-        });
+                return $playlist;
+            });
+        } catch (Throwable $exception) {
+            $sourceStorage->deletePath($sourcePath);
+
+            throw $exception;
+        }
+
+        $sourceStorage->prune();
 
         return redirect()->to('/playlists/'.$playlist->id);
+    }
+
+    public function refreshParsing(
+        Playlist $playlist,
+        ImageMatcher $imageMatcher,
+        PlaylistSourceStorage $sourceStorage,
+    ) {
+        if (! $sourceStorage->exists($playlist)) {
+            return back()->withErrors([
+                'playlist' => 'Fișierul HTM sursă nu mai este disponibil pentru acest playlist.',
+            ]);
+        }
+
+        $articles = ArticlesService::generate($sourceStorage->contents($playlist));
+        $existingArticles = $playlist->articles()->get();
+
+        DB::transaction(function () use ($playlist, $articles, $existingArticles, $imageMatcher) {
+            $this->synchronizeArticles(
+                $playlist,
+                $articles,
+                $existingArticles,
+                $imageMatcher,
+                removeMissing: true,
+            );
+        });
+
+        return redirect()->route('playlists.show', $playlist)->with('status', 'playlist-parsing-refreshed');
+    }
+
+    /**
+     * @param  array<int, \App\Services\Articles\Article>  $parsedArticles
+     * @param  Collection<int, Article>  $imageCandidates
+     */
+    private function synchronizeArticles(
+        Playlist $playlist,
+        array $parsedArticles,
+        Collection $imageCandidates,
+        ImageMatcher $imageMatcher,
+        bool $removeMissing = false,
+    ): void {
+        $availableArticles = $playlist->articles()->get()->keyBy('id');
+        $reservedArticleIds = collect($parsedArticles)
+            ->map(fn ($parsedArticle) => $availableArticles
+                ->first(fn (Article $article) => $article->subtitle === $parsedArticle->search_slug)?->id)
+            ->filter()
+            ->unique();
+        $retainedIds = [];
+
+        foreach ($parsedArticles as $order => $parsedArticle) {
+            $article = $this->matchingArticle(
+                $availableArticles,
+                $parsedArticle->search_slug,
+                $parsedArticle->slugs,
+                $reservedArticleIds,
+            );
+            $imageId = $article?->image_id
+                ?: $this->findImage($imageCandidates, $parsedArticle->search_slug, $parsedArticle->title, $imageMatcher);
+            $attributes = [
+                'title' => $parsedArticle->title,
+                'subtitle' => $parsedArticle->search_slug,
+                'slugs' => Arr::join($parsedArticle->slugs, '||'),
+                'intro' => $parsedArticle->content,
+                'article_type' => $parsedArticle->type,
+                'playlist_order' => $order + 1,
+                'image_id' => $imageId ?: null,
+            ];
+
+            if ($article) {
+                $article->update($attributes);
+                $availableArticles->forget($article->id);
+            } else {
+                $article = $playlist->articles()->create($attributes);
+            }
+
+            $retainedIds[] = $article->id;
+            if ($imageId) {
+                Image::whereKey($imageId)->update(['last_used_at' => now()]);
+            }
+        }
+
+        if ($removeMissing) {
+            $playlist->articles()->whereNotIn('id', $retainedIds)->delete();
+        }
+    }
+
+    /** @param  array<int, string>  $slugs */
+    private function matchingArticle(
+        Collection $articles,
+        string $subtitle,
+        array $slugs,
+        Collection $reservedArticleIds,
+    ): ?Article {
+        $exactMatch = $articles->first(fn (Article $article) => $article->subtitle === $subtitle);
+        if ($exactMatch) {
+            return $exactMatch;
+        }
+
+        return $articles->first(function (Article $article) use ($slugs, $reservedArticleIds) {
+            if ($reservedArticleIds->contains($article->id)) {
+                return false;
+            }
+
+            $storedSlugs = explode('||', (string) $article->slugs);
+
+            return count(array_intersect($storedSlugs, $slugs)) > 0;
+        });
     }
 
     private function findImage($previous_articles, string $slug, string $title, ImageMatcher $imageMatcher)
@@ -127,7 +233,7 @@ class PlaylistsController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(string $id)
+    public function show(string $id, PlaylistSourceStorage $sourceStorage)
     {
         $playlist = Playlist::find($id);
         if (! $playlist) {
@@ -135,6 +241,11 @@ class PlaylistsController extends Controller
         }
 
         return Inertia::render('Playlist/PlaylistShowPage', [
+            'playlist' => [
+                'id' => $playlist->id,
+                'title' => $playlist->title,
+                'can_refresh_parsing' => $sourceStorage->exists($playlist),
+            ],
             'articles' => ArticleResource::collection(Article::where('playlist_id', $id)->with('image.tags')->orderBy('playlist_order')->get()),
         ]);
     }
@@ -142,9 +253,10 @@ class PlaylistsController extends Controller
     /**
      * Remove a playlist and its articles while preserving the media library.
      */
-    public function destroy(Playlist $playlist)
+    public function destroy(Playlist $playlist, PlaylistSourceStorage $sourceStorage)
     {
         $playlist->delete();
+        $sourceStorage->delete($playlist);
 
         return redirect()->route('playlists.index');
     }
