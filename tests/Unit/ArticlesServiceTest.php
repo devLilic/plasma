@@ -45,4 +45,21 @@ class ArticlesServiceTest extends TestCase
             $articles['RIO FURTUNA VIOLENTA']->title
         );
     }
+
+    public function test_it_preserves_technical_titles_and_assigns_multiple_supported_types(): void
+    {
+        $html = file_get_contents(base_path('tests/titles/x3007TELEJURNAL_1300.HTM'));
+        $articles = collect((new ArticlesService)->generate($html))->keyBy('search_slug');
+
+        $this->assertSame('MD INCENDIU', $articles['INCENDIU']->technical_title);
+        $this->assertSame(['OFF'], $articles['INCENDIU']->types);
+        $this->assertSame(['LIVE', 'BETA'], $articles['LIVE DECLARATII BUCURESTI']->types);
+        $this->assertSame(['FAKE'], $articles['FAKE VIZITA TOFAN ROMANIA']->types);
+        $this->assertSame(['HEADER', 'BETA'], $articles['HEADLINES']->types);
+
+        $secondHtml = file_get_contents(base_path('tests/titles/x1108 TELEJURNAL  1900.HTM'));
+        $secondPlaylist = collect((new ArticlesService)->generate($secondHtml))->keyBy('search_slug');
+        $this->assertSame(['METEO', 'BETA'], $secondPlaylist['METEO']->types);
+        $this->assertSame(['CURS', 'BETA'], $secondPlaylist['CURS VALUTAR']->types);
+    }
 }

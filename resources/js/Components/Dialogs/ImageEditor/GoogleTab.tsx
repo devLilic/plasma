@@ -33,6 +33,7 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
         if (!selected.url) return;
         try {
             await dispatch(cropExternalImageThunk({url: selected.url, section: percentCrop, tags, article_id: articleId})).unwrap();
+            resetCrop();
             handleModal();
         } catch {
             // Error state is displayed below the URL field.

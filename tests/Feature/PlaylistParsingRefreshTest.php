@@ -40,6 +40,50 @@ class PlaylistParsingRefreshTest extends TestCase
                 ->where('playlist.can_refresh_parsing', true));
     }
 
+    public function test_import_persists_and_exposes_the_complete_structured_article(): void
+    {
+        $playlist = $this->importPlaylist('jurnal.HTM', 'MATERIAL');
+        $article = $playlist->articles()->firstOrFail();
+
+        $this->assertSame('MD MATERIAL', $article->technical_title);
+        $this->assertSame(['BETA'], $article->article_types);
+        $this->assertSame(['INTRO', 'BETA'], array_column($article->content_sections, 'type'));
+        $this->assertSame(['Introducerea materialului.'], $article->content_sections[0]['paragraphs']);
+        $this->assertSame(['MD MATERIAL', 'TITLU: TITLU EDITORIAL MATERIAL'], $article->content_sections[1]['paragraphs']);
+
+        $this->get(route('playlists.show', $playlist))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('articles.0.technical_title', 'MD MATERIAL')
+                ->where('articles.0.article_types', ['BETA'])
+                ->where('articles.0.content_sections.1.type', 'BETA'));
+    }
+
+    public function test_legacy_articles_receive_resource_fallbacks_without_backfill(): void
+    {
+        $playlist = Playlist::create(['title' => 'Playlist vechi']);
+        $playlist->articles()->create([
+            'title' => 'Titlu vechi',
+            'subtitle' => 'SLUG VECHI',
+            'intro' => 'Intro vechi',
+            'article_type' => 'OFF',
+            'playlist_order' => 1,
+        ]);
+
+        $this->get(route('playlists.show', $playlist))
+            ->assertInertia(fn (Assert $page) => $page
+                ->where('articles.0.technical_title', 'SLUG VECHI')
+                ->where('articles.0.article_types', ['OFF'])
+                ->where('articles.0.content_sections.0.type', 'INTRO')
+                ->where('articles.0.content_sections.0.paragraphs', ['Intro vechi']));
+
+        $this->assertDatabaseHas('articles', [
+            'playlist_id' => $playlist->id,
+            'technical_title' => null,
+            'article_types' => null,
+            'content_sections' => null,
+        ]);
+    }
+
     public function test_refresh_reparses_articles_while_preserving_existing_images(): void
     {
         $playlist = $this->importPlaylist('jurnal.HTM', 'MATERIAL');

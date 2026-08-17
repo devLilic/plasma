@@ -69,6 +69,28 @@ class TextParserTest extends TestCase
         );
     }
 
+    public function test_it_extracts_every_section_with_its_ordered_paragraphs(): void
+    {
+        $parser = (new TextParser)->parse($this->document([
+            'MD MATERIAL-INTRO' => ['Introducere unu.', 'Introducere doi.'],
+            'MD MATERIAL-OFF' => ['Text OFF.'],
+            'MD MATERIAL-SNC' => ['Sincron unu.', 'Sincron doi.'],
+            'MD MATERIAL-AMB OFF' => ['Ambianță.'],
+        ]));
+
+        $sections = $parser->get_sections_for([
+            'MD MATERIAL-INTRO',
+            'MD MATERIAL-OFF',
+            'MD MATERIAL-SNC',
+            'MD MATERIAL-AMB OFF',
+        ]);
+
+        $this->assertSame(['INTRO', 'OFF', 'SNC', 'AMB OFF'], array_column($sections, 'type'));
+        $this->assertSame(['Introducere unu.', 'Introducere doi.'], $sections[0]['paragraphs']);
+        $this->assertSame(['Sincron unu.', 'Sincron doi.'], $sections[2]['paragraphs']);
+        $this->assertSame("Introducere unu.\n\nIntroducere doi.", $parser->get_content_for(['MD MATERIAL-INTRO']));
+    }
+
     private function document(array $sections): string
     {
         return collect($sections)->map(function ($paragraphs, $slug) {

@@ -19,14 +19,25 @@ export interface Playlist {
     can_refresh_parsing?: boolean
 }
 
+export type ArticleType = "BETA" | "OFF" | "TEASE" | "METEO" | "CURS" | "LIVE" | "FAKE" | "HEADER"
+
+export interface ArticleSection {
+    slug: string
+    type: string
+    paragraphs: string[]
+}
+
 export interface Article {
     id: number
     block_title: string
     title: string
     subtitle: string
+    technical_title: string
     slugs: string
     intro: string
-    article_type: "BETA" | "OFF" | "LIVE"
+    content_sections: ArticleSection[]
+    article_type: ArticleType
+    article_types: ArticleType[]
     playlist_id: number
     playlist_order: number
     image: Image | null

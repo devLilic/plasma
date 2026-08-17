@@ -13,6 +13,8 @@ class ExternalImageService
 
     private const MAX_REDIRECTS = 3;
 
+    private const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
+
     public function crop(string $url, array $section): string
     {
         $contents = $this->download($url);
@@ -64,6 +66,7 @@ class ExternalImageService
             $this->assertPublicUrl($currentUrl);
             $response = Http::connectTimeout(5)
                 ->timeout(12)
+                ->withHeaders($this->downloadHeaders($currentUrl))
                 ->withOptions(['allow_redirects' => false, 'stream' => true])
                 ->get($currentUrl);
 
@@ -100,6 +103,21 @@ class ExternalImageService
         }
 
         throw ValidationException::withMessages(['data.url' => 'Imaginea externă nu poate fi descărcată.']);
+    }
+
+    /** @return array<string, string> */
+    private function downloadHeaders(string $url): array
+    {
+        $parts = parse_url($url);
+        $scheme = strtolower((string) ($parts['scheme'] ?? 'https'));
+        $host = (string) ($parts['host'] ?? '');
+        $port = isset($parts['port']) ? ':'.$parts['port'] : '';
+
+        return [
+            'User-Agent' => self::BROWSER_USER_AGENT,
+            'Accept' => 'image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8',
+            'Referer' => $scheme.'://'.$host.$port.'/',
+        ];
     }
 
     private function assertPublicUrl(string $url): void

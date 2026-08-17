@@ -204,6 +204,24 @@
         @apply mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between;
     }
 
+    .playlist-workspace-grid {
+        display: grid;
+        min-width: 0;
+        gap: 1.25rem;
+    }
+
+    @media (min-width: 960px) {
+        .playlist-workspace-grid {
+            grid-template-columns: 320px minmax(0, 1fr);
+        }
+    }
+
+    @media (min-width: 1140px) {
+        .playlist-workspace-grid {
+            grid-template-columns: 350px minmax(0, 1fr);
+        }
+    }
+
     .ios-eyebrow {
         @apply mb-1.5 text-[11px] font-bold uppercase tracking-[0.18em] text-[#2878ff];
     }

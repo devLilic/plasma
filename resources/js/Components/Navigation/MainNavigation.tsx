@@ -27,7 +27,7 @@ const MainNavigation = ({user}: MainNavigationProps) => {
     return (
         <>
             <nav className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
-                <div className="glass-nav mx-auto flex h-[68px] max-w-[1400px] items-center justify-between rounded-[24px] px-3 sm:px-4 lg:px-5">
+                <div className="glass-nav mx-auto flex h-[68px] w-full items-center justify-between rounded-[24px] px-3 sm:px-4 lg:px-5">
                     <div className="flex items-center gap-8">
                         <Link href={route('playlists.index')} className="flex items-center gap-3 rounded-2xl" aria-label="Plasma">
                             <ApplicationLogo className="h-10 w-10"/>

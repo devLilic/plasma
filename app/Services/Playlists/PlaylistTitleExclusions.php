@@ -11,15 +11,9 @@ class PlaylistTitleExclusions
     public const DEFAULT_TERMS = [
         'GENERIC  IN',
         'GENERIC IN',
-        'HEADLINES-INTRO',
-        'HEADLINES-BETA',
         'DUPLEX',
         'PA-INTRO',
         'GENERIC OUT',
-        'TEASE',
-        'LIVE',
-        'METEO',
-        'CURS VALUTAR',
         'EXTRO',
     ];
 

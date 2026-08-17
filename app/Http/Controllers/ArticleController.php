@@ -29,7 +29,10 @@ class ArticleController extends Controller
             $playlist->articles()->create([
                 'title' => $validated['title'],
                 'subtitle' => $validated['title'],
+                'technical_title' => $validated['title'],
                 'article_type' => $validated['articleType'],
+                'article_types' => [$validated['articleType']],
+                'content_sections' => [],
                 'playlist_order' => $validated['position'],
             ]);
 
