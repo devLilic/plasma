@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Article;
+use App\Services\Images\ImageStorage;
 use App\Services\PlasmaViewer\PlasmaViewerClient;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -25,6 +26,7 @@ class PlasmaViewerController extends Controller
             'article_id' => ['required_if:type,show', 'integer', 'exists:articles,id'],
             'transform' => ['required_if:type,show,transform', 'array'],
             'transform.brightness' => ['required_with:transform', 'numeric', 'between:0,200'],
+            'transform.contrast' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.zoom' => ['required_with:transform', 'numeric', 'between:1,4'],
             'transform.panX' => ['required_with:transform', 'numeric', 'between:-100,100'],
             'transform.panY' => ['required_with:transform', 'numeric', 'between:-100,100'],
@@ -33,6 +35,11 @@ class PlasmaViewerController extends Controller
             'window.displayId' => ['sometimes', 'nullable', 'string', 'max:64'],
             'window.fullscreen' => ['sometimes', 'boolean'],
             'window.topmost' => ['sometimes', 'boolean'],
+            'window.bounds' => ['sometimes', 'nullable', 'array'],
+            'window.bounds.x' => ['required_with:window.bounds', 'integer'],
+            'window.bounds.y' => ['required_with:window.bounds', 'integer'],
+            'window.bounds.width' => ['required_with:window.bounds', 'integer', 'min:320'],
+            'window.bounds.height' => ['required_with:window.bounds', 'integer', 'min:180'],
         ]);
 
         $payload = match ($data['type']) {
@@ -56,6 +63,10 @@ class PlasmaViewerController extends Controller
     private function showPayload(Article $article, array $transform): array
     {
         abort_unless($article->image, 422, 'Articolul nu are o imagine asociată.');
+        $storage = app(ImageStorage::class)->disk();
+        $localSource = $storage->exists($article->image->url)
+            ? $storage->path($article->image->url)
+            : null;
 
         return [
             'image' => [
@@ -66,6 +77,7 @@ class PlasmaViewerController extends Controller
                     'article' => $article->id,
                     'image' => $article->image->id,
                 ]),
+                'source' => $localSource,
             ],
             'transform' => $transform,
         ];

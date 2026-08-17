@@ -5,9 +5,9 @@ import {Article} from '@/types';
 import {createPortal} from 'react-dom';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
-interface ViewerTransform {brightness: number; zoom: number; panX: number; panY: number; flipX: boolean}
+interface ViewerTransform {brightness: number; contrast: number; zoom: number; panX: number; panY: number; flipX: boolean}
 interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; error: string | null}
-const defaults: ViewerTransform = {brightness: 100, zoom: 1, panX: 0, panY: 0, flipX: false};
+const defaults: ViewerTransform = {brightness: 100, contrast: 100, zoom: 1, panX: 0, panY: 0, flipX: false};
 
 const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: boolean; onClose: () => void}) => {
     const [transform, setTransform] = useState(defaults);
@@ -66,7 +66,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     };
 
     if (!isOpen || !article.image) return null;
-    const imageStyle = {filter: `brightness(${transform.brightness}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
+    const imageStyle = {filter: `brightness(${transform.brightness}%) contrast(${transform.contrast}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
 
     return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Control onAIR">
         <div className="liquid-dialog max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[30px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
@@ -86,6 +86,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
                 <aside className="space-y-4 rounded-[22px] border border-white/75 bg-white/45 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
                     <h3 className="font-bold text-[#172033]">Ajustări imagine</h3>
                     <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setTransform(current => ({...current, brightness}))}/>
+                    <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setTransform(current => ({...current, contrast}))}/>
                     <Slider label="Zoom" value={transform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => ({...current, zoom}))}/>
                     <Slider label="Poziție X" value={transform.panX} min={-100} max={100} suffix="%" change={panX => setTransform(current => ({...current, panX}))}/>
                     <Slider label="Poziție Y" value={transform.panY} min={-100} max={100} suffix="%" change={panY => setTransform(current => ({...current, panY}))}/>

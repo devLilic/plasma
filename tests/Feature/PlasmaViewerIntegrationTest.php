@@ -7,6 +7,7 @@ use App\Models\Image;
 use App\Models\Playlist;
 use App\Models\User;
 use App\Services\PlasmaViewer\PlasmaViewerLauncher;
+use App\Services\Images\ImageStorage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
@@ -59,7 +60,7 @@ class PlasmaViewerIntegrationTest extends TestCase
     public function test_show_command_is_built_server_side_with_signed_media_url(): void
     {
         Storage::fake('images');
-        $image = Image::create(['url' => 'library/on-air.jpg']);
+        $image = Image::create(['url' => 'library/on-air.jpg', 'sourceUrl' => 'https://source.example/on-air.jpg']);
         Storage::disk('images')->put($image->url, 'image-bytes');
         $article = Article::create([
             'title' => 'Titlu jurnal', 'subtitle' => 'Slug', 'article_type' => 'BETA',
@@ -69,7 +70,7 @@ class PlasmaViewerIntegrationTest extends TestCase
 
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'show', 'article_id' => $article->id,
-            'transform' => ['brightness' => 90, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
+            'transform' => ['brightness' => 90, 'contrast' => 110, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
             'url' => 'https://attacker.example/image.jpg',
             'executable' => 'C:\\attacker.exe',
         ])->assertOk();
@@ -81,6 +82,7 @@ class PlasmaViewerIntegrationTest extends TestCase
                 && $command['type'] === 'show'
                 && $command['payload']['image']['articleId'] === $article->id
                 && $command['payload']['image']['imageId'] === $image->id
+                && $command['payload']['image']['source'] === app(ImageStorage::class)->disk()->path($image->url)
                 && str_contains($url, '/viewer/media/')
                 && ! str_contains($url, 'attacker.example');
         });
@@ -111,7 +113,7 @@ class PlasmaViewerIntegrationTest extends TestCase
         $this->postJson(route('viewer.command'), ['type' => 'hide'])->assertUnauthorized();
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'transform',
-            'transform' => ['brightness' => 300, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
+            'transform' => ['brightness' => 300, 'contrast' => 300, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
         ])->assertUnprocessable();
     }
 
@@ -119,7 +121,7 @@ class PlasmaViewerIntegrationTest extends TestCase
     {
         return [
             'visible' => false, 'activeImage' => null,
-            'transform' => ['brightness' => 100, 'zoom' => 1, 'panX' => 0, 'panY' => 0, 'flipX' => false],
+            'transform' => ['brightness' => 100, 'contrast' => 100, 'zoom' => 1, 'panX' => 0, 'panY' => 0, 'flipX' => false],
             'window' => ['displayId' => null, 'fullscreen' => true, 'topmost' => false],
             'displays' => [], 'lastCommandId' => null, 'error' => null,
         ];
