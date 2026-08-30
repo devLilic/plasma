@@ -1,13 +1,13 @@
-import {useEffect, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import axios from 'axios';
 import {XMarkIcon} from '@heroicons/react/24/outline';
 import {Article} from '@/types';
 import {createPortal} from 'react-dom';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 
-interface ViewerTransform {brightness: number; zoom: number; panX: number; panY: number; flipX: boolean}
-interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; error: string | null}
-const defaults: ViewerTransform = {brightness: 100, zoom: 1, panX: 0, panY: 0, flipX: false};
+interface ViewerTransform {brightness: number; contrast: number; saturation: number; zoom: number; panX: number; panY: number; flipX: boolean}
+interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; transformDefaults?: ViewerTransform; error: string | null}
+const defaults: ViewerTransform = {brightness: 100, contrast: 100, saturation: 100, zoom: 1, panX: 0, panY: 0, flipX: false};
 
 const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: boolean; onClose: () => void}) => {
     const [transform, setTransform] = useState(defaults);
@@ -15,11 +15,13 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const initialized = useRef(false);
 
     const loadState = async () => {
         try {
             const {data} = await axios.get<ViewerState>(route('viewer.state'));
             setViewer(data);
+            if (!initialized.current) { setTransform(viewerDefaults(data)); initialized.current = true; }
             setError(null);
         } catch (reason: any) {
             setError(reason.response?.data?.error ?? 'PlasmaViewer nu este disponibil.');
@@ -29,7 +31,8 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     useEffect(() => {
         if (!isOpen) return;
         setSent(false);
-        setTransform({...defaults});
+        initialized.current = false;
+        setTransform(viewer ? viewerDefaults(viewer) : {...defaults});
         void loadState();
         const timer = window.setInterval(loadState, 2000);
         return () => window.clearInterval(timer);
@@ -66,7 +69,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     };
 
     if (!isOpen || !article.image) return null;
-    const imageStyle = {filter: `brightness(${transform.brightness}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
+    const imageStyle = {filter: `brightness(${transform.brightness}%) contrast(${transform.contrast}%) saturate(${transform.saturation}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
 
     return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Control onAIR">
         <div className="liquid-dialog max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[30px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
@@ -86,6 +89,8 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
                 <aside className="space-y-4 rounded-[22px] border border-white/75 bg-white/45 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)]">
                     <h3 className="font-bold text-[#172033]">Ajustări imagine</h3>
                     <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setTransform(current => ({...current, brightness}))}/>
+                    <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setTransform(current => ({...current, contrast}))}/>
+                    <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setTransform(current => ({...current, saturation}))}/>
                     <Slider label="Zoom" value={transform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => ({...current, zoom}))}/>
                     <Slider label="Poziție X" value={transform.panX} min={-100} max={100} suffix="%" change={panX => setTransform(current => ({...current, panX}))}/>
                     <Slider label="Poziție Y" value={transform.panY} min={-100} max={100} suffix="%" change={panY => setTransform(current => ({...current, panY}))}/>
@@ -101,3 +106,12 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
 const Slider = ({label, value, min, max, step = 1, suffix, change}: {label: string; value: number; min: number; max: number; step?: number; suffix: string; change: (value: number) => void}) => <label className="block text-xs font-semibold text-[#65728a]"><span className="mb-1.5 flex justify-between"><span>{label}</span><span>{step < 1 ? value.toFixed(2) : value}{suffix}</span></span><input className="w-full accent-[#2878ff]" type="range" value={value} min={min} max={max} step={step} onChange={event => change(Number(event.target.value))}/></label>;
 
 export default OnAirDialog;
+
+function viewerDefaults(viewer: ViewerState): ViewerTransform {
+    const source = viewer.transformDefaults;
+    return {...defaults, brightness: clamp(source?.brightness), contrast: clamp(source?.contrast), saturation: clamp(source?.saturation)};
+}
+
+function clamp(value: unknown): number {
+    return typeof value === 'number' && Number.isFinite(value) ? Math.min(200, Math.max(0, value)) : 100;
+}

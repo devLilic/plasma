@@ -69,7 +69,7 @@ class PlasmaViewerIntegrationTest extends TestCase
 
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'show', 'article_id' => $article->id,
-            'transform' => ['brightness' => 90, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
+            'transform' => ['brightness' => 90, 'contrast' => 80, 'saturation' => 120, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
             'url' => 'https://attacker.example/image.jpg',
             'executable' => 'C:\\attacker.exe',
         ])->assertOk();
@@ -79,6 +79,8 @@ class PlasmaViewerIntegrationTest extends TestCase
             $url = $command['payload']['image']['url'];
             return $command['version'] === 1
                 && $command['type'] === 'show'
+                && $command['payload']['transform']['contrast'] === 80
+                && $command['payload']['transform']['saturation'] === 120
                 && $command['payload']['image']['articleId'] === $article->id
                 && $command['payload']['image']['imageId'] === $image->id
                 && str_contains($url, '/viewer/media/')
@@ -111,7 +113,7 @@ class PlasmaViewerIntegrationTest extends TestCase
         $this->postJson(route('viewer.command'), ['type' => 'hide'])->assertUnauthorized();
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'transform',
-            'transform' => ['brightness' => 300, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
+            'transform' => ['brightness' => 300, 'contrast' => 100, 'saturation' => 100, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
         ])->assertUnprocessable();
     }
 

@@ -25,6 +25,8 @@ class PlasmaViewerController extends Controller
             'article_id' => ['required_if:type,show', 'integer', 'exists:articles,id'],
             'transform' => ['required_if:type,show,transform', 'array'],
             'transform.brightness' => ['required_with:transform', 'numeric', 'between:0,200'],
+            'transform.contrast' => ['required_with:transform', 'numeric', 'between:0,200'],
+            'transform.saturation' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.zoom' => ['required_with:transform', 'numeric', 'between:1,4'],
             'transform.panX' => ['required_with:transform', 'numeric', 'between:-100,100'],
             'transform.panY' => ['required_with:transform', 'numeric', 'between:-100,100'],
