@@ -1,4 +1,4 @@
-import {useEffect, useRef, useState} from 'react';
+import {useEffect, useLayoutEffect, useRef, useState} from 'react';
 import axios from 'axios';
 import {XMarkIcon} from '@heroicons/react/24/outline';
 import {Article} from '@/types';
@@ -16,6 +16,18 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const initialized = useRef(false);
+    const previewRef = useRef<HTMLDivElement>(null);
+    const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
+
+    useLayoutEffect(() => {
+        const preview = previewRef.current;
+        if (!preview) return;
+        const syncSize = () => setPreviewSize({width: preview.clientWidth, height: preview.clientHeight});
+        syncSize();
+        const observer = new ResizeObserver(syncSize);
+        observer.observe(preview);
+        return () => observer.disconnect();
+    }, [isOpen]);
 
     const loadState = async () => {
         try {
@@ -71,7 +83,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     if (!isOpen || !article.image) return null;
     const normalizedTransform = normalizeTransform(transform);
     const maxPan = maxPanForZoom(normalizedTransform.zoom);
-    const imageStyle = {filter: `brightness(${normalizedTransform.brightness}%) contrast(${normalizedTransform.contrast}%) saturate(${normalizedTransform.saturation}%)`, transform: `translate(${normalizedTransform.panX}%, ${normalizedTransform.panY}%) scale(${normalizedTransform.zoom}) scaleX(${normalizedTransform.flipX ? -1 : 1})`};
+    const imageStyle = {filter: `brightness(${normalizedTransform.brightness}%) contrast(${normalizedTransform.contrast}%) saturate(${normalizedTransform.saturation}%)`, transform: `translate(${previewSize.width * normalizedTransform.panX / 100}px, ${previewSize.height * normalizedTransform.panY / 100}px) scale(${normalizedTransform.zoom}) scaleX(${normalizedTransform.flipX ? -1 : 1})`};
 
     return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Control onAIR">
         <div className="liquid-dialog max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[30px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
@@ -81,7 +93,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
             </header>
             <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <section>
-                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><ImageWithLoader src={article.image.url} alt="Preview onAIR" containerClassName="h-full w-full" className="absolute inset-0 block h-full w-full origin-center object-cover" style={imageStyle}/></div>
+                    <div ref={previewRef} className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><ImageWithLoader src={article.image.url} alt="Preview onAIR" containerClassName="h-full w-full" className="absolute inset-0 block h-full w-full origin-center object-cover" style={imageStyle}/></div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-white/75 bg-white/45 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                         <div><p className="font-semibold text-[#172033]">{viewer?.visible ? 'Output activ' : 'Output ascuns'}</p><p className="text-xs text-[#65728a]">{viewer?.activeImage?.title ?? 'Nicio imagine în Viewer'}</p></div>
                         <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => void command('hide')} className="ios-secondary-button">Ascunde</button><button type="button" disabled={busy} onClick={show} className="min-h-10 rounded-xl bg-[#ff3b30] px-5 font-semibold text-white disabled:opacity-50">{busy ? 'Se trimite…' : 'Afișează onAIR'}</button></div>
