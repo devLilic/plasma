@@ -1,4 +1,4 @@
-import React, {ChangeEvent, useState} from 'react';
+import React, {ChangeEvent, useMemo, useState} from 'react';
 import {CheckIcon} from '@heroicons/react/24/solid';
 import ArticleHeader from '@/Components/Articles/ArticleHeader';
 import ArticleFooter from '@/Components/Articles/ArticleFooter';
@@ -16,6 +16,7 @@ interface ArticleItemProps {
 
 const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
     const article = useTypedSelector(state => selectArticleById(state, articleId));
+    const onAirArticles = useMemo(() => [article], [article]);
     const [isOnAirOpen, setIsOnAirOpen] = useState(false);
     const {changeSearchBy, changeTitle, changeSubtitle, saveArticleContent} = useActions();
     const persistContent = () => saveArticleContent({id: article.id, title: article.title, subtitle: article.subtitle});
@@ -46,7 +47,7 @@ const ArticleItem = ({articleId, openDialog, confirm}: ArticleItemProps) => {
                 </div>
             )}
             <ArticleFooter articleId={article.id} openDialog={openDialog} openOnAir={() => setIsOnAirOpen(true)}/>
-            <OnAirDialog article={article} isOpen={isOnAirOpen} onClose={() => setIsOnAirOpen(false)}/>
+            <OnAirDialog articles={onAirArticles} startArticleId={article.id} isOpen={isOnAirOpen} onClose={() => setIsOnAirOpen(false)}/>
         </article>
     );
 };

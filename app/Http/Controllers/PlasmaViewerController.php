@@ -21,7 +21,7 @@ class PlasmaViewerController extends Controller
     public function command(Request $request, PlasmaViewerClient $client): JsonResponse
     {
         $data = $request->validate([
-            'type' => ['required', 'in:show,transform,hide,window,reset-transform'],
+            'type' => ['required', 'in:show,transform,hide,disconnect-outputs,window,reset-transform'],
             'article_id' => ['required_if:type,show', 'integer', 'exists:articles,id'],
             'transform' => ['required_if:type,show,transform', 'array'],
             'transform.brightness' => ['required_with:transform', 'numeric', 'between:0,200'],

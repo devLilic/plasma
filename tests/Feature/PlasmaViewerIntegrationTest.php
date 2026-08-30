@@ -117,6 +117,17 @@ class PlasmaViewerIntegrationTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_authenticated_operator_can_disconnect_both_output_windows(): void
+    {
+        Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('viewer.command'), ['type' => 'disconnect-outputs'])
+            ->assertOk();
+
+        Http::assertSent(fn (Request $request) => $request->data()['type'] === 'disconnect-outputs');
+    }
+
     public function test_transform_pan_is_clamped_to_the_available_zoom_coverage(): void
     {
         Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);

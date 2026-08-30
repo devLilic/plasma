@@ -210,6 +210,44 @@
         gap: 1.25rem;
     }
 
+    @media (max-width: 799px) {
+        .playlist-editor-summary,
+        .playlist-mobile-detail {
+            display: none !important;
+        }
+
+        .playlist-editor-page {
+            padding: 0.75rem 0.75rem 0;
+        }
+
+        .playlist-mobile-workspace {
+            height: calc(100dvh - 92px);
+            gap: 0;
+        }
+
+        .playlist-sidebar {
+            height: 100%;
+            border-bottom-right-radius: 0;
+            border-bottom-left-radius: 0;
+        }
+
+        .playlist-sidebar-list {
+            height: calc(100% - 58px);
+            max-height: none !important;
+            padding-bottom: 6rem;
+        }
+    }
+
+    @media (min-width: 800px) {
+        .desktop-main-navigation {
+            display: flex !important;
+        }
+
+        .mobile-main-navigation {
+            display: none !important;
+        }
+    }
+
     @media (min-width: 960px) {
         .playlist-workspace-grid {
             grid-template-columns: 320px minmax(0, 1fr);

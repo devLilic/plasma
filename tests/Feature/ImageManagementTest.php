@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Images\ExternalImageService;
 use App\Services\Images\ImageThumbnailService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
@@ -105,6 +106,20 @@ class ImageManagementTest extends TestCase
             ->assertJsonCount(2)
             ->assertJsonFragment(['title' => 'energie'])
             ->assertJsonMissing(['title' => 'politica']);
+    }
+
+    public function test_local_image_upload_saves_the_original_and_thumbnail(): void
+    {
+        $response = $this->post('/api/v1/files', [
+            'files' => [UploadedFile::fake()->image('dubai.jpg', 1600, 1067)],
+        ]);
+
+        $response->assertOk()
+            ->assertJsonCount(1);
+
+        $image = Image::query()->sole();
+        Storage::disk('images')->assertExists($image->url);
+        Storage::disk('images')->assertExists(app(ImageThumbnailService::class)->pathFor($image->url));
     }
 
     public function test_external_image_with_a_long_source_url_can_be_saved(): void

@@ -9,12 +9,14 @@ import {useActions} from '@/Hooks/useActions';
 import SaveButton from '@/Components/SaveButton';
 import PlaylistArticleSidebar from '@/Components/Articles/PlaylistArticleSidebar';
 import ArticleWorkspace from '@/Components/Articles/ArticleWorkspace';
+import OnAirDialog from '@/Components/Dialogs/OnAirDialog';
 
 const ArticlesList = () => {
     const [isNewArticleDialogOpen, setIsNewArticleDialogOpen] = useState(false);
     const [isImageDialogOpen, setIsImageDialogOpen] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
-    const [activeTab, setActiveTab] = useState<'text' | 'image'>('text');
+    const [activeTab, setActiveTab] = useState<'text' | 'image'>('image');
+    const [onAirStartId, setOnAirStartId] = useState<number | null>(null);
     const {deleteArticle, unmarkForDelete, markForDelete, setCurrent, changeNewArticlePosition} = useActions();
     const articleToDelete = useTypedSelector(state => state.articles.delete_id);
     const currentId = useTypedSelector(state => state.articles.current);
@@ -28,8 +30,9 @@ const ArticlesList = () => {
 
     const selectArticle = (id: number) => {
         setCurrent({id});
-        setActiveTab('text');
+        setActiveTab('image');
     };
+    const openOnAir = (id: number) => setOnAirStartId(id);
     const openNewArticle = (position: number) => {
         changeNewArticlePosition(position);
         setIsNewArticleDialogOpen(true);
@@ -50,7 +53,7 @@ const ArticlesList = () => {
 
     return (
         <div>
-            <div className="ios-card mb-5 flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="playlist-editor-summary ios-card mb-5 flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
                 <div>
                     <h2 className="text-lg font-bold tracking-[-0.02em] text-[#172033]">Editor playlist</h2>
                     <p className="mt-0.5 text-sm text-[#65728a]">{articles.length} materiale • {completed} cu imagine • {articles.length - completed} de completat</p>
@@ -64,11 +67,14 @@ const ArticlesList = () => {
             </div>
 
             {articles.length ? (
-                <div className="playlist-workspace-grid">
-                    <PlaylistArticleSidebar articles={articles} currentId={currentArticle?.id ?? 0} onSelect={selectArticle} onAddAfter={article => openNewArticle(article.playlist_order + 1)}/>
+                <div className="playlist-mobile-workspace playlist-workspace-grid">
+                    <PlaylistArticleSidebar articles={articles} currentId={currentArticle?.id ?? 0} onSelect={selectArticle}
+                                            onOpenOnAir={openOnAir} onAddAfter={article => openNewArticle(article.playlist_order + 1)}/>
                     {currentArticle && (
-                        <ArticleWorkspace article={currentArticle} activeTab={activeTab} onTabChange={setActiveTab}
-                                          onOpenImageModal={() => setIsImageDialogOpen(true)} onDelete={requestDelete}/>
+                        <div className="playlist-mobile-detail min-w-0">
+                            <ArticleWorkspace article={currentArticle} activeTab={activeTab} onTabChange={setActiveTab}
+                                              onOpenImageModal={() => setIsImageDialogOpen(true)} onOpenOnAir={() => openOnAir(currentArticle.id)} onDelete={requestDelete}/>
+                        </div>
                     )}
                 </div>
             ) : (
@@ -82,6 +88,7 @@ const ArticlesList = () => {
             <NewArticleDialog isOpen={isNewArticleDialogOpen} handleDialog={() => setIsNewArticleDialogOpen(open => !open)}/>
             <ImageEditorDialog isOpen={isImageDialogOpen} handleDialog={() => setIsImageDialogOpen(open => !open)}/>
             <ConfirmDialog isOpen={isConfirmDialogOpen} handleDialog={() => setIsConfirmDialogOpen(open => !open)} confirmAction={confirmDelete} cancelAction={cancelDelete}/>
+            <OnAirDialog articles={articles} startArticleId={onAirStartId} isOpen={onAirStartId !== null} onClose={() => setOnAirStartId(null)}/>
         </div>
     );
 };

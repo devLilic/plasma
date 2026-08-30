@@ -43,7 +43,12 @@ class ImagesController extends Controller
 
         $images = collect($validated['files'])->map(function ($file) use ($storage, $thumbnails) {
             $filename = Str::uuid().'.'.$file->guessExtension();
-            $storage->disk()->putFileAs('', $file, $filename);
+            // On Windows, PHP uploads may have a usable pathname while getRealPath()
+            // returns an empty value. FilesystemAdapter::putFileAs() relies on
+            // getRealPath(), so store the validated upload contents directly instead.
+            if (! $storage->disk()->put($filename, $file->getContent())) {
+                throw new \RuntimeException('Imaginea încărcată nu a putut fi salvată.');
+            }
 
             try {
                 $thumbnails->generate($filename);
