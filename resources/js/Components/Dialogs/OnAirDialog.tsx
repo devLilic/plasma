@@ -60,7 +60,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     };
 
     const show = async () => {
-        if (await command('show', {article_id: article.id, transform})) setSent(true);
+        if (await command('show', {article_id: article.id, transform: normalizeTransform(transform)})) setSent(true);
     };
 
     const reset = async () => {
@@ -69,7 +69,9 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
     };
 
     if (!isOpen || !article.image) return null;
-    const imageStyle = {filter: `brightness(${transform.brightness}%) contrast(${transform.contrast}%) saturate(${transform.saturation}%)`, transform: `translate(${transform.panX}%, ${transform.panY}%) scale(${transform.zoom}) scaleX(${transform.flipX ? -1 : 1})`};
+    const normalizedTransform = normalizeTransform(transform);
+    const maxPan = maxPanForZoom(normalizedTransform.zoom);
+    const imageStyle = {filter: `brightness(${normalizedTransform.brightness}%) contrast(${normalizedTransform.contrast}%) saturate(${normalizedTransform.saturation}%)`, transform: `translate(${normalizedTransform.panX}%, ${normalizedTransform.panY}%) scale(${normalizedTransform.zoom}) scaleX(${normalizedTransform.flipX ? -1 : 1})`};
 
     return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-4 backdrop-blur-md" role="dialog" aria-modal="true" aria-label="Control onAIR">
         <div className="liquid-dialog max-h-[94vh] w-full max-w-5xl overflow-auto rounded-[30px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
@@ -91,9 +93,9 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
                     <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setTransform(current => ({...current, brightness}))}/>
                     <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setTransform(current => ({...current, contrast}))}/>
                     <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setTransform(current => ({...current, saturation}))}/>
-                    <Slider label="Zoom" value={transform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => ({...current, zoom}))}/>
-                    <Slider label="Poziție X" value={transform.panX} min={-100} max={100} suffix="%" change={panX => setTransform(current => ({...current, panX}))}/>
-                    <Slider label="Poziție Y" value={transform.panY} min={-100} max={100} suffix="%" change={panY => setTransform(current => ({...current, panY}))}/>
+                    <Slider label="Zoom" value={normalizedTransform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => normalizeTransform({...current, zoom}))}/>
+                    <Slider label="Poziție X" value={normalizedTransform.panX} min={-maxPan} max={maxPan} suffix="%" change={panX => setTransform(current => normalizeTransform({...current, panX}))}/>
+                    <Slider label="Poziție Y" value={normalizedTransform.panY} min={-maxPan} max={maxPan} suffix="%" change={panY => setTransform(current => normalizeTransform({...current, panY}))}/>
                     <label className="flex items-center justify-between text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setTransform(current => ({...current, flipX: event.target.checked}))}/></label>
                     <button type="button" className="ios-secondary-button w-full" onClick={() => void reset()}>Resetează ajustările</button>
                     <p className="text-xs leading-5 text-[#65728a]">După prima trimitere, modificările sunt aplicate live pe fereastra output.</p>
@@ -114,4 +116,14 @@ function viewerDefaults(viewer: ViewerState): ViewerTransform {
 
 function clamp(value: unknown): number {
     return typeof value === 'number' && Number.isFinite(value) ? Math.min(200, Math.max(0, value)) : 100;
+}
+
+function maxPanForZoom(zoom: number): number {
+    return Math.max(0, (Math.min(4, Math.max(1, zoom)) - 1) * 50);
+}
+
+function normalizeTransform(transform: ViewerTransform): ViewerTransform {
+    const zoom = Math.min(4, Math.max(1, transform.zoom));
+    const maxPan = maxPanForZoom(zoom);
+    return {...transform, zoom, panX: Math.min(maxPan, Math.max(-maxPan, transform.panX)), panY: Math.min(maxPan, Math.max(-maxPan, transform.panY))};
 }

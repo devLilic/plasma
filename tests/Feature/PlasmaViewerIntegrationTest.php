@@ -117,6 +117,18 @@ class PlasmaViewerIntegrationTest extends TestCase
         ])->assertUnprocessable();
     }
 
+    public function test_transform_pan_is_clamped_to_the_available_zoom_coverage(): void
+    {
+        Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);
+
+        $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
+            'type' => 'transform',
+            'transform' => ['brightness' => 100, 'contrast' => 100, 'saturation' => 100, 'zoom' => 1.5, 'panX' => 80, 'panY' => -80, 'flipX' => false],
+        ])->assertOk();
+
+        Http::assertSent(fn (Request $request) => $request->data()['payload']['panX'] === 25.0 && $request->data()['payload']['panY'] === -25.0);
+    }
+
     private function viewerState(): array
     {
         return [

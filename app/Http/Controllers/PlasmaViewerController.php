@@ -37,6 +37,12 @@ class PlasmaViewerController extends Controller
             'window.topmost' => ['sometimes', 'boolean'],
         ]);
 
+        if (isset($data['transform'])) {
+            $maxPan = max(0, ($data['transform']['zoom'] - 1) * 50);
+            $data['transform']['panX'] = min($maxPan, max(-$maxPan, $data['transform']['panX']));
+            $data['transform']['panY'] = min($maxPan, max(-$maxPan, $data['transform']['panY']));
+        }
+
         $payload = match ($data['type']) {
             'show' => $this->showPayload(Article::with('image')->findOrFail($data['article_id']), $data['transform']),
             'transform' => $data['transform'],
