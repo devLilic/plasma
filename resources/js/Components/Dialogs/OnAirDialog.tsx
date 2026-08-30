@@ -81,7 +81,7 @@ const OnAirDialog = ({article, isOpen, onClose}: {article: Article; isOpen: bool
             </header>
             <div className="grid gap-5 p-5 lg:grid-cols-[minmax(0,1fr)_320px]">
                 <section>
-                    <div className="aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><ImageWithLoader src={article.image.url} alt="Preview onAIR" containerClassName="h-full w-full" className="h-full w-full object-cover" style={imageStyle}/></div>
+                    <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-inner"><ImageWithLoader src={article.image.url} alt="Preview onAIR" containerClassName="h-full w-full" className="absolute inset-0 block h-full w-full origin-center object-cover" style={imageStyle}/></div>
                     <div className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-[20px] border border-white/75 bg-white/45 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
                         <div><p className="font-semibold text-[#172033]">{viewer?.visible ? 'Output activ' : 'Output ascuns'}</p><p className="text-xs text-[#65728a]">{viewer?.activeImage?.title ?? 'Nicio imagine în Viewer'}</p></div>
                         <div className="flex gap-2"><button type="button" disabled={busy} onClick={() => void command('hide')} className="ios-secondary-button">Ascunde</button><button type="button" disabled={busy} onClick={show} className="min-h-10 rounded-xl bg-[#ff3b30] px-5 font-semibold text-white disabled:opacity-50">{busy ? 'Se trimite…' : 'Afișează onAIR'}</button></div>
