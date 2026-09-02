@@ -85,6 +85,7 @@ export const articlesSlice = createSlice({
             .addCase(addNewArticle.fulfilled, articlesAdapter.setAll)
             .addCase(deleteArticle.fulfilled, articlesAdapter.removeOne)
             .addCase(saveArticleContent.fulfilled, articlesAdapter.upsertOne)
+            .addCase(updateTextHighlight.fulfilled, articlesAdapter.upsertOne)
 })
 
 
@@ -148,6 +149,17 @@ export const saveArticleContent = createAsyncThunk(
     async (query: {id: number, title: string, subtitle: string}, {rejectWithValue}) => {
         try {
             return await articlesApi.updateContent(query.id, query.title, query.subtitle)
+        } catch (error) {
+            return rejectWithValue(error)
+        }
+    }
+)
+
+export const updateTextHighlight = createAsyncThunk(
+    'articles/updateTextHighlight',
+    async (query: {articleId: number, sectionIndex: number, paragraphIndex: number, html: string}, {rejectWithValue}) => {
+        try {
+            return await articlesApi.updateTextHighlight(query.articleId, query.sectionIndex, query.paragraphIndex, query.html)
         } catch (error) {
             return rejectWithValue(error)
         }

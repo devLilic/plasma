@@ -5,6 +5,7 @@ import ArticleTypeBadge from '@/Components/Articles/ArticleTypeBadge';
 import ImageEditorContent from '@/Components/Dialogs/ImageEditor/ImageEditorContent';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 import {useActions} from '@/Hooks/useActions';
+import ArticleTextContent from '@/Components/Articles/ArticleTextContent';
 
 interface ArticleWorkspaceProps {
     article: Article
@@ -60,27 +61,7 @@ const ArticleWorkspace = ({article, activeTab, onTabChange, onOpenImageModal, on
 
             <div className="min-h-[520px] p-4 sm:p-6">
                 {activeTab === 'text' ? (
-                    <div className="mx-auto max-w-4xl space-y-4">
-                        {article.content_sections.length ? article.content_sections.map((section, index) => (
-                            <article key={`${section.slug}-${index}`} className="rounded-[20px] border border-white/75 bg-white/48 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,.85)] sm:p-5">
-                                <div className="mb-3 flex flex-wrap items-center justify-between gap-2 border-b border-[#71809a]/10 pb-3">
-                                    <span className="rounded-lg bg-[#172033]/[0.06] px-2.5 py-1 text-[10px] font-extrabold tracking-[0.1em] text-[#526078]">{section.type}</span>
-                                    {section.slug && <span className="max-w-full truncate text-[10px] font-medium text-[#9aa8bc]">{section.slug}</span>}
-                                </div>
-                                {section.paragraphs.length ? (
-                                    <div className="space-y-3 text-[15px] leading-7 text-[#2c3443]">
-                                        {section.paragraphs.map((paragraph, paragraphIndex) => <p key={paragraphIndex} className="whitespace-pre-wrap">{paragraph}</p>)}
-                                    </div>
-                                ) : <p className="text-sm italic text-[#9aa8bc]">Secțiune fără text.</p>}
-                            </article>
-                        )) : (
-                            <div className="flex min-h-[380px] flex-col items-center justify-center rounded-[22px] border border-dashed border-[#9aa8bc]/35 bg-white/25 px-6 text-center">
-                                <DocumentTextIcon className="mb-3 h-10 w-10 text-[#9aa8bc]"/>
-                                <p className="font-semibold text-[#172033]">Nu există text structurat</p>
-                                <p className="mt-1 max-w-md text-sm leading-6 text-[#65728a]">Acest material provine dintr-un playlist vechi sau a fost adăugat manual.</p>
-                            </div>
-                        )}
-                    </div>
+                    <ArticleTextContent article={article}/>
                 ) : (
                     <div className="space-y-5">
                         {article.image ? (

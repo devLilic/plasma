@@ -1,9 +1,10 @@
 import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import axios from 'axios';
-import {PhotoIcon, XMarkIcon} from '@heroicons/react/24/outline';
+import {DocumentTextIcon, PhotoIcon, SignalIcon, XMarkIcon} from '@heroicons/react/24/outline';
 import {Article} from '@/types';
 import {createPortal} from 'react-dom';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
+import ArticleTextContent from '@/Components/Articles/ArticleTextContent';
 
 interface ViewerTransform {brightness: number; contrast: number; saturation: number; zoom: number; panX: number; panY: number; flipX: boolean}
 interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; transformDefaults?: ViewerTransform; error: string | null}
@@ -24,6 +25,7 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [activeTab, setActiveTab] = useState<'onair' | 'text'>('onair');
     const previewRef = useRef<HTMLDivElement>(null);
     const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
     const currentIndex = orderedArticles.findIndex(article => article.id === cursorId);
@@ -50,6 +52,7 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
         setCursorId(startArticleId);
         setSent(false);
         setError(null);
+        setActiveTab('onair');
 
         const loadInitialState = async () => {
             try {
@@ -122,6 +125,7 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
         setSent(false);
         setTransform(viewer ? viewerDefaults(viewer) : {...defaults});
         setError(null);
+        setActiveTab('onair');
     };
 
     if (!isOpen || !article) return null;
@@ -140,7 +144,19 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                     <button type="button" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/50 text-[#65728a] shadow-sm hover:bg-white/85" onClick={onClose}><XMarkIcon className="h-5 w-5"/></button>
                 </div>
             </header>
-            <div className={`grid gap-3 p-3 sm:p-4 ${article.image ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : ''}`}>
+            <div className="border-b border-[#71809a]/10 px-3 pt-3 sm:px-4">
+                <div className="inline-flex rounded-xl bg-white/40 p-1" role="tablist" aria-label="Conținut modal onAIR">
+                    <button type="button" role="tab" aria-selected={activeTab === 'onair'} onClick={() => setActiveTab('onair')}
+                            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${activeTab === 'onair' ? 'bg-white text-[#e13d37] shadow-sm' : 'text-[#65728a] hover:bg-white/55'}`}>
+                        <SignalIcon className="h-4 w-4"/>onAIR
+                    </button>
+                    <button type="button" role="tab" aria-selected={activeTab === 'text'} onClick={() => setActiveTab('text')}
+                            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${activeTab === 'text' ? 'bg-white text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/55'}`}>
+                        <DocumentTextIcon className="h-4 w-4"/>Text știre
+                    </button>
+                </div>
+            </div>
+            {activeTab === 'onair' ? <div className={`grid gap-3 p-3 sm:p-4 ${article.image ? 'lg:grid-cols-[minmax(0,1fr)_300px]' : ''}`}>
                 <section>
                     {article.image ? (
                         <div ref={previewRef} className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-inner">
@@ -196,7 +212,9 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                         <button type="button" className="ios-secondary-button flex-1" onClick={() => void reset()}>Resetează</button>
                     </div>
                 </aside>}
-            </div>
+            </div> : (
+                <div className="p-3 sm:p-4" role="tabpanel"><ArticleTextContent article={article}/></div>
+            )}
         </div>
     </div>, document.body);
 };

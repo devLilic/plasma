@@ -14,6 +14,7 @@ interface ArticlesApi {
     addArticle: (query: NewArticleQuery) => Promise<Article[]>
     removeArticle: (query: {id: number}) => Promise<any>
     updateContent: (id: number, title: string, subtitle: string) => Promise<Article>
+    updateTextHighlight: (id: number, sectionIndex: number, paragraphIndex: number, html: string) => Promise<Article>
 }
 
 export const articlesApi: ArticlesApi = {
@@ -21,5 +22,6 @@ export const articlesApi: ArticlesApi = {
     removeBackground: (query) => ApiRequest.delete('/remove-bg', {data: {...query}}),
     addArticle: (query) => ApiRequest.post('/article', {data: {...query}}),
     removeArticle: (query) => ApiRequest.delete('/article', {data: {...query}}),
-    updateContent: (id, title, subtitle) => ApiRequest.patch(`/articles/${id}`, {data: {title, subtitle}})
+    updateContent: (id, title, subtitle) => ApiRequest.patch(`/articles/${id}`, {data: {title, subtitle}}),
+    updateTextHighlight: (id, sectionIndex, paragraphIndex, html) => ApiRequest.patch(`/articles/${id}/highlights`, {data: {section_index: sectionIndex, paragraph_index: paragraphIndex, html}})
 }

@@ -40,6 +40,7 @@ Route::prefix('/v1')->middleware('auth:sanctum')->group(function () {
     Route::post('/article', [ArticleController::class, 'store']);
     Route::patch('/article', [ArticleController::class, 'update']);
     Route::patch('/articles/{article}', [ArticleController::class, 'updateContent']);
+    Route::patch('/articles/{article}/highlights', [ArticleController::class, 'updateTextHighlight']);
     Route::delete('/article', [ArticleController::class, 'destroy']);
     Route::delete('/remove-bg', [ArticleController::class, 'removeBg']);
 
