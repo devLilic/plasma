@@ -70,7 +70,7 @@ class PlasmaViewerIntegrationTest extends TestCase
 
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'show', 'article_id' => $article->id,
-            'transform' => ['brightness' => 90, 'contrast' => 110, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
+            'transform' => ['brightness' => 90, 'contrast' => 80, 'saturation' => 120, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
             'url' => 'https://attacker.example/image.jpg',
             'executable' => 'C:\\attacker.exe',
         ])->assertOk();
@@ -80,6 +80,8 @@ class PlasmaViewerIntegrationTest extends TestCase
             $url = $command['payload']['image']['url'];
             return $command['version'] === 1
                 && $command['type'] === 'show'
+                && $command['payload']['transform']['contrast'] === 80
+                && $command['payload']['transform']['saturation'] === 120
                 && $command['payload']['image']['articleId'] === $article->id
                 && $command['payload']['image']['imageId'] === $image->id
                 && $command['payload']['image']['source'] === app(ImageStorage::class)->disk()->path($image->url)
@@ -113,15 +115,38 @@ class PlasmaViewerIntegrationTest extends TestCase
         $this->postJson(route('viewer.command'), ['type' => 'hide'])->assertUnauthorized();
         $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
             'type' => 'transform',
-            'transform' => ['brightness' => 300, 'contrast' => 300, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
+            'transform' => ['brightness' => 300, 'contrast' => 100, 'saturation' => 100, 'zoom' => 0, 'panX' => 0, 'panY' => 0, 'flipX' => false],
         ])->assertUnprocessable();
+    }
+
+    public function test_authenticated_operator_can_disconnect_both_output_windows(): void
+    {
+        Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);
+
+        $this->actingAs(User::factory()->create())
+            ->postJson(route('viewer.command'), ['type' => 'disconnect-outputs'])
+            ->assertOk();
+
+        Http::assertSent(fn (Request $request) => $request->data()['type'] === 'disconnect-outputs');
+    }
+
+    public function test_transform_pan_is_clamped_to_the_available_zoom_coverage(): void
+    {
+        Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);
+
+        $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
+            'type' => 'transform',
+            'transform' => ['brightness' => 100, 'contrast' => 100, 'saturation' => 100, 'zoom' => 1.5, 'panX' => 80, 'panY' => -80, 'flipX' => false],
+        ])->assertOk();
+
+        Http::assertSent(fn (Request $request) => $request->data()['payload']['panX'] === 25.0 && $request->data()['payload']['panY'] === -25.0);
     }
 
     private function viewerState(): array
     {
         return [
             'visible' => false, 'activeImage' => null,
-            'transform' => ['brightness' => 100, 'contrast' => 100, 'zoom' => 1, 'panX' => 0, 'panY' => 0, 'flipX' => false],
+            'transform' => ['brightness' => 100, 'contrast' => 100, 'saturation' => 100, 'zoom' => 1, 'panX' => 0, 'panY' => 0, 'flipX' => false],
             'window' => ['displayId' => null, 'fullscreen' => true, 'topmost' => false],
             'displays' => [], 'lastCommandId' => null, 'error' => null,
         ];

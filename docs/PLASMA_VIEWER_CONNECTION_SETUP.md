@@ -92,7 +92,7 @@ npm install
 npm run build
 ```
 
-Builder-ul scrie artefactele în `PlasmaViewer/release/0.1.0`. Se rulează installer-ul `PlasmaViewer-0.1.0-x64.exe`, apoi se actualizează `PLASMA_VIEWER_EXECUTABLE` cu locația reală instalată.
+Builder-ul scrie artefactele în `PlasmaViewer/release/0.1.0`; configurația curentă produce aplicația neîmpachetată `win-unpacked/PlasmaViewer.exe`. Pentru lansare automată, `PLASMA_VIEWER_EXECUTABLE` trebuie să indice calea absolută către acest executabil sau către o instalare ulterioară a aplicației.
 
 Cu `PLASMA_VIEWER_LAUNCH_ENABLED=true`, deschiderea dialogului `onAIR` cere starea Viewer-ului. Dacă `127.0.0.1:47832` nu răspunde, Laravel pornește executabilul și îi transmite automat `PLASMA_VIEWER_PORT` și `PLASMA_VIEWER_TOKEN` în mediul procesului.
 
@@ -145,7 +145,7 @@ Răspunsul așteptat este:
 2. Deschideți o listă care conține un articol cu imagine.
 3. Apăsați `onAIR`. Dialogul interoghează starea la fiecare 2 secunde.
 4. Apăsați `Afișează onAIR`.
-5. Verificați că fereastra output a PlasmaViewer apare și că luminozitatea, zoom-ul, poziția și flip-ul se actualizează.
+5. Verificați că FR2 apare cu imaginea onAIR și că luminozitatea, contrastul, saturația, zoom-ul, poziția și flip-ul se actualizează.
 
 Testele de integrare Laravel pot fi rulate separat:
 
@@ -168,8 +168,15 @@ Endpointurile protocolului local sunt:
 | Metodă și rută | Scop |
 |---|---|
 | `GET /v1/health` | Readiness și versiunea protocolului. |
-| `GET /v1/state` | Imaginea activă, transformările, fereastra și monitoarele. |
+| `GET /v1/state` | Imaginea activă, transformările, setările FR2/FR3 și monitoarele. |
 | `POST /v1/commands` | Comenzi `show`, `transform`, `hide`, `window` și `reset-transform`. |
+
+## Ferestre și ajustări locale
+
+- FR2 redă numai imaginea onAIR primită prin Laravel. `show` și `hide` controlează doar FR2.
+- FR3 este fundalul local separat: folosește imaginea implicită aleasă în Settings, este activată prin toggle persistent și apare numai dacă imaginea locală rămâne validă. FR3 ocupă același monitor selectat pentru FR2 și rămâne vizibilă când FR2 este ascunsă.
+- Defaulturile locale de luminozitate, contrast și saturație sunt expuse în `transformDefaults`. Comenzile v1 vechi care omit `saturation` primesc fallback `100`; clienții noi trimit toate cele trei câmpuri.
+- În modul windowed, `Fixează 16:9` persistă și normalizează bounds-urile FR2 în Electron. Modul local „Ajustare din taste” din FR1 este ne-persistent: săgețile mută, Ctrl+săgețile redimensionează, Shift folosește 10 px, iar Escape îl oprește. Nu există shortcuturi globale Windows.
 
 ## Depanare
 
@@ -182,8 +189,10 @@ Endpointurile protocolului local sunt:
 | Starea funcționează, dar `show` eșuează la încărcarea imaginii | `APP_URL` greșit, `plasma.test` nu se rezolvă pentru procesul Electron, semnătura a expirat sau fișierul lipsește. | Verificați `APP_URL`, rezoluția domeniului și ruta media semnată; nu reutilizați URL-uri mai vechi de 10 minute. |
 | Modificarea `.env` nu are efect | Configurația Laravel este cache-uită sau Viewer rulează cu vechiul mediu. | `php artisan config:clear`, apoi reporniți complet PlasmaViewer. |
 | Browserul primește `401` de la rutele `/plasma-viewer/*` | Sesiunea utilizatorului Laravel lipsește/expiră. | Reautentificați-vă în `plasma.test`; aceste rute nu sunt API-uri publice. |
+| FR3 nu apare | Toggle-ul este OFF, imaginea implicită locală a fost eliminată sau este invalidă. | În PlasmaViewer deschideți Settings, selectați o imagine validă și activați FR3; FR1 afișează eroarea când fișierul nu mai este disponibil. |
+| FR2 nu respectă 16:9 sau nu se mișcă din taste | FR2 este fullscreen sau modul local de taste este OFF/fără focus. | Ieșiți din fullscreen, activați `Fixează 16:9` și apoi `Ajustare din taste` în FR1; nu lăsați focusul într-un câmp editabil. |
 
-## Starea verificată local la 14 august 2026
+## Starea verificată local la 30 august 2026
 
 La momentul verificării acestui workspace:
 
@@ -194,6 +203,7 @@ La momentul verificării acestui workspace:
 - la verificarea inițială, portul `47832` nu asculta; ulterior, Viewer-ul a fost pornit din surse cu tokenul din Laravel, iar `/v1/health` a răspuns cu succes;
 - calea `PLASMA_VIEWER_EXECUTABLE` indică profilul Windows `C:\Users\Operator`, iar fișierul nu există pe stația curentă;
 - `PlasmaViewerIntegrationTest` trece: 5 teste, 12 aserțiuni.
+- Buildul PlasmaViewer produce `PlasmaViewer/release/0.1.0/win-unpacked/PlasmaViewer.exe`.
 
 Conexiunea funcționează în sesiunea de dezvoltare curentă. Pentru ca setup-ul să funcționeze și după oprirea sau repornirea stației, trebuie instalat/construit PlasmaViewer și corectată calea executabilului pentru utilizatorul Windows curent.
 

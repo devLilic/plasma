@@ -32,7 +32,7 @@ class TextParser implements ParserInterface
     public function get_title_for($slugs, ?string $fallback = null)
     {
         $contentSlugs = collect($slugs)
-            ->reject(fn ($slug) => preg_match('/-INTRO$/i', $slug))
+            ->reject(fn ($slug) => preg_match('/-(?:INTRO|INTO)$/i', $slug))
             ->sortBy(function ($slug) {
                 foreach (['-BETA', '-FAKE', '-OFF', '-SNC'] as $priority => $suffix) {
                     if (str_ends_with(strtoupper($slug), $suffix)) {
@@ -70,12 +70,24 @@ class TextParser implements ParserInterface
 
     public function get_content_for($slugs)
     {
-        $slug = collect($slugs)->shift();
+        $sections = $this->get_sections_for($slugs);
+        $intro = collect($sections)->firstWhere('type', 'INTRO') ?: collect($sections)->first();
 
-        $html = $this->fragment($this->code, '<a name='.$slug.'>', $this->default_end_tag);
-        $content = explode("\r\n", strip_tags($this->fragment($html, '<p>')));
+        return implode("\n\n", $intro['paragraphs'] ?? []);
+    }
 
-        return $content[0];
+    /** @return array<int, array{slug: string, type: string, paragraphs: array<int, string>}> */
+    public function get_sections_for($slugs): array
+    {
+        return collect($slugs)->map(function ($slug) {
+            $html = $this->fragment($this->code, '<a name='.$slug.'>', $this->default_end_tag);
+
+            return [
+                'slug' => $slug,
+                'type' => $this->sectionType($slug),
+                'paragraphs' => $this->paragraphsFrom($html)->all(),
+            ];
+        })->values()->all();
     }
 
     /** @return Collection<int, string> */
@@ -87,6 +99,18 @@ class TextParser implements ParserInterface
             ->map(fn ($paragraph) => trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags($paragraph)))))
             ->filter()
             ->values();
+    }
+
+    private function sectionType(string $slug): string
+    {
+        $slug = Str::upper(trim($slug));
+        if (str_starts_with($slug, 'TEASE')) {
+            return 'TEASE';
+        }
+
+        $type = str_contains($slug, '-') ? trim(Str::afterLast($slug, '-')) : 'TEXT';
+
+        return $type === 'INTO' ? 'INTRO' : $type;
     }
 
     /** @param  Collection<int, string>  $paragraphs */

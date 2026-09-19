@@ -109,25 +109,33 @@ class PlaylistTitleExclusionsSettingsTest extends TestCase
         ]);
     }
 
-    public function test_default_list_continues_to_exclude_live_articles(): void
+    public function test_default_list_keeps_supported_typed_articles(): void
     {
         $playlist = $this->importFixture();
 
-        $this->assertDatabaseMissing('articles', [
+        $this->assertDatabaseHas('articles', [
             'playlist_id' => $playlist->id,
             'subtitle' => 'LIVE DECLARATII BUCURESTI',
         ]);
+        $this->assertDatabaseHas('articles', [
+            'playlist_id' => $playlist->id,
+            'subtitle' => 'HEADLINES',
+        ]);
+        $this->assertDatabaseHas('articles', [
+            'playlist_id' => $playlist->id,
+            'subtitle' => 'TEASE INCENDII EUROPA',
+        ]);
     }
 
-    public function test_removing_live_keeps_live_articles_in_new_playlists(): void
+    public function test_adding_live_to_exclusions_removes_live_articles_from_new_playlists(): void
     {
         app(PlaylistTitleExclusions::class)->save(
-            array_values(array_diff(PlaylistTitleExclusions::DEFAULT_TERMS, ['LIVE'])),
+            [...PlaylistTitleExclusions::DEFAULT_TERMS, 'LIVE'],
         );
 
         $playlist = $this->importFixture();
 
-        $this->assertDatabaseHas('articles', [
+        $this->assertDatabaseMissing('articles', [
             'playlist_id' => $playlist->id,
             'subtitle' => 'LIVE DECLARATII BUCURESTI',
         ]);

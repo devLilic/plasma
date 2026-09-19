@@ -160,9 +160,12 @@ class PlaylistsController extends Controller
             $attributes = [
                 'title' => $parsedArticle->title,
                 'subtitle' => $parsedArticle->search_slug,
+                'technical_title' => $parsedArticle->technical_title,
                 'slugs' => Arr::join($parsedArticle->slugs, '||'),
                 'intro' => $parsedArticle->content,
+                'content_sections' => $parsedArticle->sections,
                 'article_type' => $parsedArticle->type,
+                'article_types' => $parsedArticle->types,
                 'playlist_order' => $order + 1,
                 'image_id' => $imageId ?: null,
             ];

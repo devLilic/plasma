@@ -10,7 +10,24 @@ class Article extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['title', 'subtitle', 'slugs', 'intro', 'article_type', 'playlist_id', 'playlist_order', 'image_id'];
+    protected $fillable = [
+        'title',
+        'subtitle',
+        'technical_title',
+        'slugs',
+        'intro',
+        'content_sections',
+        'article_type',
+        'article_types',
+        'playlist_id',
+        'playlist_order',
+        'image_id',
+    ];
+
+    protected $casts = [
+        'article_types' => 'array',
+        'content_sections' => 'array',
+    ];
 
     public function playlist(): BelongsTo
     {

@@ -22,11 +22,12 @@ class PlasmaViewerController extends Controller
     public function command(Request $request, PlasmaViewerClient $client): JsonResponse
     {
         $data = $request->validate([
-            'type' => ['required', 'in:show,transform,hide,window,reset-transform'],
+            'type' => ['required', 'in:show,transform,hide,disconnect-outputs,window,reset-transform'],
             'article_id' => ['required_if:type,show', 'integer', 'exists:articles,id'],
             'transform' => ['required_if:type,show,transform', 'array'],
             'transform.brightness' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.contrast' => ['required_with:transform', 'numeric', 'between:0,200'],
+            'transform.saturation' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.zoom' => ['required_with:transform', 'numeric', 'between:1,4'],
             'transform.panX' => ['required_with:transform', 'numeric', 'between:-100,100'],
             'transform.panY' => ['required_with:transform', 'numeric', 'between:-100,100'],
@@ -41,6 +42,12 @@ class PlasmaViewerController extends Controller
             'window.bounds.width' => ['required_with:window.bounds', 'integer', 'min:320'],
             'window.bounds.height' => ['required_with:window.bounds', 'integer', 'min:180'],
         ]);
+
+        if (isset($data['transform'])) {
+            $maxPan = max(0, ($data['transform']['zoom'] - 1) * 50);
+            $data['transform']['panX'] = min($maxPan, max(-$maxPan, $data['transform']['panX']));
+            $data['transform']['panY'] = min($maxPan, max(-$maxPan, $data['transform']['panY']));
+        }
 
         $payload = match ($data['type']) {
             'show' => $this->showPayload(Article::with('image')->findOrFail($data['article_id']), $data['transform']),

@@ -6,6 +6,7 @@ import {
     addNewArticle,
     deleteArticle,
     saveArticleContent,
+    updateTextHighlight,
 } from "@/Store/article/article.slice";
 import {bindActionCreators} from "@reduxjs/toolkit";
 import {fetchImages, imagesActions, removeImage, searchImages, updateImage} from "@/Store/image/image.slice";
@@ -26,7 +27,8 @@ const allActions = {
     removeBackgroundImage,
     addNewArticle,
     deleteArticle,
-    saveArticleContent
+    saveArticleContent,
+    updateTextHighlight
 }
 export const useActions = () => {
     const dispatch = useDispatch<AppDispatch>()

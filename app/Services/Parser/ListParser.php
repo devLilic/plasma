@@ -11,6 +11,8 @@ class ListParser implements ParserInterface
 
     protected $titles = [];
 
+    protected array $entries = [];
+
     protected array $restrictedTitles = [];
 
     public function __construct(private readonly PlaylistTitleExclusions $titleExclusions) {}
@@ -18,6 +20,7 @@ class ListParser implements ParserInterface
     public function parse($html)
     {
         $this->titles = [];
+        $this->entries = [];
         $this->restrictedTitles = $this->titleExclusions->terms();
 
         // get all LI tags as one fragment of text
@@ -33,7 +36,14 @@ class ListParser implements ParserInterface
 
         foreach ($list_items as $item) {
             if ($this->isTease($item)) {
-                $this->titles[$this->clean($item)] = [$item];
+                $search = $this->clean($item);
+                $slugs = [$item];
+                $this->titles[$search] = $slugs;
+                $this->entries[] = [
+                    'search' => $search,
+                    'technical_title' => $this->technicalTitle($item),
+                    'slugs' => $slugs,
+                ];
 
                 continue;
             }
@@ -46,6 +56,11 @@ class ListParser implements ParserInterface
                     ->values()
                     ->toArray();
                 $this->titles[$intro] = $parts;
+                $this->entries[] = [
+                    'search' => $intro,
+                    'technical_title' => $this->technicalTitle($item),
+                    'slugs' => $parts,
+                ];
 
                 continue;
             }
@@ -57,6 +72,12 @@ class ListParser implements ParserInterface
     public function get()
     {
         return $this->titles;
+    }
+
+    /** @return array<int, array{search: string, technical_title: string, slugs: array<int, string>}> */
+    public function entries(): array
+    {
+        return $this->entries;
     }
 
     public function clean($title): string
@@ -73,6 +94,13 @@ class ListParser implements ParserInterface
     private function articleStem(string $intro): string
     {
         return preg_replace('/-(?:INTRO|INTO)$/iu', '', $this->normalizedListItem($intro));
+    }
+
+    private function technicalTitle(string $item): string
+    {
+        $title = $this->normalizedListItem($item);
+
+        return trim(preg_replace('/-(?:INTRO|INTO)$/iu', '', $title));
     }
 
     private function isIntro(string $item): bool

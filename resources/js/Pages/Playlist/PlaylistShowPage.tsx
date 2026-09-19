@@ -1,6 +1,6 @@
 import React, {useEffect} from 'react';
-import {Head, Link, useForm} from '@inertiajs/react';
-import {ArrowPathIcon, CheckCircleIcon, ChevronLeftIcon} from '@heroicons/react/24/outline';
+import {Head, useForm} from '@inertiajs/react';
+import {ArrowPathIcon, CheckCircleIcon} from '@heroicons/react/24/outline';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import {Article, Playlist, User} from '@/types';
 import ArticlesList from '@/Components/Articles/ArticlesList';
@@ -29,31 +29,27 @@ const PlaylistShowPage = ({auth, playlist, articles}: PlaylistShowPageProps) => 
     };
 
     return (
-        <AuthenticatedLayout user={auth.user}>
+        <AuthenticatedLayout user={auth.user} headerAction={
+            <div className="flex items-center gap-2">
+                {recentlySuccessful && (
+                    <span className="hidden items-center gap-1.5 text-xs font-medium text-[#248a3d] lg:inline-flex">
+                        <CheckCircleIcon className="h-4 w-4"/>Parsing actualizat
+                    </span>
+                )}
+                <button
+                    type="button"
+                    onClick={refreshParsing}
+                    disabled={!playlist.can_refresh_parsing || processing}
+                    title={playlist.can_refresh_parsing ? 'Reprocesează fișierul HTM salvat' : 'Fișierul HTM sursă nu este disponibil'}
+                    className="ios-secondary-button !min-h-9 !rounded-full !px-2.5 sm:!px-3 disabled:cursor-not-allowed disabled:opacity-45"
+                >
+                    <ArrowPathIcon className={`h-4 w-4 ${processing ? 'animate-spin' : ''}`}/>
+                    <span className="hidden sm:inline">{processing ? 'Se reprocesează…' : 'Refresh parsing'}</span>
+                </button>
+            </div>
+        }>
             <Head title="Editor playlist"/>
-            <div className="ios-page">
-                <nav className="mb-4 flex flex-wrap items-center justify-between gap-3" aria-label="Navigare playlist">
-                    <Link href={route('playlists.index')} className="ios-secondary-button !min-h-9 !rounded-full !px-3">
-                        <ChevronLeftIcon className="h-4 w-4"/>Playlisturi
-                    </Link>
-                    <div className="flex flex-wrap items-center justify-end gap-3">
-                        {recentlySuccessful && (
-                            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-[#248a3d]">
-                                <CheckCircleIcon className="h-5 w-5"/>Parsing actualizat
-                            </span>
-                        )}
-                        <button
-                            type="button"
-                            onClick={refreshParsing}
-                            disabled={!playlist.can_refresh_parsing || processing}
-                            title={playlist.can_refresh_parsing ? 'Reprocesează fișierul HTM salvat' : 'Fișierul HTM sursă nu este disponibil'}
-                            className="ios-secondary-button !min-h-9 !rounded-full !px-3 disabled:cursor-not-allowed disabled:opacity-45"
-                        >
-                            <ArrowPathIcon className={`h-4 w-4 ${processing ? 'animate-spin' : ''}`}/>
-                            {processing ? 'Se reprocesează…' : 'Refresh parsing'}
-                        </button>
-                    </div>
-                </nav>
+            <div className="playlist-editor-page ios-page">
                 {errors.playlist && (
                     <p className="mb-4 rounded-2xl bg-[#ff3b30]/10 px-4 py-3 text-sm font-medium text-[#c9342f]">{errors.playlist}</p>
                 )}
