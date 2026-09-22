@@ -28,6 +28,9 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
     const [error, setError] = useState<string | null>(null);
     const [activeTab, setActiveTab] = useState<'onair' | 'text' | 'image'>('onair');
     const previewRef = useRef<HTMLDivElement>(null);
+    const retryTimerRef = useRef<number | null>(null);
+    const retryAttemptRef = useRef(0);
+    const scheduleStateRetryRef = useRef<() => void>(() => undefined);
     const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
     const currentIndex = orderedArticles.findIndex(article => article.id === cursorId);
     const article = currentIndex >= 0 ? orderedArticles[currentIndex] : null;
@@ -67,26 +70,46 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
     useEffect(() => {
         if (!isOpen) return;
         let cancelled = false;
+        const clearRetry = () => {
+            if (retryTimerRef.current !== null) window.clearTimeout(retryTimerRef.current);
+            retryTimerRef.current = null;
+        };
+        const loadState = async () => {
+            try {
+                const {data} = await axios.get<ViewerState>(route('viewer.state'));
+                if (cancelled) return;
+                clearRetry();
+                retryAttemptRef.current = 0;
+                setViewer(data);
+                setError(null);
+            } catch (reason: any) {
+                if (cancelled) return;
+                setError(reason.response?.data?.error ?? 'PlasmaViewer nu este disponibil.');
+                scheduleRetry();
+            }
+        };
+        const scheduleRetry = () => {
+            if (cancelled || retryTimerRef.current !== null) return;
+            const delays = [2000, 5000, 10000];
+            const delay = delays[Math.min(retryAttemptRef.current++, delays.length - 1)];
+            retryTimerRef.current = window.setTimeout(() => {
+                retryTimerRef.current = null;
+                void loadState();
+            }, delay);
+        };
         setCursorId(startArticleId);
         setSent(false);
         setError(null);
         setActiveTab('onair');
-
-        const loadInitialState = async () => {
-            try {
-                const {data} = await axios.get<ViewerState>(route('viewer.state'));
-                if (cancelled) return;
-                setViewer(data);
-            } catch (reason: any) {
-                if (!cancelled) setError(reason.response?.data?.error ?? 'PlasmaViewer nu este disponibil.');
-            }
-        };
-
-        void loadInitialState();
-        const timer = window.setInterval(() => void loadState(), 2000);
+        scheduleStateRetryRef.current = scheduleRetry;
+        void loadState();
+        const refreshOnFocus = () => void loadState();
+        window.addEventListener('focus', refreshOnFocus);
         return () => {
             cancelled = true;
-            window.clearInterval(timer);
+            clearRetry();
+            scheduleStateRetryRef.current = () => undefined;
+            window.removeEventListener('focus', refreshOnFocus);
         };
     }, [isOpen, startArticleId]);
 
@@ -102,16 +125,6 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
         return () => window.clearTimeout(timer);
     }, [transform, sent, isOpen, article?.id, isCurrentViewerImage]);
 
-    const loadState = async () => {
-        try {
-            const {data} = await axios.get<ViewerState>(route('viewer.state'));
-            setViewer(data);
-            setError(null);
-        } catch (reason: any) {
-            setError(reason.response?.data?.error ?? 'PlasmaViewer nu este disponibil.');
-        }
-    };
-
     const command = async (type: string, extra: Record<string, unknown> = {}, showBusy = true) => {
         if (showBusy) setBusy(true);
         try {
@@ -121,6 +134,7 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
             return true;
         } catch (reason: any) {
             setError(reason.response?.data?.error ?? 'Comanda nu a putut fi trimisă.');
+            scheduleStateRetryRef.current();
             return false;
         } finally {
             if (showBusy) setBusy(false);
