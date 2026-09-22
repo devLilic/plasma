@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Services\Images\ImageMatcher;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
 class PlaylistImageMatchingTest extends TestCase
@@ -63,6 +64,29 @@ class PlaylistImageMatchingTest extends TestCase
         );
 
         $this->assertSame([$phrase->id, $partial->id, $unrelated->id], $ranked->pluck('id')->all());
+    }
+
+    public function test_library_endpoint_ranks_the_complete_library_for_the_current_article(): void
+    {
+        $playlist = Playlist::create(['title' => 'Jurnal']);
+        $article = Article::create([
+            'title' => 'Cultivatorii de tutun',
+            'subtitle' => 'Plantatii tutun',
+            'article_type' => 'BETA',
+            'playlist_id' => $playlist->id,
+            'playlist_order' => 1,
+        ]);
+        $matching = $this->imageWithTag('library/plantatii-tutun.jpg', 'plantatii tutun');
+
+        foreach (range(1, 100) as $index) {
+            $this->imageWithTag("library/unrelated-{$index}.jpg", "irelevant {$index}");
+        }
+
+        Sanctum::actingAs(User::factory()->create());
+
+        $this->getJson("/api/v1/images?limit=100&article_id={$article->id}")
+            ->assertOk()
+            ->assertJsonPath('0.id', $matching->id);
     }
 
     private function importFixture(): Playlist

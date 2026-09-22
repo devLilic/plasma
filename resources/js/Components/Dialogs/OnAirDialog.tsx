@@ -1,13 +1,14 @@
-import {useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
+import {type ReactNode, useEffect, useLayoutEffect, useMemo, useRef, useState} from 'react';
 import axios from 'axios';
-import {DocumentTextIcon, PhotoIcon, SignalIcon, XMarkIcon} from '@heroicons/react/24/outline';
+import {ChevronLeftIcon, ChevronRightIcon, DocumentTextIcon, EyeSlashIcon, PhotoIcon, SignalIcon, XMarkIcon} from '@heroicons/react/24/outline';
 import {Article} from '@/types';
 import {createPortal} from 'react-dom';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 import ArticleTextContent from '@/Components/Articles/ArticleTextContent';
+import ImageEditorContent from '@/Components/Dialogs/ImageEditor/ImageEditorContent';
 
 interface ViewerTransform {brightness: number; contrast: number; saturation: number; zoom: number; panX: number; panY: number; flipX: boolean}
-interface ViewerState {visible: boolean; activeImage: {articleId: number; title: string; url: string} | null; transform: ViewerTransform; transformDefaults?: ViewerTransform; error: string | null}
+interface ViewerState {visible: boolean; activeImage: {articleId: number; imageId: number; title: string; url: string} | null; transform: ViewerTransform; transformDefaults?: ViewerTransform; error: string | null}
 const defaults: ViewerTransform = {brightness: 100, contrast: 100, saturation: 100, zoom: 1, panX: 0, panY: 0, flipX: false};
 
 interface OnAirDialogProps {
@@ -20,12 +21,12 @@ interface OnAirDialogProps {
 const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogProps) => {
     const orderedArticles = useMemo(() => [...articles].sort((left, right) => left.playlist_order - right.playlist_order), [articles]);
     const [cursorId, setCursorId] = useState<number | null>(startArticleId);
-    const [transform, setTransform] = useState(defaults);
+    const [transformsByImageId, setTransformsByImageId] = useState<Record<number, ViewerTransform>>({});
     const [viewer, setViewer] = useState<ViewerState | null>(null);
     const [sent, setSent] = useState(false);
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'onair' | 'text'>('onair');
+    const [activeTab, setActiveTab] = useState<'onair' | 'text' | 'image'>('onair');
     const previewRef = useRef<HTMLDivElement>(null);
     const [previewSize, setPreviewSize] = useState({width: 0, height: 0});
     const currentIndex = orderedArticles.findIndex(article => article.id === cursorId);
@@ -35,6 +36,23 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
     const activeOnAirArticle = viewer?.activeImage
         ? orderedArticles.find(item => item.id === viewer.activeImage?.articleId) ?? null
         : null;
+    const currentImageId = article?.image?.id;
+    const isCurrentViewerImage = Boolean(
+        currentImageId
+        && viewer?.activeImage?.articleId === article?.id
+        && viewer.activeImage.imageId === currentImageId
+    );
+    const transform = currentImageId
+        ? transformsByImageId[currentImageId] ?? (isCurrentViewerImage && viewer ? normalizeTransform(viewer.transform) : viewer ? viewerDefaults(viewer) : {...defaults})
+        : {...defaults};
+
+    const setCurrentTransform = (next: ViewerTransform | ((current: ViewerTransform) => ViewerTransform)) => {
+        if (!currentImageId) return;
+        setTransformsByImageId(current => ({
+            ...current,
+            [currentImageId]: normalizeTransform(typeof next === 'function' ? next(current[currentImageId] ?? transform) : next),
+        }));
+    };
 
     useLayoutEffect(() => {
         const preview = previewRef.current;
@@ -59,7 +77,6 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                 const {data} = await axios.get<ViewerState>(route('viewer.state'));
                 if (cancelled) return;
                 setViewer(data);
-                setTransform(viewerDefaults(data));
             } catch (reason: any) {
                 if (!cancelled) setError(reason.response?.data?.error ?? 'PlasmaViewer nu este disponibil.');
             }
@@ -74,10 +91,16 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
     }, [isOpen, startArticleId]);
 
     useEffect(() => {
-        if (!isOpen || !sent || !article?.image) return;
+        const imageId = viewer?.activeImage?.imageId;
+        if (!imageId) return;
+        setTransformsByImageId(current => current[imageId] ? current : {...current, [imageId]: normalizeTransform(viewer.transform)});
+    }, [viewer?.activeImage?.imageId]);
+
+    useEffect(() => {
+        if (!isOpen || !sent || !isCurrentViewerImage || !article?.image) return;
         const timer = window.setTimeout(() => void command('transform', {transform}, false), 100);
         return () => window.clearTimeout(timer);
-    }, [transform, sent, isOpen, article?.id]);
+    }, [transform, sent, isOpen, article?.id, isCurrentViewerImage]);
 
     const loadState = async () => {
         try {
@@ -115,15 +138,15 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
 
     const reset = async () => {
         const nextTransform = viewer ? viewerDefaults(viewer) : {...defaults};
-        setTransform(nextTransform);
-        if (sent) await command('reset-transform', {}, false);
+        setCurrentTransform(nextTransform);
+        if (sent && isCurrentViewerImage) await command('reset-transform', {}, false);
     };
 
     const selectPreview = (articleId: number) => {
-        if (!orderedArticles.some(item => item.id === articleId)) return;
+        const nextArticle = orderedArticles.find(item => item.id === articleId);
+        if (!nextArticle) return;
         setCursorId(articleId);
-        setSent(false);
-        setTransform(viewer ? viewerDefaults(viewer) : {...defaults});
+        setSent(Boolean(viewer?.activeImage?.articleId === nextArticle.id && viewer.activeImage.imageId === nextArticle.image?.id));
         setError(null);
         setActiveTab('onair');
     };
@@ -136,9 +159,14 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
 
     return createPortal(<div className="fixed inset-0 z-[100] flex items-center justify-center bg-[#12203a]/45 p-2 backdrop-blur-md sm:p-3" role="dialog" aria-modal="true" aria-label="Control onAIR">
         <div className="liquid-dialog max-h-[98vh] w-full max-w-5xl overflow-auto rounded-[26px] border border-white/75 bg-white/70 shadow-[inset_0_1px_0_rgba(255,255,255,0.95),0_30px_100px_rgba(15,29,62,0.34)] backdrop-blur-[32px]">
-            <header className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-[#71809a]/10 bg-white/35 px-4 py-3 backdrop-blur-2xl sm:px-5">
+            <header className="sticky top-0 z-30 flex items-center justify-between gap-3 border-b border-[#71809a]/15 bg-white px-4 py-3 shadow-[0_4px_16px_rgba(23,32,51,0.08)] sm:px-5">
                 <div className="min-w-0"><p className="text-xs font-bold uppercase tracking-[.16em] text-[#e13d37]">onAIR · #{article.playlist_order}</p><h2 className="truncate text-lg font-bold tracking-[-0.02em] text-[#172033]">{article.technical_title || article.title || article.subtitle}</h2></div>
                 <div className="flex shrink-0 items-center gap-2">
+                    {activeTab === 'text' && <div className="flex items-center gap-1" aria-label="Navigare și control onAIR">
+                        <HeaderIconButton label="Știrea anterioară" disabled={!previousArticle} onClick={() => previousArticle && selectPreview(previousArticle.id)}><ChevronLeftIcon className="h-4 w-4"/></HeaderIconButton>
+                        <HeaderIconButton label="Știrea următoare" disabled={!nextArticle} onClick={() => nextArticle && selectPreview(nextArticle.id)}><ChevronRightIcon className="h-4 w-4"/></HeaderIconButton>
+                        <HeaderIconButton label="Ascunde imaginea onAIR" disabled={busy} onClick={() => void hide()}><EyeSlashIcon className="h-4 w-4"/></HeaderIconButton>
+                    </div>}
                     <button type="button" disabled={busy} onClick={() => void command('disconnect-outputs')} className="inline-flex min-h-9 items-center rounded-full bg-[#ff3b30] px-2 text-xs font-bold text-white shadow-sm transition hover:bg-[#e52f26] disabled:opacity-50 sm:px-3" aria-label="Deconectează ferestrele FR2 și FR3" title="Deconectează FR2 și FR3"><span className="sm:hidden">FR2/3</span><span className="hidden sm:inline">Deconectează</span></button>
                     <span className="min-w-12 rounded-full border border-white/70 bg-white/50 px-2 py-2 text-center text-xs font-semibold tabular-nums text-[#65728a]" aria-label={`Poziția ${currentIndex + 1} din ${orderedArticles.length}`}>{currentIndex + 1}/{orderedArticles.length}</span>
                     <button type="button" className="ml-1 flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/50 text-[#65728a] shadow-sm hover:bg-white/85" onClick={onClose}><XMarkIcon className="h-5 w-5"/></button>
@@ -153,6 +181,10 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                     <button type="button" role="tab" aria-selected={activeTab === 'text'} onClick={() => setActiveTab('text')}
                             className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${activeTab === 'text' ? 'bg-white text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/55'}`}>
                         <DocumentTextIcon className="h-4 w-4"/>Text știre
+                    </button>
+                    <button type="button" role="tab" aria-selected={activeTab === 'image'} onClick={() => setActiveTab('image')}
+                            className={`inline-flex min-h-9 items-center gap-1.5 rounded-lg px-3 text-xs font-bold transition ${activeTab === 'image' ? 'bg-white text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/55'}`}>
+                        <PhotoIcon className="h-4 w-4"/>Imagine
                     </button>
                 </div>
             </div>
@@ -197,29 +229,33 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                     <h3 className="mb-2 font-bold text-[#172033]">Ajustări imagine</h3>
                     <div className="grid grid-cols-2 gap-x-4 lg:grid-cols-1 lg:gap-y-2.5">
                         <div className="space-y-2">
-                            <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setTransform(current => ({...current, brightness}))}/>
-                            <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setTransform(current => ({...current, contrast}))}/>
-                            <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setTransform(current => ({...current, saturation}))}/>
+                            <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setCurrentTransform(current => ({...current, brightness}))}/>
+                            <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setCurrentTransform(current => ({...current, contrast}))}/>
+                            <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setCurrentTransform(current => ({...current, saturation}))}/>
                         </div>
                         <div className="space-y-2">
-                            <Slider label="Zoom" value={normalizedTransform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setTransform(current => normalizeTransform({...current, zoom}))}/>
-                            <Slider label="Poziție X" value={normalizedTransform.panX} min={-maxPan} max={maxPan} suffix="%" change={panX => setTransform(current => normalizeTransform({...current, panX}))}/>
-                            <Slider label="Poziție Y" value={normalizedTransform.panY} min={-maxPan} max={maxPan} suffix="%" change={panY => setTransform(current => normalizeTransform({...current, panY}))}/>
+                            <Slider label="Zoom" value={normalizedTransform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setCurrentTransform(current => normalizeTransform({...current, zoom}))}/>
+                            <Slider label="Poziție X" value={normalizedTransform.panX} min={-maxPan} max={maxPan} suffix="%" change={panX => setCurrentTransform(current => normalizeTransform({...current, panX}))}/>
+                            <Slider label="Poziție Y" value={normalizedTransform.panY} min={-maxPan} max={maxPan} suffix="%" change={panY => setCurrentTransform(current => normalizeTransform({...current, panY}))}/>
                         </div>
                     </div>
                     <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <label className="flex min-h-9 flex-1 items-center justify-between rounded-xl bg-white/35 px-3 text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setTransform(current => ({...current, flipX: event.target.checked}))}/></label>
+                        <label className="flex min-h-9 flex-1 items-center justify-between rounded-xl bg-white/35 px-3 text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setCurrentTransform(current => ({...current, flipX: event.target.checked}))}/></label>
                         <button type="button" className="ios-secondary-button flex-1" onClick={() => void reset()}>Resetează</button>
                     </div>
                 </aside>}
-            </div> : (
+            </div> : activeTab === 'text' ? (
                 <div className="p-3 sm:p-4" role="tabpanel"><ArticleTextContent article={article}/></div>
+            ) : (
+                <div className="p-3 sm:p-4" role="tabpanel"><ImageEditorContent article={article} initialTab="local" allowUpload={false} autoFocusLibrarySearch onImageSelected={() => setActiveTab('onair')}/></div>
             )}
         </div>
     </div>, document.body);
 };
 
 const Slider = ({label, value, min, max, step = 1, suffix, change}: {label: string; value: number; min: number; max: number; step?: number; suffix: string; change: (value: number) => void}) => <label className="block text-[11px] font-semibold text-[#65728a]"><span className="mb-0.5 flex justify-between gap-2"><span>{label}</span><span>{formatSliderValue(value)}{suffix}</span></span><input className="block h-5 w-full accent-[#2878ff]" type="range" value={value} min={min} max={max} step={step} onChange={event => change(Number(event.target.value))}/></label>;
+
+const HeaderIconButton = ({label, disabled, onClick, children}: {label: string; disabled?: boolean; onClick: () => void; children: ReactNode}) => <button type="button" disabled={disabled} onClick={onClick} aria-label={label} title={label} className="flex h-9 w-9 items-center justify-center rounded-full border border-white/70 bg-white/50 text-[#65728a] shadow-sm transition hover:bg-white/85 disabled:cursor-not-allowed disabled:opacity-40">{children}</button>;
 
 const PlaylistNavigationButton = ({article, direction, onSelect}: {article: Article | null; direction: 'prev' | 'next'; onSelect: (articleId: number) => void}) => {
     const isPrevious = direction === 'prev';

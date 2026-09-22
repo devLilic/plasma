@@ -9,17 +9,17 @@ import SearchExternalImages from '@/Components/ExternalImages/SearchExternalImag
 import {useDispatch} from 'react-redux';
 import {AppDispatch} from '@/Store/store';
 import {cropExternalImage as cropExternalImageThunk} from '@/Store/image/externalImage.slice';
+import {Article} from '@/types';
 
 interface GoogleTabProps {
-    handleModal: () => void
+    article: Article
+    onImageSelected: () => void
 }
 
-const GoogleTab = ({handleModal}: GoogleTabProps) => {
+const GoogleTab = ({article, onImageSelected}: GoogleTabProps) => {
     const {resetCrop, setExternalUrlLink, changeSearchBy, changeTitle, changeSubtitle} = useActions();
     const dispatch = useDispatch<AppDispatch>();
     const {error, loading, selected} = useTypedSelector(state => state.externalImages);
-    const articleId = useTypedSelector(state => state.articles.current);
-    const article = useTypedSelector(state => state.articles.entities[articleId]);
     const searchValue = article.search_by === 'title' ? article.title : article.subtitle;
     const [tags, setTags] = useState(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
     const [percentCrop, setPercentCrop] = useState<PercentCrop>({unit: '%', x: 0, y: 0, width: 0, height: 0});
@@ -27,14 +27,14 @@ const GoogleTab = ({handleModal}: GoogleTabProps) => {
     useEffect(() => {
         resetCrop();
         setTags(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
-    }, [articleId]);
+    }, [article.id]);
 
     const saveCrop = async () => {
         if (!selected.url) return;
         try {
-            await dispatch(cropExternalImageThunk({url: selected.url, section: percentCrop, tags, article_id: articleId})).unwrap();
+            await dispatch(cropExternalImageThunk({url: selected.url, section: percentCrop, tags, article_id: article.id})).unwrap();
             resetCrop();
-            handleModal();
+            onImageSelected();
         } catch {
             // Error state is displayed below the URL field.
         }

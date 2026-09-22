@@ -53,9 +53,9 @@ export const imagesSlice = createSlice({
 
 export const fetchImages = createAsyncThunk(
     'images/fetchImages',
-    async (limit: number | undefined, {rejectWithValue}) => {
+    async (query: {limit?: number, articleId?: number} | undefined, {rejectWithValue}) => {
         try {
-            return await imagesApi.fetch(limit)
+            return await imagesApi.fetch(query)
         } catch (error) {
             return rejectWithValue(error)
         }
@@ -63,8 +63,8 @@ export const fetchImages = createAsyncThunk(
 
 export const searchImages = createAsyncThunk(
     'images/searchImages',
-    async (query: string) => {
-        return await imagesApi.search(query)
+    async (query: {query: string, articleId?: number}) => {
+        return await imagesApi.search(query.query, query.articleId)
     }
 )
 

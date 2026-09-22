@@ -88,7 +88,7 @@ const ArticleWorkspace = ({article, activeTab, onTabChange, onOpenImageModal, on
                                 <p className="mt-2 line-clamp-3 whitespace-pre-wrap text-sm leading-6 text-[#2c3443]">{article.intro || 'Acest material nu are intro.'}</p>
                             </div>
                         )}
-                        <ImageEditorContent/>
+                        <ImageEditorContent article={article}/>
                     </div>
                 )}
             </div>

@@ -4,10 +4,12 @@ namespace App\Http\Controllers\API\V1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\ImageResource;
+use App\Models\Article;
 use App\Models\Image;
 use App\Models\Tag;
 use App\Services\Images\ExternalImageService;
 use App\Services\Images\ImageDeletionService;
+use App\Services\Images\ImageMatcher;
 use App\Services\Images\ImageStorage;
 use App\Services\Images\ImageThumbnailService;
 use Illuminate\Http\Request;
@@ -18,27 +20,43 @@ use RuntimeException;
 
 class ImagesController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request, ImageMatcher $imageMatcher)
     {
         $limit = min(max($request->integer('limit', 30), 1), 100);
+        $articleId = $request->integer('article_id') ?: null;
+        $request->validate(['article_id' => ['nullable', 'integer', 'exists:articles,id']]);
+
+        if ($articleId) {
+            $article = Article::findOrFail($articleId);
+
+            return ImageResource::collection(
+                $imageMatcher->rank(Image::with('tags')->get(), [$article->title, $article->subtitle])->take($limit)
+            );
+        }
 
         return ImageResource::collection(Image::latest()->limit($limit)->with('tags')->get());
     }
 
-    public function search(Request $request)
+    public function search(Request $request, ImageMatcher $imageMatcher)
     {
         $validated = $request->validate([
             'query' => ['required', 'string', 'min:2', 'max:80'],
+            'article_id' => ['nullable', 'integer', 'exists:articles,id'],
         ]);
 
         $images = Image::query()
             ->whereHas('tags', fn ($query) => $query->where('title', 'like', '%'.$validated['query'].'%'))
             ->with('tags')
-            ->latest()
-            ->limit(100)
             ->get();
 
-        return ImageResource::collection($images);
+        if (! empty($validated['article_id'])) {
+            $article = Article::findOrFail($validated['article_id']);
+            $images = $imageMatcher->rank($images, [$article->title, $article->subtitle]);
+        } else {
+            $images = $images->sortByDesc(fn (Image $image) => $image->created_at?->getTimestamp() ?? $image->id)->values();
+        }
+
+        return ImageResource::collection($images->take(100));
     }
 
     public function update(

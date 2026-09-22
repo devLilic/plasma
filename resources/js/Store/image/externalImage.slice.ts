@@ -58,7 +58,7 @@ export const cropExternalImage = createAsyncThunk(
     async (query: CropImageWithTagsQuery, {dispatch, rejectWithValue}) => {
         try {
             const image = await externalImagesApi.crop(query);
-            dispatch(articlesActions.setBackgroundImage(image));
+            dispatch(articlesActions.setLocalBackgroundImage({articleId: query.article_id, image}));
             dispatch(imagesActions.upsertImage(image));
             return image;
         } catch (error: any) {
