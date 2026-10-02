@@ -8,6 +8,7 @@ import {
     PhotoIcon,
     QueueListIcon,
     Cog6ToothIcon,
+    PlayCircleIcon,
 } from '@heroicons/react/24/outline';
 import ApplicationLogo from '@/Components/UI/Logo/ApplicationLogo';
 import {User} from '@/types';
@@ -63,6 +64,12 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                                 </Button>
                             </MenuHandler>
                             <MenuList className="z-50 min-w-[210px] rounded-[20px] border border-white/80 bg-white/75 p-2 shadow-[0_18px_50px_rgba(42,55,94,0.18)] backdrop-blur-2xl" placeholder={null}>
+                                <MenuItem className="p-0" placeholder={null}>
+                                    <Link href={route('llc.test')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
+                                        <PlayCircleIcon className="h-5 w-5 text-[#286ee7]"/>
+                                        Test LLC
+                                    </Link>
+                                </MenuItem>
                                 <MenuItem className="p-0" placeholder={null}>
                                     <Link href={route('profile.edit')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
                                         <Cog6ToothIcon className="h-5 w-5 text-[#286ee7]"/>
