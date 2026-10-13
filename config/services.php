@@ -31,4 +31,13 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'enps' => [
+        'url' => env('ENPS_WEB_URL', 'http://95.65.10.186:8808/enpswebaccess3/'),
+        'username' => env('ENPS_WEB_USERNAME'),
+        'password' => env('ENPS_WEB_PASSWORD'),
+        'domain' => env('ENPS_WEB_DOMAIN', ''),
+        'timezone' => env('ENPS_WEB_TIMEZONE', 'Europe/Chisinau'),
+        'timeout' => (int) env('ENPS_WEB_TIMEOUT', 20),
+    ],
+
 ];

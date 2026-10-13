@@ -38,7 +38,7 @@ const LocalTab = ({article, onImageSelected, autoFocusSearch = false}: LocalTabP
             </div>
             <div className="max-h-[430px] overflow-y-auto pr-1">
                 {loading && <div className="flex min-h-60 items-center justify-center"><Loading/></div>}
-                {!loading && error && <div className="rounded-2xl bg-[#ff3b30]/10 px-4 py-8 text-center text-sm text-[#ff3b30]">{error}</div>}
+                {!loading && error && <div role="alert" className="rounded-2xl bg-[#ff3b30]/10 px-4 py-8 text-center text-sm text-[#ff3b30]">{error}</div>}
                 {!loading && !error && <ImagesList article={article} articleId={article.id} onImageSelected={onImageSelected}/>}
             </div>
         </div>

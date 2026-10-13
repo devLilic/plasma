@@ -42,7 +42,7 @@ export default function ImageStorageSettings({initialPath}: Props) {
                         spellCheck={false}
                         className="w-full rounded-xl border-0 bg-[#f2f2f7] px-4 py-3 text-sm text-[#1c1c1e] ring-1 ring-inset ring-transparent focus:bg-white focus:ring-[#007aff]"
                     />
-                    {errors.path && <p className="mt-2 text-sm text-[#ff3b30]">{errors.path}</p>}
+                    {errors.path && <p role="alert" className="mt-2 text-sm text-[#ff3b30]">{errors.path}</p>}
                     <p className="mt-2 text-xs leading-5 text-[#8e8e93]">Folderul trebuie să existe și să permită aplicației citirea, scrierea și ștergerea fișierelor. Imaginile existente nu sunt mutate automat.</p>
                 </div>
 

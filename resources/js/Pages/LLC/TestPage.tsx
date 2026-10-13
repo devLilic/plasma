@@ -263,7 +263,7 @@ const TestPage = ({auth}: PageProps) => {
                                 </span>
                             </div>
                         </form>
-                        <p role="status" aria-live="polite" className={`mt-4 flex items-start gap-2 rounded-2xl px-4 py-3 text-sm leading-6 ${error ? 'bg-[#ff3b30]/10 text-[#bd2d24]' : 'bg-white/45 text-[#53627a]'}`}>
+                        <p role={error ? 'alert' : 'status'} aria-live={error ? 'assertive' : 'polite'} className={`mt-4 flex items-start gap-2 rounded-2xl px-4 py-3 text-sm leading-6 ${error ? 'bg-[#ff3b30]/10 text-[#bd2d24]' : 'bg-white/45 text-[#53627a]'}`}>
                             {error && <ExclamationCircleIcon className="mt-0.5 h-5 w-5 shrink-0"/>}{message}
                         </p>
                     </section>

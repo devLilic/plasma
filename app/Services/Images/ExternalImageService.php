@@ -15,8 +15,12 @@ class ExternalImageService
 
     private const BROWSER_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/140.0.0.0 Safari/537.36';
 
+    public function __construct(private readonly ImageQualitySettings $qualitySettings) {}
+
     public function crop(string $url, array $section): string
     {
+        $minimum = $this->qualitySettings->dimensions();
+        $minimumCrop = $this->qualitySettings->cropDimensions($minimum);
         $contents = $this->download($url);
         $source = @imagecreatefromstring($contents);
 
@@ -27,6 +31,12 @@ class ExternalImageService
         try {
             $sourceWidth = imagesx($source);
             $sourceHeight = imagesy($source);
+            if ($sourceWidth < $minimum['width'] || $sourceHeight < $minimum['height']) {
+                throw ValidationException::withMessages([
+                    'data.url' => "Imaginea este prea mică. Folosește o imagine de minimum {$minimum['width']} × {$minimum['height']} px.",
+                ]);
+            }
+
             $crop = [
                 'x' => max(0, (int) round($sourceWidth * $section['x'] / 100)),
                 'y' => max(0, (int) round($sourceHeight * $section['y'] / 100)),
@@ -38,6 +48,11 @@ class ExternalImageService
 
             if ($crop['width'] < 1 || $crop['height'] < 1) {
                 throw ValidationException::withMessages(['data.section' => 'Zona de decupare nu este validă.']);
+            }
+            if ($crop['width'] < $minimumCrop['width'] || $crop['height'] < $minimumCrop['height']) {
+                throw ValidationException::withMessages([
+                    'data.section' => "Zona decupată este prea mică. Selectează o zonă de minimum {$minimumCrop['width']} × {$minimumCrop['height']} px pentru formatul 16:9.",
+                ]);
             }
 
             $cropped = imagecrop($source, $crop);

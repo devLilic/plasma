@@ -97,7 +97,7 @@ export default function PlaylistTitleExclusionsSettings({initialTerms}: Props) {
                             Adaugă
                         </button>
                     </div>
-                    {errors.terms && <p className="mt-2 text-sm text-[#ff3b30]">{errors.terms}</p>}
+                    {errors.terms && <p role="alert" className="mt-2 text-sm text-[#ff3b30]">{errors.terms}</p>}
                     <p className="mt-2 text-xs leading-5 text-[#8e8e93]">
                         Modificările se aplică numai playlisturilor încărcate după salvare. Playlisturile existente nu sunt modificate.
                     </p>

@@ -6,6 +6,7 @@ import {createInertiaApp} from '@inertiajs/react';
 import {resolvePageComponent} from 'laravel-vite-plugin/inertia-helpers';
 import {Provider} from "react-redux";
 import {store} from "@/Store/store";
+import {GlobalErrorToasts} from '@/Components/UI/GlobalErrorToasts';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Plasma';
 
@@ -15,7 +16,7 @@ createInertiaApp({
     setup({el, App, props}) {
         const root = createRoot(el);
 
-        root.render(<Provider store={store}><App {...props} /></Provider>);
+        root.render(<Provider store={store}><GlobalErrorToasts><App {...props} /></GlobalErrorToasts></Provider>);
     },
     progress: {
         color: '#2878ff',

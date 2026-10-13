@@ -7,13 +7,17 @@ interface SearchExternalImagesProps {
     withModal?: () => void
 }
 
+export const googleImagesSearchUrl = (query: string) =>
+    `https://www.google.com/search?q=${encodeURIComponent(query)}&source=lnms&tbm=isch&tbs=isz:lt,islt:vga,iar:w`;
+
+export const openGoogleImagesSearch = (query: string) =>
+    window.open(googleImagesSearchUrl(query), '_blank', 'noopener,noreferrer');
+
 const SearchExternalImages = ({query, withModal}: SearchExternalImagesProps) => {
     const searchOn = (engine: 'google' | 'yandex') => {
         const searchQuery = encodeURIComponent(query);
-        const url = engine === 'google'
-            ? `https://www.google.com/search?q=${searchQuery}&source=lnms&tbm=isch&tbs=isz:lt,islt:vga,iar:w`
-            : `https://yandex.com/images/search?isize=large&text=${searchQuery}`;
-        window.open(url, '_blank', 'noopener,noreferrer');
+        if (engine === 'google') openGoogleImagesSearch(query);
+        else window.open(`https://yandex.com/images/search?isize=large&text=${searchQuery}`, '_blank', 'noopener,noreferrer');
         withModal?.();
     };
 

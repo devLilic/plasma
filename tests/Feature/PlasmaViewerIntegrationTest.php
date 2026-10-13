@@ -42,6 +42,25 @@ class PlasmaViewerIntegrationTest extends TestCase
         Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer test-viewer-token'));
     }
 
+    public function test_authenticated_operator_can_read_the_plasmaviewer_default_image(): void
+    {
+        Http::fake(['http://127.0.0.1:47832/v1/default-image' => Http::response('default-image-bytes', 200, ['Content-Type' => 'image/jpeg'])]);
+
+        $this->actingAs(User::factory()->create())
+            ->get(route('viewer.default-image'))
+            ->assertOk()
+            ->assertHeader('Content-Type', 'image/jpeg')
+            ->assertHeader('Cache-Control', 'no-store')
+            ->assertSee('default-image-bytes', false);
+
+        Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer test-viewer-token'));
+    }
+
+    public function test_default_image_endpoint_requires_authentication(): void
+    {
+        $this->get(route('viewer.default-image'))->assertUnauthorized();
+    }
+
     public function test_offline_viewer_is_launched_and_the_request_is_retried(): void
     {
         $launcher = \Mockery::mock(PlasmaViewerLauncher::class);
@@ -87,6 +106,28 @@ class PlasmaViewerIntegrationTest extends TestCase
                 && $command['payload']['image']['source'] === app(ImageStorage::class)->disk()->path($image->url)
                 && str_contains($url, '/viewer/media/')
                 && ! str_contains($url, 'attacker.example');
+        });
+    }
+
+    public function test_default_image_can_be_sent_to_viewer_for_an_article_without_an_image(): void
+    {
+        $article = Article::create([
+            'title' => 'Material fără imagine', 'subtitle' => 'Subtitlu', 'article_type' => 'BETA',
+            'playlist_id' => Playlist::create(['title' => 'Jurnal'])->id, 'playlist_order' => 1,
+        ]);
+        Http::fake(['http://127.0.0.1:47832/v1/commands' => Http::response($this->viewerState())]);
+
+        $this->actingAs(User::factory()->create())->postJson(route('viewer.command'), [
+            'type' => 'show-default', 'article_id' => $article->id,
+            'transform' => ['brightness' => 100, 'contrast' => 100, 'saturation' => 100, 'zoom' => 1.2, 'panX' => 4, 'panY' => -3, 'flipX' => true],
+        ])->assertOk();
+
+        Http::assertSent(function (Request $request) use ($article) {
+            $command = $request->data();
+            return $command['type'] === 'show-default'
+                && $command['payload']['articleId'] === $article->id
+                && $command['payload']['title'] === 'Material fără imagine'
+                && $command['payload']['transform']['flipX'] === true;
         });
     }
 

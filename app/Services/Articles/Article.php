@@ -14,6 +14,10 @@ class Article
 
     public string $technical_title;
 
+    public ?string $enps_marker_color = null;
+
+    public array $mos_objects = [];
+
     /** @var array<int, array{slug: string, type: string, paragraphs: array<int, string>}> */
     public array $sections = [];
 

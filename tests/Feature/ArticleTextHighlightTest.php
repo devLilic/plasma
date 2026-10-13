@@ -36,6 +36,26 @@ class ArticleTextHighlightTest extends TestCase
         );
     }
 
+    public function test_highlighting_old_enps_text_accepts_normalized_word_spacing(): void
+    {
+        $this->actingAs(User::factory()->create());
+        $article = Playlist::create(['title' => 'Jurnal'])->articles()->create([
+            'title' => 'Material',
+            'subtitle' => 'Material',
+            'article_type' => 'OFF',
+            'playlist_order' => 1,
+            'content_sections' => [['slug' => 'INTRO', 'type' => 'INTRO', 'paragraphs' => ["Helsinki\u{00A0}și\u{202F}Finlanda dis\u{00AD}cută."]]],
+        ]);
+
+        $this->patchJson("/api/v1/articles/{$article->id}/highlights", [
+            'data' => ['section_index' => 0, 'paragraph_index' => 0, 'html' => '<strong>Helsinki și Finlanda</strong> discută.'],
+        ])->assertOk();
+
+        $this->patchJson("/api/v1/articles/{$article->id}/highlights", [
+            'data' => ['section_index' => 0, 'paragraph_index' => 0, 'html' => '<strong>Helsinki și România</strong> discută.'],
+        ])->assertUnprocessable();
+    }
+
     public function test_it_rejects_highlight_requests_that_change_article_text(): void
     {
         $this->actingAs(User::factory()->create());

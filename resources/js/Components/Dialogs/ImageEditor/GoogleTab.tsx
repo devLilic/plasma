@@ -6,6 +6,7 @@ import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {useActions} from '@/Hooks/useActions';
 import CropBlock from '@/Components/Dialogs/ImageEditor/Crop/CropBlock';
 import SearchExternalImages from '@/Components/ExternalImages/SearchExternalImages';
+import {openGoogleImagesSearch} from '@/Components/ExternalImages/SearchExternalImages';
 import {useDispatch} from 'react-redux';
 import {AppDispatch} from '@/Store/store';
 import {cropExternalImage as cropExternalImageThunk} from '@/Store/image/externalImage.slice';
@@ -17,17 +18,28 @@ interface GoogleTabProps {
 }
 
 const GoogleTab = ({article, onImageSelected}: GoogleTabProps) => {
-    const {resetCrop, setExternalUrlLink, changeSearchBy, changeTitle, changeSubtitle} = useActions();
+    const {resetCrop, setExternalUrlLink, changeSearchBy} = useActions();
     const dispatch = useDispatch<AppDispatch>();
     const {error, loading, selected} = useTypedSelector(state => state.externalImages);
-    const searchValue = article.search_by === 'title' ? article.title : article.subtitle;
+    const [titleQuery, setTitleQuery] = useState(article.title);
+    const [subtitleQuery, setSubtitleQuery] = useState(article.subtitle);
+    const searchValue = article.search_by === 'title' ? titleQuery : subtitleQuery;
     const [tags, setTags] = useState(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
+    const [imageDimensions, setImageDimensions] = useState<{width: number; height: number} | null>(null);
+    const [imageDimensionsError, setImageDimensionsError] = useState(false);
     const [percentCrop, setPercentCrop] = useState<PercentCrop>({unit: '%', x: 0, y: 0, width: 0, height: 0});
 
     useEffect(() => {
         resetCrop();
         setTags(article.subtitle.replace(/\s?off|\s?snc/gi, '').toLowerCase());
     }, [article.id]);
+
+    useEffect(() => {
+        setTitleQuery(article.title);
+        setSubtitleQuery(article.subtitle);
+    }, [article.id, article.title, article.subtitle]);
+
+    useEffect(() => setImageDimensionsError(false), [selected.url]);
 
     const saveCrop = async () => {
         if (!selected.url) return;
@@ -44,10 +56,19 @@ const GoogleTab = ({article, onImageSelected}: GoogleTabProps) => {
         const active = article.search_by === kind;
         return (
             <div className={`flex items-center gap-3 rounded-2xl border p-3 transition ${active ? 'border-[#2878ff]/25 bg-[#2878ff]/[0.06] shadow-[inset_0_1px_0_rgba(255,255,255,0.65)]' : 'border-white/60 bg-white/28'}`}>
-                <button type="button" aria-label={kind === 'title' ? 'Folosește titlul pentru căutare' : 'Folosește subtitlul pentru căutare'} onClick={() => changeSearchBy({id: article.id, changes: {search_by: kind}})} className="shrink-0">
+                <button type="button" aria-label={kind === 'title' ? 'Folosește titlul pentru căutare' : 'Folosește subtitlul pentru căutare'} onClick={() => {
+                    changeSearchBy({id: article.id, changes: {search_by: kind}});
+                    if (!active && value.trim()) openGoogleImagesSearch(value);
+                }} className="shrink-0">
                     <span className={`flex h-5 w-5 items-center justify-center rounded-full border ${active ? 'border-[#2878ff] bg-[#2878ff] text-white shadow-sm' : 'border-[#9ba8bb] bg-white/70'}`}>{active && <CheckIcon className="h-3 w-3"/>}</span>
                 </button>
-                <input aria-label={kind === 'title' ? 'Titlul materialului' : 'Subtitlul materialului'} value={value} onChange={onChange} className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[#172033] outline-none ring-0 focus:ring-0"/>
+                <input aria-label={kind === 'title' ? 'Termen de căutare după titlu' : 'Termen de căutare după subtitlu'} value={value} onChange={onChange} onKeyDown={event => {
+                    if (event.key !== 'Enter') return;
+                    event.preventDefault();
+                    changeSearchBy({id: article.id, changes: {search_by: kind}});
+                    const query = event.currentTarget.value.trim();
+                    if (query) openGoogleImagesSearch(query);
+                }} className="min-w-0 flex-1 border-0 bg-transparent p-0 text-sm font-medium text-[#172033] outline-none ring-0 focus:ring-0"/>
             </div>
         );
     };
@@ -58,14 +79,14 @@ const GoogleTab = ({article, onImageSelected}: GoogleTabProps) => {
                 {selected.url ? (
                     <div>
                         <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-[#172033]"><ScissorsIcon className="h-5 w-5 text-[#286ee7]"/>Decupează la formatul 16:9</div>
-                        <div className="overflow-hidden rounded-2xl bg-black/5"><CropBlock url={selected.url} handlePercentCropChange={setPercentCrop}/></div>
+                        <div className="overflow-hidden rounded-none bg-black/5"><CropBlock url={selected.url} handlePercentCropChange={setPercentCrop} handleImageDimensionsChange={setImageDimensions} handleImageLoadError={() => setImageDimensionsError(true)}/></div>
                     </div>
                 ) : (
                     <div>
                         <p className="mb-3 text-sm font-semibold text-[#172033]">Termen pentru căutare</p>
                         <div className="space-y-2.5">
-                            {searchField('title', article.title, event => changeTitle({id: article.id, changes: {title: event.target.value}}))}
-                            {searchField('subtitle', article.subtitle, event => changeSubtitle({id: article.id, changes: {subtitle: event.target.value}}))}
+                            {searchField('title', titleQuery, event => setTitleQuery(event.target.value))}
+                            {searchField('subtitle', subtitleQuery, event => setSubtitleQuery(event.target.value))}
                         </div>
                         <div className="mt-4 flex items-center gap-2 rounded-2xl border border-white/70 bg-white/48 px-4 py-3 shadow-sm">
                             <span className="min-w-0 flex-1 truncate text-sm text-[#65728a]">{searchValue}</span>
@@ -79,7 +100,12 @@ const GoogleTab = ({article, onImageSelected}: GoogleTabProps) => {
                 <label>
                     <span className="auth-field-label flex items-center gap-2"><LinkIcon className="h-4 w-4"/>URL imagine</span>
                     <input value={selected.url} onChange={event => setExternalUrlLink(event.target.value)} placeholder="Lipește adresa imaginii" className="ios-search !pl-4"/>
-                    {error && <p className="mt-2 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-xs text-[#ff3b30]">{error}</p>}
+                    {selected.url && <p className="mt-2 text-xs text-[#65728a]" aria-live="polite">
+                        {imageDimensions
+                            ? <>Dimensiuni detectate: {imageDimensions.width} × {imageDimensions.height} px</>
+                            : imageDimensionsError ? 'Dimensiunile nu au putut fi detectate din acest link.' : 'Se detectează dimensiunile imaginii…'}
+                    </p>}
+                    {error && <p role="alert" className="mt-2 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-xs text-[#ff3b30]">{error}</p>}
                 </label>
                 {selected.url ? (
                     <>

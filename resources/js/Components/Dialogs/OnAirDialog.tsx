@@ -237,27 +237,28 @@ const OnAirDialog = ({articles, startArticleId, isOpen, onClose}: OnAirDialogPro
                         )}
                         <button type="button" disabled={busy} onClick={() => void hide()} className="ios-secondary-button shrink-0">Ascunde</button>
                     </div>
-                    {error && <p className="mt-3 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm font-medium text-[#c9251c]">{error}</p>}
+                    {error && <p role="alert" className="mt-3 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm font-medium text-[#c9251c]">{error}</p>}
                 </section>
-                {article.image && <aside className="rounded-[20px] border border-white/75 bg-white/45 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] sm:p-4">
-                    <h3 className="mb-2 font-bold text-[#172033]">Ajustări imagine</h3>
-                    <div className="grid grid-cols-2 gap-x-4 lg:grid-cols-1 lg:gap-y-2.5">
-                        <div className="space-y-2">
-                            <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setCurrentTransform(current => ({...current, brightness}))}/>
-                            <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setCurrentTransform(current => ({...current, contrast}))}/>
-                            <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setCurrentTransform(current => ({...current, saturation}))}/>
+                {article.image && <div className="rounded-[20px] border border-white/75 bg-white/45 p-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.84)] sm:p-4">
+                    <div>
+                        <div className="grid grid-cols-2 gap-x-4 lg:grid-cols-1 lg:gap-y-2.5">
+                            <div className="space-y-2">
+                                <Slider label="Luminozitate" value={transform.brightness} min={0} max={200} suffix="%" change={brightness => setCurrentTransform(current => ({...current, brightness}))}/>
+                                <Slider label="Contrast" value={transform.contrast} min={0} max={200} suffix="%" change={contrast => setCurrentTransform(current => ({...current, contrast}))}/>
+                                <Slider label="Saturație" value={transform.saturation} min={0} max={200} suffix="%" change={saturation => setCurrentTransform(current => ({...current, saturation}))}/>
+                            </div>
+                            <div className="space-y-2">
+                                <Slider label="Zoom" value={normalizedTransform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setCurrentTransform(current => normalizeTransform({...current, zoom}))}/>
+                                <Slider label="Poziție X" value={normalizedTransform.panX} min={-maxPan} max={maxPan} suffix="%" change={panX => setCurrentTransform(current => normalizeTransform({...current, panX}))}/>
+                                <Slider label="Poziție Y" value={normalizedTransform.panY} min={-maxPan} max={maxPan} suffix="%" change={panY => setCurrentTransform(current => normalizeTransform({...current, panY}))}/>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Slider label="Zoom" value={normalizedTransform.zoom} min={1} max={4} step={0.01} suffix="×" change={zoom => setCurrentTransform(current => normalizeTransform({...current, zoom}))}/>
-                            <Slider label="Poziție X" value={normalizedTransform.panX} min={-maxPan} max={maxPan} suffix="%" change={panX => setCurrentTransform(current => normalizeTransform({...current, panX}))}/>
-                            <Slider label="Poziție Y" value={normalizedTransform.panY} min={-maxPan} max={maxPan} suffix="%" change={panY => setCurrentTransform(current => normalizeTransform({...current, panY}))}/>
+                        <div className="mt-3 flex flex-wrap items-center gap-3">
+                            <label className="flex min-h-9 flex-1 items-center justify-between rounded-xl bg-white/35 px-3 text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setCurrentTransform(current => ({...current, flipX: event.target.checked}))}/></label>
+                            <button type="button" className="ios-secondary-button flex-1" onClick={() => void reset()}>Resetează</button>
                         </div>
                     </div>
-                    <div className="mt-3 flex flex-wrap items-center gap-3">
-                        <label className="flex min-h-9 flex-1 items-center justify-between rounded-xl bg-white/35 px-3 text-sm font-medium text-[#3a3a3c]">Flip orizontal<input type="checkbox" className="rounded text-[#007aff]" checked={transform.flipX} onChange={event => setCurrentTransform(current => ({...current, flipX: event.target.checked}))}/></label>
-                        <button type="button" className="ios-secondary-button flex-1" onClick={() => void reset()}>Resetează</button>
-                    </div>
-                </aside>}
+                </div>}
             </div> : activeTab === 'text' ? (
                 <div className="p-3 sm:p-4" role="tabpanel"><ArticleTextContent article={article}/></div>
             ) : (

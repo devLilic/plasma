@@ -1,5 +1,5 @@
-import React from 'react';
-import {ArrowUpTrayIcon, GlobeAltIcon, PhotoIcon} from '@heroicons/react/24/outline';
+import React, {useEffect, useState} from 'react';
+import {ArrowUpTrayIcon, GlobeAltIcon, PhotoIcon, TvIcon} from '@heroicons/react/24/outline';
 import {TabPanel, Tabs} from '@material-tailwind/react';
 import LocalTab from '@/Components/Dialogs/ImageEditor/LocalTab';
 import GoogleTab from '@/Components/Dialogs/ImageEditor/GoogleTab';
@@ -9,23 +9,39 @@ import TabsHeader from '@/Components/Material/TabHeader';
 import TabsBody from '@/Components/Material/TabsBody';
 import {Article} from '@/types';
 
+type ImageEditorTab = 'external' | 'local' | 'upload' | 'plasma';
+
 interface ImageEditorContentProps {
     onImageSelected?: () => void
     article: Article
-    initialTab?: 'external' | 'local' | 'upload'
+    initialTab?: ImageEditorTab
     allowUpload?: boolean
     autoFocusLibrarySearch?: boolean
+    operatorMode?: boolean
+    plasmaContent?: React.ReactNode
 }
 
-const ImageEditorContent = ({onImageSelected = () => undefined, article, initialTab = 'external', allowUpload = true, autoFocusLibrarySearch = false}: ImageEditorContentProps) => {
+const ImageEditorContent = ({onImageSelected = () => undefined, article, initialTab = 'external', allowUpload = true, autoFocusLibrarySearch = false, operatorMode = false, plasmaContent}: ImageEditorContentProps) => {
+    const [operatorTab, setOperatorTab] = useState<ImageEditorTab>(initialTab);
+    useEffect(() => setOperatorTab(initialTab), [article.id, initialTab]);
     const tabs = [
         {value: 'external', label: 'Internet', icon: GlobeAltIcon},
         {value: 'local', label: 'Bibliotecă', icon: PhotoIcon},
         ...(allowUpload ? [{value: 'upload' as const, label: 'Încarcă', icon: ArrowUpTrayIcon}] : []),
     ] as const;
 
+    if (operatorMode) return <div className="operator-image-editor">
+        <nav className="operator-image-tabs" role="tablist" aria-label="Surse imagine">
+            {(plasmaContent ? [{value: 'plasma', label: 'Plasma', icon: TvIcon}, ...tabs] : tabs).map(item => <button key={item.value} type="button" role="tab" aria-selected={operatorTab === item.value} className={operatorTab === item.value ? 'active' : ''} onClick={() => setOperatorTab(item.value as ImageEditorTab)}><item.icon className="h-4 w-4"/>{item.label}</button>)}
+        </nav>
+        {operatorTab === 'plasma' && plasmaContent}
+        {operatorTab === 'external' && <GoogleTab article={article} onImageSelected={onImageSelected}/>}
+        {operatorTab === 'local' && <LocalTab article={article} onImageSelected={onImageSelected} autoFocusSearch={autoFocusLibrarySearch}/>}
+        {operatorTab === 'upload' && allowUpload && <UploadTab handleModal={onImageSelected}/>}
+    </div>;
+
     return (
-        <Tabs value={initialTab}>
+        <Tabs value={initialTab === 'plasma' ? 'external' : initialTab}>
             <TabsHeader className="!mx-auto !mb-5 !max-w-xl !rounded-[16px] !border !border-white/60 !bg-white/30 !p-1"
                         indicatorProps={{className: 'rounded-[12px] bg-white/90 shadow-[0_5px_16px_rgba(54,73,115,0.1)] ring-1 ring-white'}}>
                 {tabs.map(item => (

@@ -103,7 +103,7 @@ export default function SavedImageEditorDialog({image, isOpen, onClose}: Props) 
                             <span className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-[22px] border border-white/70 bg-[#ff3b30]/10 text-[#e13d37] shadow-[inset_0_1px_0_rgba(255,255,255,0.8),0_8px_22px_rgba(201,55,48,0.12)]"><ExclamationTriangleIcon className="h-8 w-8"/></span>
                             <h3 className="text-xl font-bold text-[#172033]">Ștergere definitivă</h3>
                             <p className="mt-2 text-sm leading-6 text-[#65728a]">Fișierul și toate asocierile imaginii cu materialele și etichetele vor fi eliminate. Etichetele globale rămân disponibile în baza de date.</p>
-                            {error && <p className="mt-4 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-sm text-[#ff3b30]">{error}</p>}
+                            {error && <p role="alert" className="mt-4 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-sm text-[#ff3b30]">{error}</p>}
                         </div>
                     </DialogBody>
                     <DialogFooter className="!justify-end">
@@ -154,7 +154,7 @@ export default function SavedImageEditorDialog({image, isOpen, onClose}: Props) 
                                 </section>
                             </div>
                         )}
-                        {error && <p className="mt-4 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-sm text-[#ff3b30]">{error}</p>}
+                        {error && <p role="alert" className="mt-4 rounded-xl bg-[#ff3b30]/10 px-3 py-2 text-sm text-[#ff3b30]">{error}</p>}
                     </DialogBody>
                     <DialogFooter className="!justify-between !border-[#5878a8]/10 !bg-white/30">
                         <button type="button" onClick={() => setConfirmingDelete(true)} className="inline-flex min-h-10 items-center gap-2 rounded-[14px] border border-[#d84a42]/15 bg-[#fff4f2]/80 px-3.5 text-sm font-bold text-[#a62f29] shadow-[inset_0_1px_0_rgba(255,255,255,0.9),0_4px_14px_rgba(168,54,47,0.07)] transition hover:border-[#d84a42]/25 hover:bg-[#ffe9e6]"><span className="flex h-6 w-6 items-center justify-center rounded-lg bg-[#d84a42]/10"><TrashIcon className="h-3.5 w-3.5"/></span>Șterge imaginea</button>
