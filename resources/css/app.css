@@ -249,6 +249,8 @@
     .mos-sequence-missing { background: rgba(113,128,154,.08); color: #65728a; }
     .mos-override-card { position: relative; padding: 0; border: 1px solid rgba(40,110,231,.46); border-radius: 14px; background: rgba(237,244,255,.7); transition: border-color .14s ease, background-color .14s ease, box-shadow .14s ease; }
     .mos-override-card:hover, .mos-override-card:focus-within { border-color: rgba(40,110,231,.72); background: rgba(228,239,255,.9); box-shadow: 0 3px 12px rgba(40,110,231,.1); }
+    .mos-override-card-on-air, .mos-override-card-on-air:hover, .mos-override-card-on-air:focus-within { border-color: rgba(28,145,87,.7); background: rgba(222,247,231,.96); box-shadow: inset 4px 0 0 #20965c, 0 3px 12px rgba(32,150,92,.12); }
+    .mos-override-card-on-air, .mos-override-card-on-air:hover, .mos-override-card-on-air:focus-within { border-color: rgba(28,145,87,.7); background: rgba(222,247,231,.96); box-shadow: inset 4px 0 0 #20965c, 0 3px 12px rgba(32,150,92,.12); }
     .mos-graphic-tools { position: absolute; z-index: 2; top: -8px; left: 8px; display: flex; align-items: center; gap: 5px; opacity: 0; pointer-events: none; transform: translateY(3px); transition: opacity .14s ease, transform .14s ease; }
     .mos-override-card:hover .mos-graphic-tools, .mos-override-card:focus-within .mos-graphic-tools { opacity: 1; pointer-events: auto; transform: translateY(0); }
     .mos-graphic-template-badge { display: inline-flex; min-height: 22px; align-items: center; border: 1px solid rgba(40,110,231,.16); border-radius: 8px; background: #f5f8ff; padding: 0 7px; color: #286ee7; font-size: 9px; font-weight: 700; box-shadow: 0 3px 10px rgba(34,65,115,.08); }
@@ -275,6 +277,7 @@
     .mos-param-map-details, .mos-orphans { margin-top: 6px; border-top: 1px solid rgba(113,128,154,.12); padding-top: 5px; }
     .mos-param-map-details > summary, .mos-orphans > summary { cursor: pointer; color: #64728a; font-size: 9px; font-weight: 800; list-style-position: inside; }
     .mos-compact-value-row { display: flex; min-width: 0; align-items: center; gap: 8px; }
+    .mos-graphic-only { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; background: rgba(237,244,255,.6); padding: 8px 10px; color: #2c3443; font-size: 13px; font-weight: 700; }
     .mos-override-card [data-mos-role], .mos-speech-snippet { font-family: Arial, "Noto Sans", sans-serif; }
     .mos-speech-snippet { overflow: hidden; margin: 6px 10px 0 0; border-radius: 0 8px 8px 0; background: rgba(255,255,255,.5); padding: 6px 10px 6px 12px; color: #526078; font-size: 14px; line-height: 1.4; }
     .mos-playback-icon { display: inline-flex; width: 32px; height: 32px; flex: 0 0 32px; align-items: center; justify-content: center; border: 1px solid rgba(40,110,231,.22); border-radius: 9px; background: rgba(255,255,255,.85); color: #286ee7; }

@@ -33,3 +33,9 @@ Integrarea directă ENPS, importul HTM, refresh-ul playlisturilor și regulile e
 ### Verificări necesare la modificarea zonei
 
 Rulează testele care corespund schimbării dintre `EnpsPlaylistImportTest`, `EnpsWebIntegrationTest` și `PlaylistParsingRefreshTest`. Pentru modificări frontend rulează `npm run build`. Dacă se schimbă un comportament documentat, actualizează [indexul și documentația Codex](docs/codex/README.md) în aceeași intervenție.
+
+## Integrarea Plasma cu LB-Portal
+
+PLAY-ul MOS și receiverul HTTP LB-Portal formează un contract comun între două repo-uri. Înainte de orice modificare la payload, URL, autentificare, CORS, setări, confirmarea receiverului sau viitoarea rutare spre LiveBoard, citește [documentația PLAY MOS → LB-Portal](docs/codex/lb-portal-mos-play.md) și documentul pereche `C:\Projects\LB-Portal\docs\CODEX_PLASMA_INGRESS_CONTRACT.md`.
+
+După fiecare modificare cu impact funcțional, consemnează în aceeași intervenție decizia și efectul în documentația Codex Plasma și LB-Portal, actualizează indexurile ambelor proiecte și ajustează testele contractului. Păstrează distincția dintre recepția HTTP demonstrativă și etapa viitoare de trimitere TCP LiveBoard; nu reintroduce OSCon/OSC ca transport pentru această integrare.

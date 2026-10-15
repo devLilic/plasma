@@ -5,6 +5,7 @@ use App\Http\Controllers\EnpsTestController;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageStorageSettingsController;
 use App\Http\Controllers\ImageQualitySettingsController;
+use App\Http\Controllers\LBPortalConnectionController;
 use App\Http\Controllers\OSConConnectionController;
 use App\Http\Controllers\PlaylistMosOverrideController;
 use App\Http\Controllers\PlasmaViewerController;
@@ -61,6 +62,8 @@ Route::middleware('auth')->group(function () {
     Route::patch('/profile/image-quality', [ImageQualitySettingsController::class, 'update'])->name('profile.image-quality.update');
     Route::patch('/profile/oscon', [OSConConnectionController::class, 'update'])->name('profile.oscon.update');
     Route::get('/oscon/connection', [OSConConnectionController::class, 'connection'])->name('oscon.connection');
+    Route::patch('/profile/lb-portal', [LBPortalConnectionController::class, 'update'])->name('profile.lb-portal.update');
+    Route::get('/lb-portal/connection', [LBPortalConnectionController::class, 'connection'])->name('lb-portal.connection');
     Route::patch('/profile/playlist-title-exclusions', [PlaylistTitleExclusionsSettingsController::class, 'update'])
         ->name('profile.playlist-title-exclusions.update');
 

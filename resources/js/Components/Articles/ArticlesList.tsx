@@ -10,6 +10,7 @@ import ArticleWorkspace from '@/Components/Articles/ArticleWorkspace';
 import {MosWorkspace} from '@/Components/Articles/MosWorkspace';
 import {defaultViewerTransform, LiveImageStage, ViewerState, ViewerTransform} from '@/Components/Articles/LiveImageStage';
 import {Article} from '@/types';
+import {useLBPortalController} from '@/Components/Articles/useLBPortalController';
 import {enterLiveMode, leaveLiveMode, selectPlaylistArticle} from '@/Components/Articles/operatorSelection';
 
 interface ArticlesListProps {
@@ -37,6 +38,7 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
     const hasEnteredLive = useRef(false);
     const selectionPlaylistId = useRef<number | null>(null);
     const {deleteArticle, unmarkForDelete, markForDelete, setCurrent, changeNewArticlePosition} = useActions();
+    const lbPortal = useLBPortalController();
     const articleToDelete = useTypedSelector(state => state.articles.delete_id);
     const currentId = useTypedSelector(state => state.articles.current);
     const articles = useTypedSelector(selectAllArticles);
@@ -239,7 +241,7 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
                         : <EmptyOperatorPanel title="Niciun articol selectat" body="Alege o știre din playlist. Selecția nu va fi schimbată automat." />
                     : <LiveImageStage article={previewArticle} previousArticle={previousPreviewArticle} nextArticle={nextPreviewArticle} previousDisabled={!previousPreviewArticle} nextDisabled={!nextPreviewArticle} onPrevious={() => movePreview(-1)} onNext={() => movePreview(1)} viewer={viewer} viewerBusy={viewerBusy} viewerError={viewerError} onRefreshViewer={() => void refreshViewer()} onShow={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show', article, draft); }} onShowDefault={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show-default', article, draft); }} onHide={() => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('hide'); }} transform={transform} onTransformChange={setTransform}/>}
             </main>
-            <MosWorkspace article={mosArticle} previousDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) <= 0} nextDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) >= orderedArticles.length - 1} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showOsconControls={false}/>
+            <MosWorkspace article={mosArticle} previousDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) <= 0} nextDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) >= orderedArticles.length - 1} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showLBPortalControls lbPortalStatus={lbPortal.status} commandBusy={lbPortal.busy} commandMessage={lbPortal.message} lastPlayedObjectKey={lbPortal.lastPlayedObjectKey} onPlay={lbPortal.sendPlay}/>
         </div>
 
         <NewArticleDialog isOpen={isNewArticleDialogOpen} handleDialog={() => setIsNewArticleDialogOpen(open => !open)}/>

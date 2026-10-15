@@ -149,6 +149,22 @@ class ArticleMosTimelineTest extends TestCase
         $this->assertSame([], app(ArticleMosTimeline::class)->scan('Au fost mai multe voxuri în reportaj.', []));
     }
 
+    public function test_vox_content_is_only_a_yellow_marker_and_does_not_create_mos_graphics(): void
+    {
+        $objects = [
+            $this->graphic('carina', 'NUME', 'CARINA MULLER'),
+            $this->graphic('location', 'Locatie', 'BRUXELLES'),
+            ['commandId' => 'vox-graphic', 'slug' => 'VOX_Graphic', 'editableObjects' => [['name' => 'Text', 'value' => 'MOS intern VOX']]],
+            ['commandId' => 'numbered-vox-graphic', 'slug' => '10_Vox', 'editableObjects' => [['name' => 'Text', 'value' => 'MOS intern VOX']]],
+        ];
+        $text = "VOX\nCARINA MULLER\nBRUXELLES\nMOS intern VOX\nTEXT\nBETA\nȘtirea continuă fără potriviri.";
+
+        $events = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
+
+        $this->assertSame(['vox'], array_column($events, 'kind'));
+        $this->assertNull($events[0]['object']);
+    }
+
     public function test_snippet_stops_before_another_cue_and_strips_urls_paths_timecodes_and_function(): void
     {
         $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN', 'reporter');
@@ -280,6 +296,22 @@ class ArticleMosTimelineTest extends TestCase
             $events = app(ArticleMosTimeline::class)->scan("SNC ANA ȘERBAN\n$speech", [$speaker]);
             $this->assertSame('În ultimii de ani exporturile au crescut', $events[0]['snippet']);
         }
+    }
+
+    public function test_video_number_on_its_own_line_is_removed_before_the_next_line_of_sync_text(): void
+    {
+        $speakers = [
+            $this->graphic('zinaida', 'NUME', 'ZINAIDA DUMITRĂȘCU', 'profesor de fizică'),
+            $this->graphic('ana', 'NUME', 'ANA NOVIC', 'director'),
+        ];
+        $text = "ZINAIDA DUMITRĂȘCU, profesor de fizică\nVideo nr. 2218\nTC 01:01 - 01:32 Fizica este foarte aproape de matematică, iar elevii...\nANA NOVIC, director\nVideo nr. 2265\nTC 00:53 - 01:18 A transformat sălile de clasă la științele exacte...";
+
+        $events = app(ArticleMosTimeline::class)->scan($text, $speakers);
+
+        $this->assertSame([
+            'Fizica este foarte aproape de matematică iar',
+            'A transformat sălile de clasă la științele',
+        ], array_column($events, 'snippet'));
     }
 
     public function test_real_unmarked_person_appears_twice_with_its_own_speech_and_without_reporter_credits(): void

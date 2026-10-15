@@ -25,14 +25,19 @@ class ArticleMosTimeline
             $sources = array_map(fn ($section) => $section['type']."\n".implode("\n\n", $section['paragraphs']), $sections);
         }
 
-        return $this->completeTimeline($this->scan(implode("\n\n", $sources), $objects), $objects);
+        $text = implode("\n\n", $sources);
+
+        return $this->completeTimeline($this->scan($text, $objects), $objects, $this->objectsMentionedInVox($text, $objects));
     }
 
     /** Fill missing graphics around the located entries without reordering speech/VOX. */
-    private function completeTimeline(array $events, array $objects): array
+    private function completeTimeline(array $events, array $objects, array $voxObjectKeys = []): array
     {
         $graphics = [];
         foreach ($objects as $object) {
+            if ($this->isVoxGraphic($object) || isset($voxObjectKeys[$this->objectKey($object)])) {
+                continue;
+            }
             if (array_filter($object['editableObjects'], fn ($field) => trim($field['value']) !== '') !== []) {
                 $graphics[$this->objectKey($object)] ??= $object;
             }
@@ -98,19 +103,30 @@ class ArticleMosTimeline
         $lines = explode("\n", $text);
         $events = [];
         $seenTitles = [];
+        $insideVox = false;
         $offset = 0;
         foreach ($lines as $index => $line) {
             $trimmed = trim($line);
             if (preg_match('/^(VOX(?:URI|[- ]URI)?)\b/iu', $trimmed, $vox)) {
+                $insideVox = true;
                 $count = $this->normalized($vox[1]) === 'vox' ? 1 : null;
                 if (preg_match('/^VOX(?:URI|[- ]URI)?[ \t]+[x×][ \t]*(\d+)\b/iu', $trimmed, $number)
                     || preg_match('/^VOX(?:URI|[- ]URI)[ \t]*:?[ \t]+(\d+)\b/iu', $trimmed, $number)) {
                     $count = max(1, (int) $number[1]);
                 }
                 $events[] = ['kind' => 'vox', 'position' => $offset, 'sourceLine' => $index, 'count' => $count, 'object' => null, 'snippet' => ''];
+            } elseif ($this->isVoxBoundary($trimmed)) {
+                $insideVox = false;
+            }
+            if ($insideVox) {
+                $offset += strlen($line) + 1;
+                continue;
             }
             $isCue = preg_match('/^(?:STAND[ \t]*UP|SINCRON|SNC|PRIN[ \t]+TELEFON)\b/iu', $trimmed) === 1;
             foreach ($objects as $object) {
+                if ($this->isVoxGraphic($object)) {
+                    continue;
+                }
                 $titles = array_filter($object['editableObjects'], fn ($field) => EnpsBasicContent::editableRole($field['name']) === 'title' && trim($field['value']) !== '');
                 $names = array_filter($object['editableObjects'], fn ($field) => in_array($this->normalized($field['name']), ['nume', 'name'], true) && trim($field['value']) !== '');
                 foreach ($titles ?: $names as $field) {
@@ -154,6 +170,47 @@ class ArticleMosTimeline
         }
 
         return array_map(fn ($event) => array_diff_key($event, ['lastLine' => true]), $grouped);
+    }
+
+    /** MOS values found inside a VOX span belong to that yellow VOX block, not to separate graphics. */
+    private function objectsMentionedInVox(string $text, array $objects): array
+    {
+        $insideVox = false;
+        $keys = [];
+        foreach (explode("\n", str_replace(["\r\n", "\r", "\u{00a0}", "\u{202f}"], ["\n", "\n", ' ', ' '], $text)) as $line) {
+            $line = trim($line);
+            if (preg_match('/^(?:VOX(?:URI|[- ]URI)?)\b/iu', $line)) {
+                $insideVox = true;
+                continue;
+            }
+            if ($this->isVoxBoundary($line)) {
+                $insideVox = false;
+                continue;
+            }
+            if (! $insideVox) {
+                continue;
+            }
+            foreach ($objects as $object) {
+                foreach ($object['editableObjects'] as $field) {
+                    if (trim($field['value']) !== '' && $this->findValue($line, $field['value'], false) !== null) {
+                        $keys[$this->objectKey($object)] = true;
+                        break;
+                    }
+                }
+            }
+        }
+
+        return $keys;
+    }
+
+    private function isVoxGraphic(array $object): bool
+    {
+        return preg_match('/^(?:\d+[_-])?VOX(?:[_-]|$)/iu', trim($object['slug'] ?? '')) === 1;
+    }
+
+    private function isVoxBoundary(string $line): bool
+    {
+        return preg_match('/^(?:TEXT|INTRO|BETA|OFF|LIVE|STAND[ \t]*UP|SINCRON|SNC|PRIN[ \t]+TELEFON|AMBIAN[ȚT][ĂA])\b/iu', $line) === 1;
     }
 
     private function normalized(string $text): string
@@ -289,7 +346,9 @@ class ArticleMosTimeline
         $speechText = preg_replace('/^[ \t]*(?:\d{3,}[ \t]+)?(?:T[ \t]*\.?[ \t]*C\.?|TC|TIMECODE)[ \t]*:?[ \t]*'.$timecode.'(?:[ \t]*'.$rangeSeparator.'[ \t]*'.$timecode.')?[ \t]*/imu', '', $speechText);
         $speechText = preg_replace('/^[ \t]*(?:\d+[ \t]+)?(?:TITRE|TC)\b[ \t]*:?[ \t]*(?=\d)/imu', 'T.C. ', $speechText);
         $clean = $this->adapter->cleanSpeech("STAND UP\n".$speechText);
-        $clean = preg_replace('/^(?:VIDEO[ \t]+NR\.?[ \t]*[:#-]?[ \t]*)+/imu', '', $clean);
+        // Video numbers are production metadata too. Remove their numeric ID
+        // with the label so the quote can begin on the following line.
+        $clean = preg_replace('/^[ \t]*(?:VIDEO[ \t]+NR\.?[ \t]*[:#-]?[ \t]*)+(?:\d+[ \t]*[:.]?[ \t]*)?/imu', '', $clean);
         $clean = preg_replace('/^(?:(?:T[ \t]*\.?[ \t]*C\.?|TC|TIMECODE)[ \t]*:?[ \t]*)+/imu', '', $clean);
         preg_match_all('/[\p{L}\p{N}]+(?:[’\x{0027}-][\p{L}\p{N}]+)*/u', $clean, $words);
         // Production labels and timecodes are stripped above; numerals left in
