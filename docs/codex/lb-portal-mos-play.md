@@ -66,6 +66,8 @@ Consola afișează secțiunea, template-ul Plasma și mapările fixate la recep�
 
 ## Proiecte în LB-Portal
 
+Proiectele LB-Portal pot configura și interacțiuni între secțiuni: eveniment declanșator, acțiuni ordonate RESUME/STOP/PLAY ori suspendare cu revenire. Exemplu: Nume suspendă Titluri, apoi readuce titlul după durata deja configurată a graficii Nume (6 secunde dacă sursa are 6 secunde). Regula nu adaugă altă durată sau comportament special pentru nume consecutive. Revenirea folosește bufferul și valorile memorate, este anulată la oprire/resincronizare sau stare incertă și apare în jurnal cu identitatea regulii. Detaliile sunt în `C:\Projects\LB-Portal\docs\CODEX_SECTION_INTERACTIONS.md`; payloadul și confirmarea HTTP Plasma rămân aceleași.
+
 Secțiunile sunt organizate în proiecte independente. Plasma poate executa grafica numai în **Telejurnal** și **Retrospectiva săptămânii**, alese manual ca proiect activ în consola LB-Portal. Selectarea unui proiect în editorul de setări schimbă doar proiectul editat. Payloadul Plasma nu conține un selector de proiect și nu activează automat alt proiect.
 
 Cu un proiect pentru operare directă activ, receiverul înregistrează cererea și confirmă recepția HTTP, dar raportul indică `project-disabled`, fără comenzi LiveBoard sau fallback la Telejurnal. Schimbarea proiectului activ cere lipsa operațiilor în curs/coadă și toate secțiunile OFF; activarea nu trimite comenzi. Fiecare proiect are mapări și stare A/B proprii, iar istoricul și deduplicarea păstrează contextul proiectului. Mapările vechi sunt adaptate în Telejurnal fără pierderea identificatorilor sau valorilor. Proiectele pentru operare directă pot salva secțiuni fără surse Plasma; interfața lor de operare este o etapă ulterioară.
@@ -87,6 +89,8 @@ Contractul complet este `C:\Projects\LB-Portal\docs\CODEX_MOS_PROJECTS.md`. Inte
 - La orice schimbare de adresă, allowlist, autentificare, schemă JSON, confirmare sau semnificație a câmpurilor, actualizează în aceeași intervenție acest document, indexul [README Codex](README.md), documentația pereche din LB-Portal și testele relevante.
 
 ## Verificarea etapei de execuție — 15 octombrie 2026
+
+**Etapa ulterioară de proiecte: 68 teste LB-Portal, 11 teste frontend Plasma și 110 verificări Electron izolate — PASS.** Au fost verificate migrarea în Telejurnal, mapările distincte Retrospectiva, selecția manuală, refuzul schimbării cu secțiuni active, blocarea execuției Plasma pentru proiecte independente, contextul istoric și persistența proiectului activ după restart fără replay. Capturile au fost revizuite și build-ul TypeScript/Vite/NSIS a trecut. Codul Plasma/ENPS/HTM nu a fost modificat pentru această etapă; documentația pereche și indexurile sunt actualizate. Detaliile sunt în `C:\Projects\LB-Portal\docs\CODEX_MOS_PROJECTS.md`.
 
 Cele 11 teste frontend ale contractului Plasma și cele 48 de teste relevante LB-Portal au trecut. Verificarea Electron izolată a trecut 61 de verificări, folosind receiverul HTTP real și clientul TCP împotriva unui proces mock, cu setări temporare. Acoperă alternarea completă A/B/A, erori și recuperare, resincronizarea offline și restartul fără replay. Build-ul LB-Portal și installerul NSIS au fost generate cu succes; rezultatele și instrumentele sunt consemnate în `C:\Projects\LB-Portal\docs\CODEX_LIVEBOARD_EXECUTION.md`. Codul integrării ENPS și importului HTM nu a fost schimbat în această finalizare. Compatibilitatea vizuală și diacriticele pe LiveBoard real rămân de verificat pe instalație.
 

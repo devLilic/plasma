@@ -7,6 +7,10 @@ const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 
 global.route = name => `/${name}`;
+const sequenceSource = readFileSync(path.resolve(__dirname, '../../resources/js/Components/Articles/mosSequence.ts'), 'utf8');
+const sequenceCode = ts.transpileModule(sequenceSource, {compilerOptions: {module: ts.ModuleKind.CommonJS}}).outputText;
+const sequenceModule = {exports: {}};
+new Function('require', 'module', 'exports', sequenceCode)(require, sequenceModule, sequenceModule.exports);
 const source = readFileSync(path.resolve(__dirname, '../../resources/js/Components/Articles/MosWorkspace.tsx'), 'utf8');
 const compiled = ts.transpileModule(source, {compilerOptions: {jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS}}).outputText;
 const componentModule = {exports: {}};
@@ -19,9 +23,7 @@ const mockRequire = id => {
     };
     if (id === '@heroicons/react/24/outline') return Object.fromEntries(['ChevronLeftIcon', 'ChevronRightIcon', 'PencilSquareIcon', 'ArrowPathIcon', 'XMarkIcon', 'PlayIcon', 'StopIcon'].map(name => [name, () => null]));
     if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
-    if (id === '@/Components/Articles/mosSequence') return {orderMosSequence: (entries, objects) => entries.length
-        ? entries.map((entry, index) => ({...entry, key: `row-${index}`, object: objects.find(object => object.objectKey === entry.object?.objectKey) || entry.object}))
-        : objects.map((object, index) => ({kind: 'mos', key: `row-${index}`, object, snippet: ''}))};
+    if (id === '@/Components/Articles/mosSequence') return sequenceModule.exports;
     return require(id);
 };
 new Function('require', 'module', 'exports', compiled)(mockRequire, componentModule, componentModule.exports);
@@ -77,12 +79,20 @@ test('the last graphic accepted by LB-Portal receives the on-air card style', ()
     assert.match(html, /class="mos-override-card mos-override-card-on-air" data-last-played="true"/);
 });
 
+test('an explicitly empty timeline does not fall back to every valued MOS object', () => {
+    const emptyTimelineArticle = {...article, mos_timeline: []};
+    const html = render({article: emptyTimelineArticle, showLBPortalControls: false});
+
+    assert.match(html, /Articolul nu are valori MOS disponibile\./);
+    assert.doesNotMatch(html, /Corectat local|class="mos-override-card"/);
+});
+
 test('preparation-mode PLAY shows one shared alert and never sends the graphic', async () => {
     const objects = [
         {commandId: 'first', objectKey: 'first', slug: '05_Titlu', editableObjects: [{name: 'Titlu', value: 'Primul titlu', role: 'title'}]},
         {commandId: 'second', objectKey: 'second', slug: '06_Nume', editableObjects: [{name: 'Nume', value: 'Ana', role: 'value'}]},
     ];
-    const prepArticle = {...article, mos_objects: objects, mos_timeline: []};
+    const prepArticle = {...article, mos_objects: objects, mos_timeline: undefined};
     const html = render({article: prepArticle, live: false, lbPortalStatus: 'ready'});
     assert.equal((html.match(/class="mos-playback-icon"/g) || []).length, 2);
     assert.equal((html.match(/Intră în modul LIVE pentru a trimite grafica\./g) || []).length, 0);
@@ -129,7 +139,7 @@ test('active and paused MOS graphics show Stop and Resume states without sending
         commandId: `command-${index}`, objectKey: `object-${index}`, revision: `rev-${index}`, slug: `template-${index}`, editable: false, playbackState,
         editableObjects: [{name: 'Titlu', value: `Titlu ${index}`, role: 'title'}],
     }));
-    const activeArticle = {...article, mos_objects: objects, mos_timeline: []};
+    const activeArticle = {...article, mos_objects: objects, mos_timeline: undefined};
     const html = render({article: activeArticle, showLBPortalControls: false});
 
     assert.match(html, /aria-label="STOP template-0 către LB-Portal"/);

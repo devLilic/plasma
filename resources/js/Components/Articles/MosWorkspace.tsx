@@ -67,7 +67,7 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
         return cached && (source.revision === cached.baseRevision || source.revision === cached.object.revision) ? cached.object : source;
     }), [article?.mos_objects, saved]);
 
-    const sequence = useMemo(() => orderMosSequence(article?.mos_timeline || [], objects), [article?.mos_timeline, objects]);
+    const sequence = useMemo(() => orderMosSequence(article?.mos_timeline, objects), [article?.mos_timeline, objects]);
 
     const saveObject = async (source: MosObject) => {
         if (!article || !source.objectKey || !source.revision) return false;

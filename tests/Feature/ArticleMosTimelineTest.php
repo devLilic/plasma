@@ -26,7 +26,236 @@ class ArticleMosTimelineTest extends TestCase
         return ['commandId' => $id, 'slug' => $name === 'Titlu' ? '05_Titlu_Ultima_Ora' : '06_Nume_Ultima_Ora', 'editableObjects' => $fields];
     }
 
-    public function test_missing_graphics_are_added_at_the_beginning_between_neighbors_and_at_the_end_without_reordering_sync_or_vox(): void
+    public function test_repeated_story_attributions_do_not_cross_match_equivalent_commands_or_the_headline(): void
+    {
+        $headline = $this->graphic('headline', 'Titlu', 'MARTA KOS: NEGOCIERILE CU UE AR PUTEA FI ÎNCHEIATE ÎN 2028');
+        $cristina = $this->graphic('cristina-first', 'NUME', 'CRISTINA GHERASIMOV', 'viceprim-ministra');
+        $cristinaDuplicate = $this->graphic('cristina-duplicate', 'NUME', 'Cristina Gherasimov', 'viceprim-ministra');
+        $cristinaDuplicate['slug'] = '09_Nume_Fullscreen';
+        $cristinaDuplicate['editableObjects'][] = ['name' => 'Instituție', 'value' => 'Guvernul Republicii Moldova', 'role' => 'value'];
+        $cristinaSurplusDuplicate = $this->graphic('cristina-surplus-duplicate', 'NUME', 'CRISTINA GHERASIMOV', 'viceprim-ministra');
+        $cristinaVariant = $this->graphic('cristina-distinct-template', 'NUME', 'CRISTINA GHERASIMOV', 'viceprim-ministra');
+        $cristinaVariant['slug'] = '09_Nume_AltTemplate';
+        $cristinaVariant['editableObjects'][] = ['name' => 'Instituție', 'value' => 'Guvernul Republicii Moldova — mandat anterior', 'role' => 'value'];
+        $thomas = $this->graphic('thomas', 'NUME', 'THOMAS BYRNE', 'ministru');
+        $marta = $this->graphic('marta', 'NUME', 'MARTA KOS', 'comisar european');
+        $credit = $this->graphic('credit', 'NUME', 'CARINA MULLER', 'reporter');
+        $objects = [$headline, $cristina, $cristinaDuplicate, $cristinaSurplusDuplicate, $cristinaVariant, $thomas, $marta, $credit];
+        $text = implode("\n", [
+            'MARTA KOS: NEGOCIERILE CU UE AR PUTEA FI ÎNCHEIATE ÎN 2028',
+            'SNC CRISTINA GHERASIMOV, viceprim-ministra',
+            'Obiectivul nostru imediat este să deschidem cele două clustere pentru negocieri.',
+            'TEXT Narațiune despre Thomas Byrne și Marta Kos.',
+            'SNC THOMAS BYRNE, ministru',
+            'Irlanda va continua să depună toate eforturile pentru aderarea Moldovei.',
+            'SNC MARTA KOS, comisar european',
+            'Până acum, lucrurile au mers excelent în procesul de aderare.',
+            'SNC CRISTINA GHERASIMOV, viceprim-ministra',
+            'Ne-am exprimat interesul pentru alte programe europene.',
+            'REPORTER: CARINA MULLER',
+        ]);
+
+        $scanned = app(ArticleMosTimeline::class)->scan($text, $objects);
+
+        $this->assertSame(
+            ['headline', 'cristina-first', 'thomas', 'marta', 'cristina-duplicate'],
+            array_column(array_column($scanned, 'object'), 'commandId'),
+        );
+        $this->assertSame([
+            '',
+            'Obiectivul nostru imediat este să deschidem cele',
+            'Irlanda va continua să depună toate eforturile',
+            'Până acum lucrurile au mers excelent în',
+            'Ne-am exprimat interesul pentru alte programe europene',
+        ], array_column($scanned, 'snippet'));
+        $this->assertSame([0, 1, 4, 6, 8], array_column($scanned, 'sourceLine'));
+        $this->assertSame('09_Nume_Fullscreen', $scanned[4]['object']['slug']);
+        $this->assertSame('Guvernul Republicii Moldova', $scanned[4]['object']['editableObjects'][2]['value']);
+
+        $complete = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
+
+        $this->assertSame(
+            ['headline', 'cristina-first', 'thomas', 'marta', 'cristina-duplicate', 'cristina-surplus-duplicate', 'cristina-distinct-template', 'credit'],
+            array_column(array_column($complete, 'object'), 'commandId'),
+        );
+        $this->assertSame(['mos', 'mos', 'mos', 'mos', 'mos', 'mos', 'mos', 'mos'], array_column($complete, 'kind'));
+        $this->assertSame(1, count(array_filter($complete, fn ($event) => $event['object']['commandId'] === 'credit')));
+        $this->assertSame(1, count(array_filter($complete, fn ($event) => $event['object']['commandId'] === 'cristina-surplus-duplicate')));
+        $this->assertSame(1, count(array_filter($complete, fn ($event) => $event['object']['commandId'] === 'cristina-distinct-template')));
+        foreach ([5, 6, 7] as $index) {
+            $this->assertNull($complete[$index]['position']);
+            $this->assertNull($complete[$index]['sourceLine']);
+            $this->assertSame('', $complete[$index]['snippet']);
+        }
+    }
+
+    public function test_every_surplus_equivalent_speaker_command_is_appended_once_without_an_invented_attribution(): void
+    {
+        $objects = array_map(fn ($index) => $this->graphic("daniel-$index", 'NUME', 'DANIEL VODA', 'ambasador'), range(1, 3));
+        $text = "SNC DANIEL VODA, ambasador\nDaniel Voda a declarat că avem 2 soluții pentru discuții.";
+
+        $scanned = app(ArticleMosTimeline::class)->scan($text, $objects);
+        $this->assertSame(['daniel-1'], array_column(array_column($scanned, 'object'), 'commandId'));
+
+        $complete = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
+
+        $this->assertSame(['daniel-1', 'daniel-2', 'daniel-3'], array_column(array_column($complete, 'object'), 'commandId'));
+        $this->assertSame([true, false, false], array_map(fn ($event) => $event['position'] !== null, $complete));
+        $this->assertSame([null, null], array_slice(array_column($complete, 'sourceLine'), 1));
+        $this->assertSame(['', ''], array_slice(array_column($complete, 'snippet'), 1));
+    }
+
+    public function test_many_repeated_attributions_pair_with_equivalent_commands_in_order_without_cartesian_duplicates(): void
+    {
+        $title = $this->graphic('story-title', 'Titlu', 'BĂTĂLIA AMBASADELOR');
+        $daniel = array_map(fn ($index) => $this->graphic("daniel-$index", 'NUME', 'DANIEL VODA', 'ambasador'), range(1, 6));
+        $ion = array_map(fn ($index) => $this->graphic("ion-$index", 'NUME', 'ION TABARTA', 'ambasador'), range(1, 3));
+        $otherSpeakers = [
+            $this->graphic('cristian', 'NUME', 'CRISTIAN-LEON TURCANU', 'ambasador'),
+            $this->graphic('joseph', 'NUME', 'JOSEPH MARK BURKHALTER', 'ambasador'),
+            $this->graphic('oleg', 'NUME', 'OLEG OZEROV', 'ambasador'),
+        ];
+        $objects = [$title, ...$daniel, ...$ion, ...$otherSpeakers];
+        $cristian = $this->graphic('cristian', 'NUME', 'E.S. CRISTIAN-LEON TURCANU', 'ambasador');
+        $joseph = $this->graphic('joseph', 'NUME', 'E.S. JOSEPH MARK BURKHALTER', 'ambasador');
+        $otherSpeakers = [$cristian, $joseph, $otherSpeakers[2]];
+        $objects = [$title, ...$daniel, ...$ion, ...$otherSpeakers];
+        $attributions = [
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-1'],
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-2'],
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-3'],
+            ['ION TABARTA', 'Ion Tabarta', 'ion-1'],
+            ['CRISTIAN-LEON TURCANU', 'Cristian-Leon Turcanu', 'cristian'],
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-4'],
+            ['JOSEPH MARK BURKHALTER', 'Joseph Mark Burkhalter', 'joseph'],
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-5'],
+            ['ION TABARTA', 'Ion Tabarta', 'ion-2'],
+            ['DANIEL VODA', 'Daniel Voda', 'daniel-6'],
+            ['OLEG OZEROV', 'Oleg Ozerov', 'oleg'],
+            ['ION TABARTA', 'Ion Tabarta', 'ion-3'],
+        ];
+        $lines = ['BĂTĂLIA AMBASADELOR'];
+        foreach ($attributions as [$name, $spokenName]) {
+            $lines[] = "SNC $name, ambasador";
+            $lines[] = "$spokenName a declarat că discuțiile vor continua în zilele următoare.";
+        }
+        $text = implode("\n", $lines);
+
+        $scanned = app(ArticleMosTimeline::class)->scan($text, $objects);
+
+        $expectedIds = [
+            'story-title', ...array_column($attributions, 2),
+        ];
+        $this->assertSame($expectedIds, array_column(array_column($scanned, 'object'), 'commandId'));
+        $this->assertCount(13, $scanned);
+        $this->assertSame(
+            array_values(array_unique(array_column($scanned, 'sourceLine'))),
+            array_column($scanned, 'sourceLine'),
+        );
+
+        $complete = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
+        $this->assertSame($expectedIds, array_column(array_column($complete, 'object'), 'commandId'));
+        $this->assertCount(13, $complete);
+    }
+
+    public function test_es_prefix_on_mos_name_script_name_or_both_still_locates_the_script_attribution(): void
+    {
+        $cases = [
+            [$this->graphic('mos-prefix', 'NUME', 'E.S. JOSEPH MARK BURKHALTER'), 'SNC JOSEPH MARK BURKHALTER, ambasador'],
+            [$this->graphic('script-prefix', 'NUME', 'CRISTIAN-LEON TURCANU'), 'SNC E.S. CRISTIAN-LEON TURCANU, ambasador'],
+            [$this->graphic('both-prefix', 'NUME', 'E.S. OLEG OZEROV'), 'SNC E.S. OLEG OZEROV, ambasador'],
+        ];
+
+        $expectedPositions = [
+            strpos($cases[0][1], 'JOSEPH'),
+            strpos($cases[1][1], 'CRISTIAN'),
+            strpos($cases[2][1], 'E.S.'),
+        ];
+        foreach ($cases as $index => [$object, $cue]) {
+            $events = app(ArticleMosTimeline::class)->scan("$cue\nDeclarația confirmă că există 2 opțiuni pentru următoarele discuții.", [$object]);
+
+            $this->assertCount(1, $events);
+            $this->assertSame($object['commandId'], $events[0]['object']['commandId']);
+            $this->assertSame('Declarația confirmă că există 2 opțiuni pentru', $events[0]['snippet']);
+            $this->assertSame($expectedPositions[$index], $events[0]['position']);
+        }
+    }
+
+    public function test_es_prefixed_name_can_be_an_unmarked_speaker_heading(): void
+    {
+        $speaker = $this->graphic('joseph', 'NUME', 'E.S. JOSEPH MARK BURKHALTER', 'ambasador');
+        $events = app(ArticleMosTimeline::class)->scan(
+            "E.S. JOSEPH MARK BURKHALTER, ambasador\nDeclarația confirmă că există 2 opțiuni pentru următoarele discuții.",
+            [$speaker],
+        );
+
+        $this->assertCount(1, $events);
+        $this->assertSame('joseph', $events[0]['object']['commandId']);
+        $this->assertSame(0, $events[0]['sourceLine']);
+        $this->assertSame('Declarația confirmă că există 2 opțiuni pentru', $events[0]['snippet']);
+    }
+
+    public function test_exact_speaker_match_takes_priority_over_a_fuzzy_candidate(): void
+    {
+        $fuzzy = $this->graphic('fuzzy', 'NUME', 'DANIEL VODAS', 'ambasador');
+        $exact = $this->graphic('exact', 'NUME', 'DANIEL VODA', 'ambasador');
+        $text = "SNC DANIEL VODA, ambasador\nPrima declarație conține 2 idei clare pentru public.\nSNC DANIEL VODAS, ambasador\nA doua declarație conține 3 idei clare pentru public.";
+
+        $events = app(ArticleMosTimeline::class)->scan($text, [$fuzzy, $exact]);
+
+        $this->assertSame(['exact', 'fuzzy'], array_column(array_column($events, 'object'), 'commandId'));
+        $this->assertSame([
+            'Prima declarație conține 2 idei clare pentru',
+            'A doua declarație conține 3 idei clare',
+        ], array_column($events, 'snippet'));
+    }
+
+    public function test_sync_preview_skips_source_lines_and_timecode_metadata_without_losing_spoken_numbers(): void
+    {
+        $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN');
+        $text = implode("\n", [
+            'SNC ANA ȘERBAN',
+            'T.C. 09.33-10.01 musca',
+            'În 2028 vor fi 2 clustere disponibile pentru negocieri.',
+            'SNC ANA ȘERBAN',
+            '07.46-07.59 musca 08.14–08.20',
+            'Ne-am exprimat interesul pentru alte 3 programe în 2026.',
+            'SNC ANA ȘERBAN',
+            'SURSA: arhiva redacției',
+            'SURSĂ: document intern',
+            'SOURCE: newsroom archive',
+            '00:14 MARKER 00:26 În 2027, am identificat 4 proiecte prioritare pentru aderare.',
+        ]);
+
+        $events = app(ArticleMosTimeline::class)->scan($text, [$speaker]);
+
+        $this->assertSame([
+            'În 2028 vor fi 2 clustere disponibile',
+            'Ne-am exprimat interesul pentru alte 3 programe',
+            'În 2027 am identificat 4 proiecte prioritare',
+        ], array_column($events, 'snippet'));
+        foreach ($events as $event) {
+            $this->assertDoesNotMatchRegularExpression('/(?:T\.C\.|MUSCA|SURSA|SURSĂ|SOURCE|MARKER)/iu', $event['snippet']);
+        }
+    }
+
+    public function test_marker_is_removed_only_when_adjacent_to_a_timecode(): void
+    {
+        $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN');
+        $spoken = app(ArticleMosTimeline::class)->scan(
+            "SNC ANA ȘERBAN\nUn marker costă 2 lei în 2026.",
+            [$speaker],
+        );
+        $technical = app(ArticleMosTimeline::class)->scan(
+            "SNC ANA ȘERBAN\n00:05 MARKER Abia în 2026 am identificat 4 proiecte prioritare pentru Moldova.",
+            [$speaker],
+        );
+
+        $this->assertSame('Un marker costă 2 lei în 2026', $spoken[0]['snippet']);
+        $this->assertSame('Abia în 2026 am identificat 4 proiecte', $technical[0]['snippet']);
+    }
+
+    public function test_unlocated_graphics_are_appended_after_located_events_in_mos_order(): void
     {
         Http::preventStrayRequests();
         $objects = [
@@ -39,14 +268,14 @@ class ArticleMosTimelineTest extends TestCase
         ];
         $text = "VOX\nTEXT Continuare.\nSNC ANA ȘERBAN\nPrima intervenție are șapte cuvinte distincte aici.\nTEXT Continuare.\nSNC BOGDAN STAN\nAltă intervenție cu text.\nTEXT Continuare.\nSNC ANA ȘERBAN\nA doua intervenție conține alte cuvinte aici.\nVOX";
         $events = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
-        $this->assertSame(['first', null, 'ana', 'middle', 'middle-two', 'bogdan', 'ana', null, 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
-        foreach ([0, 3, 4, 8] as $index) {
+        $this->assertSame([null, 'ana', 'bogdan', 'ana', null, 'first', 'middle', 'middle-two', 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        foreach ([5, 6, 7, 8] as $index) {
             $this->assertNull($events[$index]['position']);
             $this->assertNull($events[$index]['sourceLine']);
             $this->assertSame('', $events[$index]['snippet']);
         }
-        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[2]['snippet']);
-        $this->assertSame('A doua intervenție conține alte cuvinte aici', $events[6]['snippet']);
+        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[1]['snippet']);
+        $this->assertSame('A doua intervenție conține alte cuvinte aici', $events[3]['snippet']);
         $this->assertSame(app(ArticleMosTimeline::class)->scan("BETA\n".$text, $objects), array_values(array_filter($events, fn ($event) => $event['position'] !== null)));
         Http::assertNothingSent();
     }
@@ -207,7 +436,7 @@ class ArticleMosTimelineTest extends TestCase
         $before = $text;
         $events = app(ArticleMosTimeline::class)->scan($text, [$object]);
         $this->assertCount(3, $events);
-        $this->assertSame(['Aș spune că apropierea de Uniunea Europeană', 'Aș spune că 2026 apropierea de Uniunea Europeană', 'Aș spune că apropierea de Uniunea Europeană'], array_column($events, 'snippet'));
+        $this->assertSame(['Aș spune că apropierea de Uniunea Europeană', 'Aș spune că 2026 apropierea de Uniunea', 'Aș spune că apropierea de Uniunea Europeană'], array_column($events, 'snippet'));
         foreach ($events as $event) {
             $this->assertDoesNotMatchRegularExpression('/TITRE/u', $event['snippet']);
         }
@@ -222,17 +451,17 @@ class ArticleMosTimelineTest extends TestCase
         $events = app(ArticleMosTimeline::class)->scan($text, [$speaker]);
 
         $this->assertCount(1, $events);
-        $this->assertSame('Eu aveam fix 60 de ani Nu mă', $events[0]['snippet']);
+        $this->assertSame('Eu aveam fix 60 de ani Nu', $events[0]['snippet']);
     }
 
     public function test_sync_preview_removes_an_unlabelled_leading_media_id_and_timecode_but_keeps_spoken_numbers(): void
     {
         $speaker = $this->graphic('grigore', 'NUME', 'GRIGORE ROMANCIUC', 'directorul Agenției de Transplant');
-        $text = "SNC GRIGORE ROMANCIUC, directorul Agenției de Transplant\n8488 03:40 Este necesar să avem 2 donatori în 2026.";
+        $text = "SNC GRIGORE ROMANCIUC, directorul Agenției de Transplant\n8488 03:40 În 2026 este necesar să avem 2 donatori.";
 
         $events = app(ArticleMosTimeline::class)->scan($text, [$speaker]);
 
-        $this->assertSame('Este necesar să avem 2 donatori în 2026', $events[0]['snippet']);
+        $this->assertSame('În 2026 este necesar să avem 2', $events[0]['snippet']);
     }
 
     public function test_sync_preview_removes_a_leading_media_id_and_spaced_timecode(): void
@@ -241,7 +470,7 @@ class ArticleMosTimelineTest extends TestCase
         foreach (['8489 02 53', '0611 00:42', '0612 04:14'] as $prefix) {
             $text = "SNC AURELIA TRIȘIȚILOVA, vicedirector Agenția de Transplant\n$prefix Cea mai mare provocare este egalitatea substanțelor de origine umană.";
             $events = app(ArticleMosTimeline::class)->scan($text, [$speaker]);
-            $this->assertSame('Cea mai mare provocare este egalitatea', $events[0]['snippet']);
+            $this->assertSame('Cea mai mare provocare este egalitatea substanțelor', $events[0]['snippet']);
         }
     }
 

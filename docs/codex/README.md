@@ -18,6 +18,12 @@ Acest director descrie comportamente și decizii de proiect care trebuie păstra
 
 ## Regula de întreținere
 
+[Contractul PLAY](lb-portal-mos-play.md#proiecte-în-lb-portal) include interacțiunile configurabile între secțiuni în LB-Portal: suspendare/revenire legată de durata existentă, reguli per proiect și jurnal, fără modificarea cererii HTTP Plasma. Contractul detaliat este `C:\Projects\LB-Portal\docs\CODEX_SECTION_INTERACTIONS.md`.
+
+Potrivirea [aparițiilor MOS din text](enps-playlist-import.md#aparițiile-mos-și-vox-în-text) alocă o singură comandă fiecărei intervenții, cu prioritate pentru numele exacte și prefix diplomatic `E.S.` opțional. Comenzile nelocalizate rămân toate la sfârșitul listei, fără fragmente inventate; frontendul respectă timeline-ul și păstrează template-urile fără text.
+
 Organizarea secțiunilor LB-Portal în proiecte este descrisă în [contractul PLAY](lb-portal-mos-play.md#proiecte-în-lb-portal): selecție manuală Telejurnal/Retrospectiva, blocarea execuției Plasma pentru alte proiecte, migrarea mapărilor existente și păstrarea contextului istoric. Documentul detaliat LB-Portal este `C:\Projects\LB-Portal\docs\CODEX_MOS_PROJECTS.md`.
+
+Verificarea etapei de proiecte: 68 teste LB-Portal, 11 teste Plasma, 110 verificări Electron și build NSIS — toate trecute, cu setări temporare și receiver TCP mock.
 
 Documentația și testele sunt parte din contractul funcțional, nu sunt note opționale. Dacă o modificare autorizată schimbă comportamentul descris, actualizează documentul în aceeași schimbare și ajustează testele relevante. Nu șterge o regulă doar pentru că pare redundantă înainte de a verifica traseul complet frontend–backend–persistență.

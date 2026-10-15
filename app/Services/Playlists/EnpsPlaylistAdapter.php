@@ -44,8 +44,13 @@ class EnpsPlaylistAdapter
             }
             $name = $slug;
             $segment = 'TEXT';
-            if (preg_match('/-('.self::SEGMENTS.')\s*$/iu', $slug, $matches, PREG_OFFSET_CAPTURE)) {
-                $segment = mb_strtoupper($matches[1][0]);
+            $segmentPattern = '(?:'.self::SEGMENTS.')';
+            if (preg_match('/-('.$segmentPattern.'(?:[ -]+'.$segmentPattern.')*)\s*$/iu', $slug, $matches, PREG_OFFSET_CAPTURE)) {
+                preg_match_all('/'.self::SEGMENTS.'/iu', $matches[1][0], $suffixes);
+                $suffixes = array_map('strtoupper', $suffixes[0]);
+                // Compound labels such as "-AMB OFF" describe the OFF item in
+                // Plasma; AMB is an ENPS production cue, not another article.
+                $segment = in_array('OFF', $suffixes, true) ? 'OFF' : end($suffixes);
                 $segment = $segment === 'INTO' ? 'INTRO' : $segment;
                 $name = trim(substr($slug, 0, $matches[0][1]));
             } elseif (preg_match('/^TEASE\b/iu', $name)) {
