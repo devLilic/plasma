@@ -2,8 +2,26 @@ import {useCallback, useEffect, useState} from 'react';
 import {MosObject} from '@/types';
 
 export type LBPortalStatus = 'loading' | 'ready' | 'unconfigured' | 'error';
+export type MosPlaybackAction = 'PLAY' | 'RESUME';
+export type MosPlaybackState = {onAir: boolean; sectionId: string | null};
 
 interface LBPortalConnection {endpoint: string; accessKey: string; timeoutMs?: number}
+
+export function localizeLBPortalMessage(message: string): string {
+    const missingParameters = message.match(/^Missing mapped parameter\(s\):\s*(.+)$/i);
+    if (missingParameters) return `Lipsesc parametrii mapați: ${missingParameters[1]}`;
+
+    const knownMessages: Record<string, string> = {
+        'No saved MOS mapping matches this template.': 'Nu există o mapare MOS salvată pentru acest template.',
+        'Plasma execution is disabled for standalone projects.': 'Trimiterea comenzilor Plasma este dezactivată pentru proiectele independente.',
+        'Section needs operator resync.': 'Secțiunea necesită resincronizare din LB-Portal.',
+        'LiveBoard operation queue is full.': 'Coada de comenzi LiveBoard este plină. Încearcă din nou în câteva momente.',
+        'LiveBoard disconnected during execution.': 'Conexiunea cu LiveBoard s-a întrerupt în timpul executării comenzii.',
+        'LiveBoard disconnected before auto-exit; operator resync required.': 'Conexiunea cu LiveBoard s-a întrerupt înainte de închiderea automată. Secțiunea necesită resincronizare.',
+    };
+
+    return knownMessages[message] || message;
+}
 
 export function createRequestId(): string {
     const cryptoApi = globalThis.crypto;
@@ -24,6 +42,7 @@ export function useLBPortalController() {
     const [busy, setBusy] = useState(false);
     const [message, setMessage] = useState<string | null>(null);
     const [lastPlayedObjectKey, setLastPlayedObjectKey] = useState<string | null>(null);
+    const [playbackStates, setPlaybackStates] = useState<Record<string, MosPlaybackState>>({});
 
     useEffect(() => {
         let disposed = false;
@@ -43,9 +62,9 @@ export function useLBPortalController() {
         return () => { disposed = true; };
     }, []);
 
-    const sendPlay = useCallback(async (object: MosObject): Promise<boolean> => {
+    const sendPlay = useCallback(async (object: MosObject, action: MosPlaybackAction = 'PLAY'): Promise<boolean> => {
         if (!connection || status !== 'ready') {
-            setMessage('Configurează conexiunea LB-Portal în Setări înainte de PLAY.');
+            setMessage(`Configurează conexiunea LB-Portal în Setări înainte de ${action}.`);
             return false;
         }
         const hasTextValues = object.editableObjects.some(field => field.value.trim() !== '');
@@ -54,9 +73,9 @@ export function useLBPortalController() {
         const payload = {
             requestId,
             source: 'plasma.test',
-            type: 'mos-play',
+            type: action === 'PLAY' ? 'mos-play' : 'mos-resume',
             template: object.slug,
-            ...(params ? {params} : {}),
+            ...(action === 'PLAY' && params ? {params} : {}),
         };
         setBusy(true);
         setMessage(null);
@@ -73,18 +92,33 @@ export function useLBPortalController() {
                     signal: abortController.signal,
                 });
             } finally { window.clearTimeout(timeout); }
-            const result = await response.json().catch(() => ({})) as {requestId?: string; error?: string};
+            const result = await response.json().catch(() => ({})) as {requestId?: string; error?: string; execution?: {status?: string; sectionId?: string | null; onAir?: boolean; error?: string | null}};
             if (!response.ok || result.requestId !== requestId) throw new Error(result.error || `LB-Portal a răspuns cu HTTP ${response.status}.`);
-            setLastPlayedObjectKey(object.objectKey || object.commandId);
+            const objectKey = object.objectKey || object.commandId;
+            if (!result.execution || !['completed', 'noop'].includes(result.execution.status || '')) throw new Error(result.execution?.error || result.error || 'LB-Portal nu a confirmat starea graficii de la LiveBoard.');
+            if (action === 'PLAY' && result.execution.onAir) {
+                setPlaybackStates(current => {
+                    const next = {...current};
+                    if (result.execution?.sectionId) for (const [key, state] of Object.entries(next)) if (state.sectionId === result.execution.sectionId) next[key] = {...state, onAir: false};
+                    next[objectKey] = {onAir: true, sectionId: result.execution?.sectionId ?? null};
+                    return next;
+                });
+                setLastPlayedObjectKey(objectKey);
+            } else if (action === 'RESUME' && result.execution.onAir === false) {
+                setPlaybackStates(current => ({...current, [objectKey]: {onAir: false, sectionId: result.execution?.sectionId ?? current[objectKey]?.sectionId ?? null}}));
+                setLastPlayedObjectKey(current => current === objectKey ? null : current);
+            } else {
+                throw new Error('LiveBoard nu a confirmat schimbarea stării graficii.');
+            }
             setMessage(null);
             return true;
         } catch (error) {
             setMessage(error instanceof Error && error.name === 'AbortError'
                 ? 'LB-Portal nu a răspuns în 5 secunde. Verifică aplicația, IP-ul și portul.'
-                : error instanceof Error ? error.message : 'Cererea către LB-Portal a eșuat.');
+                : error instanceof Error ? localizeLBPortalMessage(error.message) : 'Cererea către LB-Portal a eșuat.');
             return false;
         } finally { setBusy(false); }
     }, [connection, status]);
 
-    return {status, busy, message, lastPlayedObjectKey, sendPlay};
+    return {status, busy, message, lastPlayedObjectKey, playbackStates, sendPlay};
 }

@@ -1,11 +1,12 @@
 import {useEffect, useMemo, useState} from 'react';
 import axios from 'axios';
 import {Dialog, DialogPanel, DialogTitle} from '@headlessui/react';
-import {ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon, ArrowPathIcon, XMarkIcon, PlayIcon, StopIcon} from '@heroicons/react/24/outline';
+import {ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon, ArrowPathIcon, XMarkIcon, PlayIcon} from '@heroicons/react/24/outline';
 import {Article, MosObject} from '@/types';
 import ArticleMosContent from '@/Components/Articles/ArticleMosContent';
-import type {LBPortalStatus} from '@/Components/Articles/useLBPortalController';
+import type {LBPortalStatus, MosPlaybackAction, MosPlaybackState} from '@/Components/Articles/useLBPortalController';
 import {MosSequenceRow, orderMosSequence} from '@/Components/Articles/mosSequence';
+import {compareMosFieldOrder} from '@/Components/Articles/mosFieldOrder';
 
 interface MosOverrideResponse {data: MosObject}
 interface MosOrphan {id: number; fieldName: string; value: string; createdAt: string}
@@ -22,21 +23,22 @@ interface MosWorkspaceProps {
     commandBusy?: boolean
     commandMessage?: string | null
     lastPlayedObjectKey?: string | null
-    onPlay?: (object: MosObject) => Promise<boolean>
+    playbackStates?: Record<string, MosPlaybackState>
+    onPlay?: (object: MosObject, action?: MosPlaybackAction) => Promise<boolean>
 }
 
 const keyFor = (object: MosObject) => object.objectKey || object.commandId;
 const titleFor = (article: Article) => article.subtitle || article.title || article.technical_title;
 
-export async function requestMosPlay(live: boolean, object: MosObject, onPlay?: (object: MosObject) => Promise<boolean>, onRequiresLive?: () => void) {
+export async function requestMosPlay(live: boolean, object: MosObject, onPlay?: (object: MosObject, action?: MosPlaybackAction) => Promise<boolean>, onRequiresLive?: () => void, action: MosPlaybackAction = 'PLAY') {
     if (!live) {
         onRequiresLive?.();
         return false;
     }
-    return onPlay ? onPlay(object) : false;
+    return onPlay ? onPlay(object, action) : false;
 }
 
-export function MosWorkspace({article, previousDisabled = true, nextDisabled = true, onPrevious, onNext, live, showLBPortalControls = true, lbPortalStatus = 'unconfigured', commandBusy = false, commandMessage, lastPlayedObjectKey, onPlay}: MosWorkspaceProps) {
+export function MosWorkspace({article, previousDisabled = true, nextDisabled = true, onPrevious, onNext, live, showLBPortalControls = true, lbPortalStatus = 'unconfigured', commandBusy = false, commandMessage, lastPlayedObjectKey, playbackStates = {}, onPlay}: MosWorkspaceProps) {
     const [saved, setSaved] = useState<Record<string, SavedMosObject>>({});
     const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -60,6 +62,14 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
     useEffect(() => {
         if (live) setLiveModeNoticeId(0);
     }, [live]);
+
+    useEffect(() => {
+        if (commandMessage) window.dispatchEvent(new CustomEvent('plasma:toast', {detail: {message: commandMessage}}));
+    }, [commandMessage]);
+
+    useEffect(() => {
+        if (liveModeNoticeId > 0) window.dispatchEvent(new CustomEvent('plasma:toast', {detail: {message: 'Intră în modul LIVE pentru a trimite grafica.'}}));
+    }, [liveModeNoticeId]);
 
     const objects = useMemo(() => (article?.mos_objects || []).map(source => {
         const key = keyFor(source);
@@ -145,8 +155,6 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
             </nav>
         </header>
         <div className="mos-workspace-scroll">
-            {commandMessage && <p className="mos-profile-buttons" role="status">{commandMessage}</p>}
-            {!live && liveModeNoticeId > 0 && <p key={liveModeNoticeId} className="mos-live-mode-alert" role="alert">Intră în modul LIVE pentru a trimite grafica.</p>}
             {sequence.length ? <ol className="mos-sequence">
                 {sequence.map((row, index) => {
                     if (row.kind === 'vox') return <li className="mos-sequence-vox" key={row.key}><span>{row.count === null ? 'VOX-uri' : row.count === 1 ? '1 VOX' : `${row.count} VOX-uri`}</span>{row.snippet && <small>{row.snippet}</small>}</li>;
@@ -157,20 +165,24 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
                     const key = keyFor(object);
                     const draft = drafts[key] || {};
                     const dirty = object.editableObjects.some(field => field.fieldKey && Object.hasOwn(draft, field.fieldKey) && draft[field.fieldKey] !== field.value);
-                    const playbackAction = object.playbackState === 'active' ? 'STOP' : object.playbackState === 'paused' ? 'RESUME' : 'PLAY';
+                    const playbackState = playbackStates[key]
+                        ? playbackStates[key].onAir ? 'onair' : 'off'
+                        : !showLBPortalControls && (object.playbackState === 'active' || object.playbackState === 'paused') ? 'onair' : 'off';
+                    const playbackAction: MosPlaybackAction = playbackState === 'onair' ? 'RESUME' : 'PLAY';
                     const isLastPlayed = lastPlayedObjectKey === key;
+                    const isOnAir = playbackState === 'onair';
                     const canEdit = !!object.editable && !!object.objectKey && !!object.revision && object.editableObjects.some(field => !!field.fieldKey);
                     const invalidParams = object.editableObjects.some(field => field.value.length > 2000 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(field.value));
-                    const playReady = !!object.slug && !dirty && !invalidParams;
-                    return <li className="mos-sequence-mos" key={row.key}><section className={`mos-override-card ${isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
+                    const playReady = !!object.slug && (playbackAction === 'RESUME' || (!dirty && !invalidParams));
+                    return <li className="mos-sequence-mos" key={row.key}><section className={`mos-override-card ${isOnAir || isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
                         {hasTextValues && <div className="mos-graphic-tools" aria-label={`Opțiuni ${object.slug || 'grafică MOS'}`}>
                             <span className="mos-graphic-template-badge">{object.slug || 'Grafică MOS'}</span>
                             {canEdit && <button type="button" className="mos-edit-corrections" onClick={() => { setErrors(current => ({...current, [key]: ''})); setEditingKey(key); }} aria-label={`Editează corecțiile pentru ${object.slug || 'grafică MOS'}`}><PencilSquareIcon className="h-3.5 w-3.5"/>Editează</button>}
                         </div>}
                         {(object.memberObjectKeys?.length || 0) > 1 && <small className="mos-member-count">Grafica reprezintă {object.memberObjectKeys!.length} segmente MOS identice.</small>}
                         {hasTextValues
-                            ? <ArticleMosContent objects={[object]} compact action={<button type="button" className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady || playbackAction !== 'PLAY'} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1))} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'STOP' ? <StopIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}</button>}/>
-                            : <div className="mos-graphic-only"><span>{object.slug}</span><button type="button" className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady || playbackAction !== 'PLAY'} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1))} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}><PlayIcon className="h-4 w-4" aria-hidden="true"/></button></div>}
+                            ? <ArticleMosContent objects={[object]} compact action={<button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button>}/>
+                            : <div className="mos-graphic-only"><span>{object.slug}</span><button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button></div>}
                         {row.snippet && <p className="mos-speech-snippet">{row.snippet}</p>}
                         {showLBPortalControls && (lbPortalStatus === 'loading' || lbPortalStatus === 'unconfigured' || lbPortalStatus === 'error' || !playReady) && <div className="mos-profile-controls">
                             <div className="mos-profile-buttons">
@@ -196,10 +208,7 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
                             <button type="button" onClick={closeEditor} disabled={busyKey === editingKey} className="mos-correction-dialog-close" aria-label="Închide"><XMarkIcon className="h-4 w-4"/></button>
                         </header>
                         <div className="mos-correction-dialog-body">
-                            {[...editingObject.editableObjects].sort((left, right) => {
-                                const order = {short_title: 0, title: 1, value: 2};
-                                return order[left.role] - order[right.role];
-                            }).map((field, index) => <label className="mos-override-field" key={field.fieldKey || `${field.name}-${index}`}>
+                            {[...editingObject.editableObjects].sort(compareMosFieldOrder).map((field, index) => <label className="mos-override-field" key={field.fieldKey || `${field.name}-${index}`}>
                                 <span>{field.name}{field.isOverridden && <small>corectat local</small>}{field.sourceChanged && <small className="source-changed">sursa s-a schimbat</small>}</span>
                                 {field.fieldKey ? <input type="text" value={editingDraft[field.fieldKey] ?? field.value} onChange={event => setDrafts(current => ({...current, [editingKey]: {...(current[editingKey] || {}), [field.fieldKey!]: event.target.value}}))}/> : <p className="mos-override-field-readonly">{field.value || '—'}</p>}
                                 {field.sourceChanged && field.importedValue !== undefined && <small className="mos-imported-value">Import ENPS: {field.importedValue || '—'}</small>}

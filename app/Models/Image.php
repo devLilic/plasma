@@ -10,12 +10,13 @@ class Image extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['sourceUrl', 'url', 'isNew', 'last_used_at'];
+    protected $fillable = ['sourceUrl', 'url', 'isNew', 'last_used_at', 'cleanup_excluded_at'];
 
     protected function casts(): array
     {
         return [
             'last_used_at' => 'datetime',
+            'cleanup_excluded_at' => 'datetime',
         ];
     }
 

@@ -1,12 +1,14 @@
-# Playlist Pregătire / LIVE și OSCon
+# Playlist Pregătire / LIVE
 
 Pagina playlistului folosește lățimea disponibilă a ecranului. În Pregătire se aleg și se verifică imaginile; în LIVE există trei contexte independente: articolul pregătit pentru imagine, imaginea raportată activă de PlasmaViewer și articolul din panoul MOS. Exemplul operațional este MOS pentru știrea 5, plasma știrii 6 pe ieșire și imaginea știrii 7 în pregătire.
+
+Pe ecrane mici (`max-width: 767px`), numai în LIVE, playlistul se deschide ca drawer din stânga peste conținut. Butonul burger este în stânga selectorului de surse al imaginii, iar taburile sunt aliniate la dreapta. Drawer-ul este `position: fixed` și nu ocupă un rând în grid, astfel Plasma rămâne imediat sub header. La deschidere, overlay-ul întunecat și blurat acoperă întregul viewport, inclusiv zona de sus; drawer-ul este stratificat deasupra overlay-ului. Închiderea are loc la selectarea unui articol, la atingerea overlay-ului sau cu Escape. La 768px și peste, acest control și drawer-ul mobil sunt ascunse, iar layoutul existent rămâne neschimbat.
 
 Blocul separat „Playlist / operator” nu se mai afișează. Titlul integral al playlistului și numărul materialelor sunt în partea de sus a sidebarului din stânga. Descarcă toate nu se mai afișează pe această pagină. Headerul arată și butoanele de fullscreen/windowed FR2, cu pictograme, grupare și stare activă ca în PlasmaViewer; sunt înaintea selectorului Pregătire / LIVE. Butoanele trimit comenzile `window.fullscreen` existente, iar starea afișată se actualizează din răspunsul PlasmaViewer. În PlasmaViewer FR3 rămâne mereu fullscreen, fără buton de mod separat. Selectorul Pregătire / LIVE și Refresh playlist stau lângă comenzile FR2, în dreapta headerului, lângă selectorul utilizatorului. Distanța dintre header și panouri este de 12 px. Schimbarea regimului folosește aceleași reguli de selecție independente și nu trimite comenzi de ieșire.
 
 Butonul rotund „+” pe marginea de sus a primului material deschide dialogul Material nou la poziția primului articol; este vizibil la hover/focus pe primul rând, la fel ca butoanele „+” dintre materiale, care inserează în continuare după articolul respectiv. Pentru un playlist gol, sidebarul și un „+” vizibil rămân disponibile, cu poziția 1. Lista se derulează separat de titlu și acțiunile sidebarului. Badge-ul INTRO este ascuns numai în sidebar, celelalte badge-uri își păstrează ordinea; datele importate și badge-urile din editor nu sunt modificate. Numerele de ordine folosesc 11 px într-o coloană de 12 px. Panoul MOS și sidebarul sunt aliniate sus cu editorul central; regula sticky MOS are selectorul explicit al gridului pentru a nu fi suprascrisă de poziționarea generică `.ios-card`.
 
-Interacțiunea OSC pentru titre este retrasă din pagina playlistului: bara OSCon, profilele, maparea, PLAY/STOP MOS și mesajele de conectare sunt ascunse. Pagina nu mai inițializează controllerul OSCon. Grafica MOS, navigarea și corecțiile locale rămân disponibile. Direcția cerută este conectarea TCP la LiveBoard; acea conexiune nu este implementată prin această schimbare. Secțiunile OSCon de mai jos documentează implementarea păstrată în cod, fără acces din pagina playlistului.
+Comenzile MOS din Plasma trec prin HTTP către LB-Portal, care face bridge-ul către LiveBoard prin TCP LBControl (`LBC_`). Plasma nu se conectează direct la LiveBoard. Simularea fără socket din LB-Portal rămâne numai pentru verificări offline; pentru comenzi reale către LiveBoard se folosește conexiunea TCP configurată și pornită manual în LB-Portal. Nu extinde și nu folosi transportul OSCon/OSC pentru acest flux.
 
 ## Acțiuni explicite
 
@@ -15,12 +17,6 @@ Interacțiunea OSC pentru titre este retrasă din pagina playlistului: bara OSCo
 Textul original și sursele importate rămân păstrate. Panoul operațional MOS urmărește ordinea și fragmentele calculate din sursa originală, înaintea aplicării corecțiilor. Importul/refresh-ul ENPS și HTM păstrează contractele din [documentația importului](enps-playlist-import.md).
 
 În zona de Pregătire, cardul „Intro știre” afișează textul intro până la primul marker `OFF` standalone. Markerul și tot textul de după el sunt eliminate din preview, inclusiv când `OFF` apare în mijlocul aceluiași rând; cuvinte precum `OFFICIAL` rămân intacte. Textul sursă nu este modificat.
-
-## Conexiunea OSCon
-
-Operatorul apasă Conectează OSCon. Setările globale sunt disponibile în profil, pentru utilizatorii autentificați: endpoint HTTP/HTTPS și token. Tokenul este criptat prin Laravel Crypt în ApplicationSetting; formularul nu primește valoarea salvată. Un token gol păstrează valoarea existentă, iar eliminarea se cere explicit. Ruta autentificată `oscon.connection` răspunde cu `Cache-Control: private, no-store`. Browserul păstrează tokenul numai în memorie, fără localStorage sau sessionStorage.
-
-Browserul verifică identitatea `oscon`, versiunea protocolului, readiness și capabilitățile MOS, apoi citește profilele și grupurile. Starea serviciului și starea locală a graficii sunt distincte. După o comandă cu rezultat incert se cere verificarea stării; nu există retry automat al comenzii. Confirmarea UDP/OSC este numai locală și nu dovedește imaginea de pe ieșirea LiveBoard.
 
 ## Corecții MOS
 
@@ -32,6 +28,6 @@ PATCH și DELETE verifică revizia și răspund cu 409 la intervenții concurent
 
 ## Verificare
 
-Testele PHP rulează exclusiv cu `APP_ENV=testing`, SQLite în memorie, verificat prin `TestIsolationTest`. Verificările relevante sunt `PlaylistMosOverrideTest`, `ArticleMosTimelineTest`, `OSConConnectionSettingsTest`, `EnpsPlaylistImportTest`, `EnpsWebIntegrationTest`, `PlaylistParsingRefreshTest` și `PlasmaViewerIntegrationTest`. Frontend-ul se verifică prin testele Node din `tests/Frontend` și `npm run build`.
+Testele PHP rulează exclusiv cu `APP_ENV=testing`, SQLite în memorie, verificat prin `TestIsolationTest`. Verificările relevante sunt `PlaylistMosOverrideTest`, `ArticleMosTimelineTest`, `EnpsPlaylistImportTest`, `EnpsWebIntegrationTest`, `PlaylistParsingRefreshTest` și `PlasmaViewerIntegrationTest`. Frontend-ul se verifică prin testele Node din `tests/Frontend` și `npm run build`.
 
-Acceptanța pe stația LiveBoard rămâne manuală: redarea efectivă, durata animației Person, revenirea titlului, STOP profil și STOP grup. Testele automate folosesc transporturi simulate și nu trimit OSC către ieșirea reală.
+Acceptanța comenzilor LiveBoard rămâne manuală pe instalația reală: redarea efectivă, durata animației Person și ieșirea graficii. Testele automate folosesc simularea LB-Portal sau receiverul TCP mock și nu dovedesc output-ul video real.

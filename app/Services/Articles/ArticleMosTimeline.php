@@ -11,7 +11,12 @@ use Illuminate\Support\Str;
 /** Locate graphics in the script without extracting or moving its speech. */
 class ArticleMosTimeline
 {
-    public function __construct(private readonly EnpsPlaylistAdapter $adapter) {}
+    private ?array $configuredNameGraphicTemplates = null;
+
+    public function __construct(
+        private readonly EnpsPlaylistAdapter $adapter,
+        private readonly NameGraphicTemplates $nameGraphicTemplates,
+    ) {}
 
     public function forArticle(Article $article, array $objects, array $sections): array
     {
@@ -85,6 +90,14 @@ class ArticleMosTimeline
                 $fields[] = ['function', $this->normalized($field['name']), $this->normalized($field['value'])];
             }
         }
+        if (! array_filter($fields, fn ($field) => $field[0] === 'name') && $this->isNameGraphic($object)) {
+            foreach ($object['editableObjects'] ?? [] as $field) {
+                if (trim($field['value'] ?? '') !== '') {
+                    $fields[] = ['name', $this->normalized($field['name'] ?? 'Text'), $this->normalized($field['value'])];
+                    break;
+                }
+            }
+        }
         if (! array_filter($fields, fn ($field) => $field[0] === 'name')) {
             return null;
         }
@@ -122,7 +135,7 @@ class ArticleMosTimeline
             $isCue = preg_match('/^(?:STAND[ \t]*UP|SINCRON|SNC|PRIN[ \t]+TELEFON)\b/iu', $trimmed) === 1;
             $lineTitleMatches = [];
             foreach ($objects as $object) {
-                if ($this->isVoxGraphic($object)) {
+                if ($this->isVoxGraphic($object) || $this->isNameGraphic($object)) {
                     continue;
                 }
                 foreach ($object['editableObjects'] ?? [] as $field) {
@@ -140,8 +153,12 @@ class ArticleMosTimeline
                 if ($this->isVoxGraphic($object)) {
                     continue;
                 }
-                $titles = array_filter($object['editableObjects'], fn ($field) => EnpsBasicContent::editableRole($field['name']) === 'title' && trim($field['value']) !== '');
+                $titles = $this->isNameGraphic($object) ? [] : array_filter($object['editableObjects'], fn ($field) => EnpsBasicContent::editableRole($field['name']) === 'title' && trim($field['value']) !== '');
                 $names = array_filter($object['editableObjects'], fn ($field) => in_array($this->normalized($field['name']), ['nume', 'name'], true) && trim($field['value']) !== '');
+                if ($names === [] && $this->isNameGraphic($object)) {
+                    $names = array_filter($object['editableObjects'], fn ($field) => trim($field['value'] ?? '') !== '');
+                    $names = array_slice($names, 0, 1, true);
+                }
                 foreach ($titles ?: $names as $field) {
                     $match = $this->findValue($line, $field['value'], $titles === []);
                     if ($match === null) {
@@ -149,7 +166,7 @@ class ArticleMosTimeline
                     }
                     // A mention in narration is not a speaker attribution.
                     $isBareName = $this->isSpeakerHeading($line, $match, $object);
-                    if ($titles === [] && ! $isCue && ! $isBareName) {
+                    if ($titles === [] && ! $isCue && ! $isBareName && ! $this->isNameGraphic($object)) {
                         continue;
                     }
                     if ($titles === [] && ! $isCue && $this->insideTitleMatch($match, $lineTitleMatches)) {
@@ -282,6 +299,12 @@ class ArticleMosTimeline
     private function isVoxGraphic(array $object): bool
     {
         return preg_match('/^(?:\d+[_-])?VOX(?:[_-]|$)/iu', trim($object['slug'] ?? '')) === 1;
+    }
+
+    private function isNameGraphic(array $object): bool
+    {
+        $this->configuredNameGraphicTemplates ??= array_map('mb_strtolower', $this->nameGraphicTemplates->templates());
+        return in_array(mb_strtolower(trim($object['slug'] ?? '')), $this->configuredNameGraphicTemplates, true);
     }
 
     private function isVoxBoundary(string $line): bool

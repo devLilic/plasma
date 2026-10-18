@@ -6,6 +6,7 @@ use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageStorageSettingsController;
 use App\Http\Controllers\ImageQualitySettingsController;
 use App\Http\Controllers\LBPortalConnectionController;
+use App\Http\Controllers\NameGraphicTemplatesSettingsController;
 use App\Http\Controllers\OSConConnectionController;
 use App\Http\Controllers\PlaylistMosOverrideController;
 use App\Http\Controllers\PlasmaViewerController;
@@ -66,6 +67,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/lb-portal/connection', [LBPortalConnectionController::class, 'connection'])->name('lb-portal.connection');
     Route::patch('/profile/playlist-title-exclusions', [PlaylistTitleExclusionsSettingsController::class, 'update'])
         ->name('profile.playlist-title-exclusions.update');
+    Route::patch('/profile/mos-name-graphics', [NameGraphicTemplatesSettingsController::class, 'update'])
+        ->name('profile.mos-name-graphics.update');
 
     Route::post('/playlists/enps/catalog', [EnpsPlaylistImportController::class, 'catalog'])->name('playlists.enps.catalog');
     Route::post('/playlists/enps/import', [EnpsPlaylistImportController::class, 'import'])->name('playlists.enps.import');

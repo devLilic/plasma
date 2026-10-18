@@ -19,9 +19,11 @@ interface ImageEditorContentProps {
     autoFocusLibrarySearch?: boolean
     operatorMode?: boolean
     plasmaContent?: React.ReactNode
+    internetContent?: React.ReactNode
+    operatorLeadingAction?: React.ReactNode
 }
 
-const ImageEditorContent = ({onImageSelected = () => undefined, article, initialTab = 'external', allowUpload = true, autoFocusLibrarySearch = false, operatorMode = false, plasmaContent}: ImageEditorContentProps) => {
+const ImageEditorContent = ({onImageSelected = () => undefined, article, initialTab = 'external', allowUpload = true, autoFocusLibrarySearch = false, operatorMode = false, plasmaContent, internetContent, operatorLeadingAction}: ImageEditorContentProps) => {
     const [operatorTab, setOperatorTab] = useState<ImageEditorTab>(initialTab);
     useEffect(() => setOperatorTab(initialTab), [article.id, initialTab]);
     const tabs = [
@@ -31,11 +33,16 @@ const ImageEditorContent = ({onImageSelected = () => undefined, article, initial
     ] as const;
 
     if (operatorMode) return <div className="operator-image-editor">
-        <nav className="operator-image-tabs" role="tablist" aria-label="Surse imagine">
+        {operatorLeadingAction ? <div className="operator-image-tabs-row">
+            {operatorLeadingAction}
+            <nav className="operator-image-tabs" role="tablist" aria-label="Surse imagine">
+                {(plasmaContent ? [{value: 'plasma', label: 'Plasma', icon: TvIcon}, ...tabs] : tabs).map(item => <button key={item.value} type="button" role="tab" aria-selected={operatorTab === item.value} className={operatorTab === item.value ? 'active' : ''} onClick={() => setOperatorTab(item.value as ImageEditorTab)}><item.icon className="h-4 w-4"/>{item.label}</button>)}
+            </nav>
+        </div> : <nav className="operator-image-tabs" role="tablist" aria-label="Surse imagine">
             {(plasmaContent ? [{value: 'plasma', label: 'Plasma', icon: TvIcon}, ...tabs] : tabs).map(item => <button key={item.value} type="button" role="tab" aria-selected={operatorTab === item.value} className={operatorTab === item.value ? 'active' : ''} onClick={() => setOperatorTab(item.value as ImageEditorTab)}><item.icon className="h-4 w-4"/>{item.label}</button>)}
-        </nav>
+        </nav>}
         {operatorTab === 'plasma' && plasmaContent}
-        {operatorTab === 'external' && <GoogleTab article={article} onImageSelected={onImageSelected}/>}
+        {operatorTab === 'external' && <>{internetContent}<GoogleTab article={article} onImageSelected={onImageSelected}/></>}
         {operatorTab === 'local' && <LocalTab article={article} onImageSelected={onImageSelected} autoFocusSearch={autoFocusLibrarySearch}/>}
         {operatorTab === 'upload' && allowUpload && <UploadTab handleModal={onImageSelected}/>}
     </div>;

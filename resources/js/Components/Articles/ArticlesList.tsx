@@ -1,5 +1,6 @@
 import {ReactNode, useEffect, useMemo, useRef, useState} from 'react';
 import axios from 'axios';
+import {Bars3Icon, XMarkIcon} from '@heroicons/react/24/outline';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectAllArticles} from '@/Store/article/article.slice';
 import NewArticleDialog from '@/Components/Dialogs/NewArticleDialog';
@@ -21,6 +22,8 @@ type WorkMode = 'preparation' | 'live';
 
 const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
     const [mode, setMode] = useState<WorkMode>('preparation');
+    const [livePlaylistOpen, setLivePlaylistOpen] = useState(false);
+    const [smallViewport, setSmallViewport] = useState(() => typeof window !== 'undefined' && window.matchMedia('(max-width: 767px)').matches);
     const [selectionReady, setSelectionReady] = useState(false);
     const [isNewArticleDialogOpen, setIsNewArticleDialogOpen] = useState(false);
     const [isConfirmDialogOpen, setIsConfirmDialogOpen] = useState(false);
@@ -37,6 +40,8 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
     const initialSelectionHandled = useRef(false);
     const hasEnteredLive = useRef(false);
     const selectionPlaylistId = useRef<number | null>(null);
+    const livePlaylistDrawerRef = useRef<HTMLDivElement>(null);
+    const livePlaylistToggleRef = useRef<HTMLButtonElement>(null);
     const {deleteArticle, unmarkForDelete, markForDelete, setCurrent, changeNewArticlePosition} = useActions();
     const lbPortal = useLBPortalController();
     const articleToDelete = useTypedSelector(state => state.articles.delete_id);
@@ -55,6 +60,65 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
 
     useEffect(() => { viewerRef.current = viewer; }, [viewer]);
     useEffect(() => () => { if (transformTimer.current) clearTimeout(transformTimer.current); }, []);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(max-width: 767px)');
+        const updateViewport = () => {
+            setSmallViewport(mediaQuery.matches);
+            if (!mediaQuery.matches) setLivePlaylistOpen(false);
+        };
+        updateViewport();
+        mediaQuery.addEventListener('change', updateViewport);
+        return () => mediaQuery.removeEventListener('change', updateViewport);
+    }, []);
+
+    useEffect(() => {
+        if (mode !== 'live') setLivePlaylistOpen(false);
+    }, [mode]);
+
+    useEffect(() => {
+        const drawer = livePlaylistDrawerRef.current;
+        if (!drawer) return;
+        drawer.inert = mode === 'live' && smallViewport && !livePlaylistOpen;
+    }, [mode, smallViewport, livePlaylistOpen]);
+
+    useEffect(() => {
+        if (mode !== 'live' || !smallViewport || !livePlaylistOpen) return;
+        const focusables = () => [
+            livePlaylistToggleRef.current,
+            ...Array.from(livePlaylistDrawerRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href], input:not(:disabled), select:not(:disabled), textarea:not(:disabled), [tabindex]:not([tabindex="-1"])') ?? []),
+        ].filter((element): element is HTMLElement => Boolean(element && element.getClientRects().length));
+        const focusFirstDrawerControl = () => {
+            const first = focusables()[1];
+            first?.focus();
+        };
+        const frame = window.requestAnimationFrame(focusFirstDrawerControl);
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                setLivePlaylistOpen(false);
+                window.requestAnimationFrame(() => livePlaylistToggleRef.current?.focus());
+                return;
+            }
+            if (event.key !== 'Tab') return;
+            const items = focusables();
+            const first = items[0];
+            const last = items[items.length - 1];
+            if (!first || !last) return;
+            if (event.shiftKey && document.activeElement === first) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && document.activeElement === last) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.cancelAnimationFrame(frame);
+            document.removeEventListener('keydown', handleKeyDown);
+        };
+    }, [mode, smallViewport, livePlaylistOpen]);
 
     useEffect(() => {
         const ids = new Set(articles.map(article => article.id));
@@ -129,10 +193,15 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
         setPreviewId(next.previewArticleId);
         setMosArticleId(next.mosArticleId);
     };
+    const closeLivePlaylist = () => {
+        setLivePlaylistOpen(false);
+        window.requestAnimationFrame(() => livePlaylistToggleRef.current?.focus());
+    };
     const selectArticle = (id: number) => {
         const next = selectPlaylistArticle({mode, hasEnteredLive: hasEnteredLive.current, currentArticleId: currentId || null, previewArticleId: previewId, mosArticleId}, id);
         applySelection(next);
         if (mode === 'preparation') setActiveTab('image');
+        if (mode === 'live' && smallViewport) closeLivePlaylist();
     };
     const selectPreview = (id: number) => setPreviewId(id);
     const openLiveForCurrent = () => applySelection(enterLiveMode({mode, hasEnteredLive: hasEnteredLive.current, currentArticleId: currentArticle?.id ?? null, previewArticleId: previewId, mosArticleId}));
@@ -231,17 +300,37 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
         </button>
     </div>;
+    const livePlaylistToggle = mode === 'live' && <button
+            ref={livePlaylistToggleRef}
+            type="button"
+            className="live-playlist-toggle"
+            aria-label={livePlaylistOpen ? 'Închide playlistul LIVE' : 'Deschide playlistul LIVE'}
+            aria-expanded={livePlaylistOpen}
+            aria-controls="live-playlist-drawer"
+            onClick={() => setLivePlaylistOpen(open => !open)}
+        >{livePlaylistOpen ? <XMarkIcon className="h-5 w-5"/> : <Bars3Icon className="h-5 w-5"/>}</button>;
     const content = <div className="playlist-operator">
+        {mode === 'live' && livePlaylistOpen && <div className="live-playlist-backdrop" aria-hidden="true" onClick={closeLivePlaylist}/>}
         <div className={`playlist-operator-grid ${mode === 'live' ? 'live-mode' : 'preparation-mode'}`}>
-            <PlaylistArticleSidebar playlistTitle={playlistTitle} articles={articles} currentId={currentArticle?.id ?? 0} previewId={previewId} mosArticleId={mosArticleId} viewerActiveArticleId={viewer?.visible ? viewer.activeImage?.articleId ?? null : null} live={mode === 'live'} onSelect={selectArticle} onSelectMos={setMosArticleId} onPreview={selectPreview} onAddFirst={() => openNewArticle(orderedArticles[0]?.playlist_order ?? 1)} onAddAfter={article => openNewArticle(article.playlist_order + 1)}/>
+            <div
+                ref={livePlaylistDrawerRef}
+                id="live-playlist-drawer"
+                className={`live-playlist-drawer${livePlaylistOpen ? ' is-open' : ''}`}
+                role={mode === 'live' && smallViewport ? 'dialog' : undefined}
+                aria-label={mode === 'live' && smallViewport ? 'Playlist LIVE' : undefined}
+                aria-modal={mode === 'live' && smallViewport ? true : undefined}
+                aria-hidden={mode === 'live' && smallViewport ? !livePlaylistOpen : undefined}
+            >
+                <PlaylistArticleSidebar playlistTitle={playlistTitle} articles={articles} currentId={currentArticle?.id ?? 0} previewId={previewId} mosArticleId={mosArticleId} viewerActiveArticleId={viewer?.visible ? viewer.activeImage?.articleId ?? null : null} live={mode === 'live'} onSelect={selectArticle} onSelectMos={setMosArticleId} onPreview={selectPreview} onAddFirst={() => openNewArticle(orderedArticles[0]?.playlist_order ?? 1)} onAddAfter={article => openNewArticle(article.playlist_order + 1)}/>
+            </div>
             <main className="playlist-operator-center">
                 {!articles.length ? <div className="ios-card empty-playlist-operator"><p className="text-lg font-bold text-[#172033]">Playlistul nu conține materiale</p><p>Folosește butonul + din playlist pentru a adăuga primul material.</p></div> : mode === 'preparation'
                     ? currentArticle
                         ? <ArticleWorkspace article={currentArticle} activeTab={activeTab} onTabChange={setActiveTab} onOpenOnAir={openLiveForCurrent} onDelete={requestDelete} showMos={false} operatorMode previousArticle={previousCurrentArticle} nextArticle={nextCurrentArticle} onPreviousArticle={() => { if (previousCurrentArticle) selectArticle(previousCurrentArticle.id); }} onNextArticle={() => { if (nextCurrentArticle) selectArticle(nextCurrentArticle.id); }}/>
                         : <EmptyOperatorPanel title="Niciun articol selectat" body="Alege o știre din playlist. Selecția nu va fi schimbată automat." />
-                    : <LiveImageStage article={previewArticle} previousArticle={previousPreviewArticle} nextArticle={nextPreviewArticle} previousDisabled={!previousPreviewArticle} nextDisabled={!nextPreviewArticle} onPrevious={() => movePreview(-1)} onNext={() => movePreview(1)} viewer={viewer} viewerBusy={viewerBusy} viewerError={viewerError} onRefreshViewer={() => void refreshViewer()} onShow={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show', article, draft); }} onShowDefault={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show-default', article, draft); }} onHide={() => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('hide'); }} transform={transform} onTransformChange={setTransform}/>}
+                    : <LiveImageStage article={previewArticle} playlistToggle={livePlaylistToggle} previousArticle={previousPreviewArticle} nextArticle={nextPreviewArticle} previousDisabled={!previousPreviewArticle} nextDisabled={!nextPreviewArticle} onPrevious={() => movePreview(-1)} onNext={() => movePreview(1)} viewer={viewer} viewerBusy={viewerBusy} viewerError={viewerError} onRefreshViewer={() => void refreshViewer()} onShow={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show', article, draft); }} onShowDefault={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show-default', article, draft); }} onHide={() => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('hide'); }} transform={transform} onTransformChange={setTransform}/>}
             </main>
-            <MosWorkspace article={mosArticle} previousDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) <= 0} nextDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) >= orderedArticles.length - 1} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showLBPortalControls lbPortalStatus={lbPortal.status} commandBusy={lbPortal.busy} commandMessage={lbPortal.message} lastPlayedObjectKey={lbPortal.lastPlayedObjectKey} onPlay={lbPortal.sendPlay}/>
+            <MosWorkspace article={mosArticle} previousDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) <= 0} nextDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) >= orderedArticles.length - 1} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showLBPortalControls lbPortalStatus={lbPortal.status} commandBusy={lbPortal.busy} commandMessage={lbPortal.message} lastPlayedObjectKey={lbPortal.lastPlayedObjectKey} playbackStates={lbPortal.playbackStates} onPlay={lbPortal.sendPlay}/>
         </div>
 
         <NewArticleDialog isOpen={isNewArticleDialogOpen} handleDialog={() => setIsNewArticleDialogOpen(open => !open)}/>

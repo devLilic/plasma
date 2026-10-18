@@ -4,7 +4,7 @@ Acest document descrie contractul dintre pagina de operare Plasma și receiverul
 
 ## Scopul etapei curente
 
-Plasma trimite grafica selectată ca JSON prin HTTP către LB-Portal. Receiverul autentifică și înregistrează cererea, rezolvă mapările salvate și programează execuția separat. LB-Portal simulează implicit comenzile fără socket; modul TCP, configurat și conectat manual, folosește numai comenzile LBControl `LBC_`. Confirmarea HTTP înseamnă recepție, nu execuție reușită sau grafică observată în emisie. OSC nu este transport pentru acest flux.
+Plasma trimite grafica selectată ca JSON prin HTTP către LB-Portal; LB-Portal este bridge-ul dintre Plasma și LiveBoard. Receiverul autentifică și înregistrează cererea, rezolvă mapările salvate și execută comanda înainte de răspunsul HTTP. Răspunsul pentru MOS include statusul execuției, starea secțiunii și dacă grafica este ON AIR; consola păstrează raportul detaliat. Pentru comenzile reale către LiveBoard se folosește exclusiv TCP LBControl cu comenzile `LBC_`, după configurare și conectare manuală. Simularea fără socket este doar pentru verificări offline. Confirmarea TCP este acceptarea protocolului, nu confirmarea video. Nu conecta Plasma direct la LiveBoard și nu utiliza OSCon/OSC pentru această integrare.
 
 ## Configurare și securitate
 
@@ -12,7 +12,7 @@ LB-Portal are și pagina `Setări → Mapări MOS`, unde se salvează secțiuni 
 
 Setările sunt locale și versionate, păstrate după repornire. Numele se introduc exact; sugestiile Plasma provin din setările salvate și cererile acceptate. Numele LiveBoard sunt manuale și trebuie să identifice contenturi deja încărcate și obiectele lor text. Contractul editorului este `C:\Projects\LB-Portal\docs\CODEX_MOS_MAPPING_EDITOR.md`; payloadul HTTP rămâne același.
 
-Perechea funcționează ca două grupuri complete: prima cerere scrie toate câmpurile în A, așteaptă propagarea și trimite PLAY A. Următoarea scrie întregul set în B fără schimbarea datelor A, așteaptă propagarea, trimite RESUME A, așteaptă pauza configurată și trimite PLAY B. Apoi alternează invers. Pauza de propagare este implicit 250 ms, cu opțiunile `0, 100, 250, 500, 1000`; toate sursele unei secțiuni folosesc aceeași stare A/B. Parametrii lipsă blochează înainte de scriere, iar cererile identice cu grafica activă nu retrimit comenzile.
+Perechea funcționează ca două grupuri complete: prima cerere scrie toate câmpurile în A, așteaptă propagarea și trimite PLAY A. Următoarea scrie întregul set în B fără schimbarea datelor A, așteaptă propagarea, trimite RESUME A, așteaptă pauza configurată și trimite PLAY B. Apoi alternează invers. Pauza de propagare este implicit 250 ms, cu opțiunile `0, 100, 250, 500, 1000`; toate sursele unei secțiuni folosesc aceeași stare A/B. Parametrii mapați lipsă blochează numai PLAY înainte de scriere; RESUME nu folosește mapări de câmp și trimite doar numele template-ului destinație. Cererile PLAY identice cu grafica activă nu retrimit comenzile.
 
 Pentru grafica automată, durata estimează numai ieșirea locală; LB-Portal nu trimite RESUME/STOP la expirare. Ieșirea reală trebuie configurată în template. Consola permite RESUME manual, STOP pentru toate destinațiile secțiunii și resincronizare locală. După o tranziție incertă sau pierderea conexiunii cu grafica activă, PLAY este blocat până la recuperare. Pornirea aplicației nu reconectează și nu reexecută cereri automat.
 
@@ -31,7 +31,9 @@ Documentele LB-Portal pentru această etapă sunt `docs/CODEX_LIVEBOARD_EXECUTIO
 
 ## Contractul HTTP
 
-Plasma face `POST http://<IPv4>:<port>/v1/requests` cu `Content-Type: application/json` și bearer key. Receiverul confirmă acceptarea cu același `requestId`; interfața marchează cererea ca primită numai când răspunsul HTTP este de succes și ID-ul corespunde.
+Plasma face `POST http://<IPv4>:<port>/v1/requests` cu `Content-Type: application/json` și bearer key. Pentru `mos-play` și `mos-resume`, LB-Portal așteaptă comanda LiveBoard și răspunde cu același `requestId` plus `execution.status`, `execution.sectionId`, `execution.playbackState`, `execution.onAir`, `execution.confirmation` și `execution.error`. Plasma schimbă grafica în verde/Resume numai la `completed`/`noop` și `onAir=true`; după Resume revine la Play și stilul implicit numai la confirmarea `completed` cu `onAir=false`. Statusul execuției rămâne distinct de recepția HTTP.
+
+În integrarea LIVE, RESUME este oferit doar pentru grafica pe care sesiunea Plasma a confirmat-o ca activă prin răspunsul LB-Portal. O altă grafică MOS din aceeași secțiune rămâne disponibilă pentru PLAY; controllerul pregătește noua destinație, retrage grafica anterioară și pornește noua durată configurată. Starea locală Plasma urmărește grafica confirmată în sesiunea curentă; statusurile MOS inițiale nu pot bloca PLAY-ul altei grafici.
 
 Payloadul `mos-play` curent are forma:
 
@@ -44,6 +46,8 @@ Payloadul `mos-play` curent are forma:
   "params": {"Titlu": "Text titlu", "Titlu scurt": "Ultima oră"}
 }
 ```
+
+Pentru a retrage grafică ON AIR, Plasma trimite `type: "mos-resume"` cu `requestId`, `source` și template-ul Plasma în `template`; `params` este omis. Mapările de parametri sunt necesare numai pentru PLAY. LB-Portal rezolvă template-ul sursă la secțiunea salvată, apoi trimite `LBC_RESUMECONTENT` cu doar numele template-ului destinație pentru bufferul activ și include starea confirmată în același răspuns HTTP.
 
 Pentru o grafică fără valori textuale, Plasma trimite același envelope de ingress cu `template`, dar omite complet `params`:
 
@@ -89,6 +93,8 @@ Contractul complet este `C:\Projects\LB-Portal\docs\CODEX_MOS_PROJECTS.md`. Inte
 - La orice schimbare de adresă, allowlist, autentificare, schemă JSON, confirmare sau semnificație a câmpurilor, actualizează în aceeași intervenție acest document, indexul [README Codex](README.md), documentația pereche din LB-Portal și testele relevante.
 
 ## Verificarea etapei de execuție — 15 octombrie 2026
+
+**Etapa de interacțiuni între secțiuni: 90 teste relevante LB-Portal, 12 teste frontend Plasma și 159 verificări Electron izolate — PASS.** Include revenirea pe exact același buffer de titlu după durata de 6 secunde a sursei Nume, păstrarea câmpurilor, anularea revenirii la STOP/acțiune locală/deconectare și persistența regulilor după restart. Editorul mai larg a fost verificat separat la 640/1280/1920 px, fără scroll orizontal, cu șapte capturi revizuite. Aplicația pornește maximizată, cu DevTools dezactivat. Build-ul TypeScript/Vite/NSIS a trecut. Proba Electron a folosit `--skip-captures`, iar instrumentul headless a generat capturile separat; ambele folosesc date temporare/fictive. Etapele, instrumentele și configurarea exemplului sunt descrise în `C:\Projects\LB-Portal\docs\CODEX_SECTION_INTERACTIONS.md`. Codul Plasma/ENPS/HTM și cererea HTTP nu au fost modificate în această etapă. TCP mock verifică protocolul; animațiile și output-ul video rămân de verificat pe LiveBoard real.
 
 **Etapa ulterioară de proiecte: 68 teste LB-Portal, 11 teste frontend Plasma și 110 verificări Electron izolate — PASS.** Au fost verificate migrarea în Telejurnal, mapările distincte Retrospectiva, selecția manuală, refuzul schimbării cu secțiuni active, blocarea execuției Plasma pentru proiecte independente, contextul istoric și persistența proiectului activ după restart fără replay. Capturile au fost revizuite și build-ul TypeScript/Vite/NSIS a trecut. Codul Plasma/ENPS/HTM nu a fost modificat pentru această etapă; documentația pereche și indexurile sunt actualizate. Detaliile sunt în `C:\Projects\LB-Portal\docs\CODEX_MOS_PROJECTS.md`.
 

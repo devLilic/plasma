@@ -1,6 +1,7 @@
 import {ReactNode} from 'react';
 import {MapPinIcon} from '@heroicons/react/24/outline';
 import {MosObject} from '@/types';
+import {compareMosFieldOrder} from '@/Components/Articles/mosFieldOrder';
 
 const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: MosObject[]; compact?: boolean; action?: ReactNode}) => {
     const populated = objects.filter(object => object.editableObjects.some(field => field.value.trim() !== ''));
@@ -10,10 +11,7 @@ const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: M
         {!compact && <p className="mb-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#7c899d]">Elemente MOS</p>}
         <div className={`grid min-w-0 gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
             {populated.map((object, index) => {
-                const fields = object.editableObjects.filter(field => field.value.trim() !== '').sort((left, right) => {
-                    const order = {short_title: 0, title: 1, value: 2};
-                    return order[left.role] - order[right.role];
-                });
+                const fields = object.editableObjects.filter(field => field.value.trim() !== '').sort(compareMosFieldOrder);
                 const isTitle = fields.some(field => field.role === 'title' || field.role === 'short_title');
                 const isLocation = object.slug === '08_Locatie';
                 return <div key={`${object.commandId}-${index}`} className={`min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>

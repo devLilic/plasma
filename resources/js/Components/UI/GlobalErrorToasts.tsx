@@ -1,4 +1,4 @@
-import {useEffect, useState, type ReactNode} from 'react';
+import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
 import {ExclamationCircleIcon, XMarkIcon} from '@heroicons/react/24/outline';
 
@@ -9,10 +9,20 @@ interface ToastMessage {
 
 export function GlobalErrorToasts({children}: {children: ReactNode}) {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
+    const nextId = useRef(0);
 
     useEffect(() => {
-        let nextId = 0;
         const recentMessages = new Map<string, number>();
+
+        const addToast = (message: string) => {
+            const now = Date.now();
+            recentMessages.forEach((seenAt, seenMessage) => {
+                if (now - seenAt >= 10000) recentMessages.delete(seenMessage);
+            });
+            if (now - (recentMessages.get(message) || 0) < 2500) return;
+            recentMessages.set(message, now);
+            setToasts(current => [...current, {id: ++nextId.current, message}]);
+        };
 
         const collectAlerts = () => {
             document.querySelectorAll<HTMLElement>('[role="alert"]:not(.global-error-toast)').forEach(element => {
@@ -27,21 +37,23 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
 
                 if (element.dataset.plasmaToastMessage === message) return;
                 element.dataset.plasmaToastMessage = message;
-
-                const now = Date.now();
-                recentMessages.forEach((seenAt, seenMessage) => {
-                    if (now - seenAt >= 10000) recentMessages.delete(seenMessage);
-                });
-                if (now - (recentMessages.get(message) || 0) < 2500) return;
-                recentMessages.set(message, now);
-                setToasts(current => [...current, {id: ++nextId, message}]);
+                addToast(message);
             });
+        };
+
+        const collectToastEvent = (event: Event) => {
+            const message = (event as CustomEvent<{message?: string}>).detail?.message?.trim();
+            if (message) addToast(message);
         };
 
         const observer = new MutationObserver(collectAlerts);
         observer.observe(document.body, {subtree: true, childList: true, characterData: true});
+        window.addEventListener('plasma:toast', collectToastEvent);
         collectAlerts();
-        return () => observer.disconnect();
+        return () => {
+            observer.disconnect();
+            window.removeEventListener('plasma:toast', collectToastEvent);
+        };
     }, []);
 
     useEffect(() => {

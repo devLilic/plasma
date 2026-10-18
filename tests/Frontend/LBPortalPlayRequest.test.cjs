@@ -37,7 +37,7 @@ test('MOS PLAY sends template and editable values when randomUUID is unavailable
         if (url === '/lb-portal.connection') return {ok: true, status: 200, json: async () => ({endpoint: 'http://192.168.1.50:47835', accessKey: 'a'.repeat(64), timeoutMs: 5000})};
         const payload = JSON.parse(options.body);
         sent.push({url, options, payload});
-        return {ok: true, status: 200, json: async () => ({requestId: payload.requestId})};
+        return {ok: true, status: 200, json: async () => ({requestId: payload.requestId, execution: {status: 'completed', sectionId: 'section-a', onAir: true}})};
     };
 
     stateIndex = 0;
@@ -89,7 +89,7 @@ test('graphic-only MOS PLAY omits params when there are no text values', async t
     global.fetch = async (url, options = {}) => {
         if (url === '/lb-portal.connection') return {ok: true, status: 200, json: async () => ({endpoint: 'http://192.168.1.50:47835', accessKey: 'a'.repeat(64), timeoutMs: 5000})};
         const payload = JSON.parse(options.body); sent.push(payload);
-        return {ok: true, status: 200, json: async () => ({requestId: payload.requestId})};
+        return {ok: true, status: 200, json: async () => ({requestId: payload.requestId, execution: {status: 'completed', sectionId: 'section-a', onAir: true}})};
     };
     stateIndex = 0; module.exports.useLBPortalController(); connectionEffect();
     await new Promise(resolve => setImmediate(resolve));
@@ -100,4 +100,32 @@ test('graphic-only MOS PLAY omits params when there are no text values', async t
     assert.equal(sent[0].template, '09_impact_emotional');
     assert.deepEqual(Object.keys(sent[0]).sort(), ['requestId', 'source', 'template', 'type']);
     assert.equal(state[4], 'graphic-only');
+});
+
+test('MOS Resume sends mos-resume and clears the local on-air state only after LiveBoard confirms OFF', async t => {
+    const state = []; let stateIndex = 0; let connectionEffect;
+    const react = {
+        useState(initial) { const index = stateIndex++; if (!(index in state)) state[index] = initial; return [state[index], value => { state[index] = typeof value === 'function' ? value(state[index]) : value; }]; },
+        useEffect(effect) { connectionEffect = effect; }, useCallback(callback) { return callback; },
+    };
+    const source = readFileSync(path.resolve(__dirname, '../../resources/js/Components/Articles/useLBPortalController.ts'), 'utf8');
+    const compiled = ts.transpileModule(source, {compilerOptions: {module: ts.ModuleKind.CommonJS}}).outputText;
+    const module = {exports: {}};
+    new Function('require', 'module', 'exports', compiled)(id => id === 'react' ? react : require(id), module, module.exports);
+    global.route = name => `/${name}`; global.window = global;
+    const sent = [];
+    global.fetch = async (url, options = {}) => {
+        if (url === '/lb-portal.connection') return {ok: true, status: 200, json: async () => ({endpoint: 'http://192.168.1.50:47835', accessKey: 'a'.repeat(64), timeoutMs: 5000})};
+        const payload = JSON.parse(options.body); sent.push(payload);
+        return {ok: true, status: 200, json: async () => ({requestId: payload.requestId, execution: {status: 'completed', sectionId: 'section-a', onAir: false}})};
+    };
+    stateIndex = 0; module.exports.useLBPortalController(); connectionEffect(); await new Promise(resolve => setImmediate(resolve));
+    stateIndex = 0; const controller = module.exports.useLBPortalController();
+    const accepted = await controller.sendPlay({commandId: 'cmd-1', objectKey: 'mos-1', slug: '02_Nume', editableObjects: [{name: 'Text', value: 'Ana'}]}, 'RESUME');
+    assert.equal(accepted, true);
+    assert.equal(sent[0].type, 'mos-resume');
+    assert.equal(sent[0].template, '02_Nume');
+    assert.deepEqual(Object.keys(sent[0]).sort(), ['requestId', 'source', 'template', 'type']);
+    assert.deepEqual(state[5], { 'mos-1': {onAir: false, sectionId: 'section-a'} });
+    assert.equal(state[4], null);
 });

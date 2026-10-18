@@ -26,6 +26,20 @@ class ArticleMosTimelineTest extends TestCase
         return ['commandId' => $id, 'slug' => $name === 'Titlu' ? '05_Titlu_Ultima_Ora' : '06_Nume_Ultima_Ora', 'editableObjects' => $fields];
     }
 
+    public function test_configured_02_name_graphic_uses_its_text_value_to_extract_the_persons_seven_spoken_words(): void
+    {
+        $object = ['commandId' => 'name-lower-third', 'slug' => '02_Nume', 'editableObjects' => [
+            ['name' => 'Text', 'value' => 'IRINA MIHAILICI, jurnalist TVR MOLDOVA', 'role' => 'value'],
+        ]];
+        $text = "INTRO Introducere editorială.\nIRINA MIHAILICI, jurnalist TVR MOLDOVA\nDeficitul comercial al Republicii Moldova a depășit 4,4 miliarde de euro.";
+
+        $events = app(ArticleMosTimeline::class)->scan($text, [$object]);
+
+        $this->assertCount(1, $events);
+        $this->assertSame('name-lower-third', $events[0]['object']['commandId']);
+        $this->assertSame('Deficitul comercial al Republicii Moldova a depășit', $events[0]['snippet']);
+    }
+
     public function test_repeated_story_attributions_do_not_cross_match_equivalent_commands_or_the_headline(): void
     {
         $headline = $this->graphic('headline', 'Titlu', 'MARTA KOS: NEGOCIERILE CU UE AR PUTEA FI ÎNCHEIATE ÎN 2028');

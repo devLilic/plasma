@@ -24,6 +24,7 @@ const mockRequire = id => {
     if (id === '@heroicons/react/24/outline') return Object.fromEntries(['ChevronLeftIcon', 'ChevronRightIcon', 'PencilSquareIcon', 'ArrowPathIcon', 'XMarkIcon', 'PlayIcon', 'StopIcon'].map(name => [name, () => null]));
     if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
     if (id === '@/Components/Articles/mosSequence') return sequenceModule.exports;
+    if (id === '@/Components/Articles/mosFieldOrder') return {compareMosFieldOrder: (left, right) => ({short_title: 0, title: 1, value: 2}[left.role] - {short_title: 0, title: 1, value: 2}[right.role])};
     return require(id);
 };
 new Function('require', 'module', 'exports', compiled)(mockRequire, componentModule, componentModule.exports);
@@ -61,7 +62,7 @@ test('LB-Portal controls explain when settings have not been configured', () => 
 
 test('existing graphic PLAY button is enabled in live mode with a configured LB-Portal connection', () => {
     const html = render({live: true, lbPortalStatus: 'ready', onPlay: async () => {}});
-    assert.match(html, /<button type="button" class="mos-playback-icon"(?! disabled)/);
+    assert.match(html, /<button type="button" data-action="PLAY" class="mos-playback-icon"(?! disabled)/);
     assert.doesNotMatch(html, /PLAY MOS → LB-Portal/);
     assert.doesNotMatch(html, /mos-profile-controls/);
     assert.equal((html.match(/class="mos-playback-icon"/g) || []).length, 1);
@@ -134,7 +135,7 @@ test('MOS cards omit graphic order numbers, show name snippets without a label a
     assert.doesNotMatch(html, /Primele șapte cuvinte spuse de persoană…|„Primele șapte cuvinte/);
 });
 
-test('active and paused MOS graphics show Stop and Resume states without sending PLAY', () => {
+test('on-air MOS graphics show Resume and stay marked green while on air', () => {
     const objects = ['active', 'paused'].map((playbackState, index) => ({
         commandId: `command-${index}`, objectKey: `object-${index}`, revision: `rev-${index}`, slug: `template-${index}`, editable: false, playbackState,
         editableObjects: [{name: 'Titlu', value: `Titlu ${index}`, role: 'title'}],
@@ -142,8 +143,23 @@ test('active and paused MOS graphics show Stop and Resume states without sending
     const activeArticle = {...article, mos_objects: objects, mos_timeline: undefined};
     const html = render({article: activeArticle, showLBPortalControls: false});
 
-    assert.match(html, /aria-label="STOP template-0 către LB-Portal"/);
+    assert.match(html, /aria-label="RESUME template-0 către LB-Portal"/);
     assert.match(html, /aria-label="RESUME template-1 către LB-Portal"/);
+    assert.equal((html.match(/mos-override-card-on-air/g) || []).length, 2);
+    assert.equal((html.match(/>Resume<\/span>/g) || []).length, 2);
+});
+
+test('LB-Portal keeps PLAY available on another same-section timed graphic', () => {
+    const objects = ['02_Nume', '02_Nume'].map((slug, index) => ({
+        commandId: `timed-${index}`, objectKey: `timed-${index}`, revision: `rev-${index}`, slug, editable: false,
+        playbackState: index === 0 ? 'active' : 'off',
+        editableObjects: [{name: 'Nume', value: `Nume ${index}`, role: 'value'}],
+    }));
+    const timedArticle = {...article, mos_objects: objects, mos_timeline: undefined};
+    const html = render({article: timedArticle, showLBPortalControls: true, playbackStates: {'timed-0': {onAir: true, sectionId: 'names'}, 'timed-1': {onAir: false, sectionId: 'names'}}});
+
+    assert.match(html, /aria-label="RESUME 02_Nume către LB-Portal"/);
+    assert.match(html, /aria-label="PLAY 02_Nume către LB-Portal"/);
 });
 
 test('empty graphic-only templates render with PLAY while VOX graphics stay hidden', () => {

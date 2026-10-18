@@ -6,6 +6,7 @@ use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\Images\ImageQualitySettings;
 use App\Services\Images\ImageStorage;
 use App\Services\LBPortal\LBPortalConnectionSettings;
+use App\Services\Articles\NameGraphicTemplates;
 use App\Services\Playlists\PlaylistTitleExclusions;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -26,6 +27,7 @@ class ProfileController extends Controller
         ImageQualitySettings $imageQualitySettings,
         PlaylistTitleExclusions $titleExclusions,
         LBPortalConnectionSettings $lbPortalSettings,
+        NameGraphicTemplates $nameGraphicTemplates,
     ): Response {
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
@@ -34,6 +36,7 @@ class ProfileController extends Controller
             'imageMinimumDimensions' => $imageQualitySettings->dimensions(),
             'playlistTitleExclusions' => $titleExclusions->terms(),
             'lbPortalSettings' => $lbPortalSettings->publicSettings(),
+            'nameGraphicTemplates' => $nameGraphicTemplates->templates(),
         ]);
     }
 
