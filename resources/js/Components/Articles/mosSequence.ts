@@ -6,8 +6,9 @@ export type MosSequenceRow =
 
 const keyFor = (object: MosObject) => object.objectKey || object.commandId;
 const isVoxGraphic = (object: MosObject) => /^(?:\d+[_-])?VOX(?:[_-]|$)/i.test(object.slug || '');
+const isNameGraphic = (object: MosObject) => /(?:^|[_-])(?:Nume|Name)(?:[_-]|$)/i.test(object.slug || '');
 const hasEditableValues = (object: MosObject) => (object.editableObjects || []).some(field => field.value.trim() !== '');
-const hasTitleValue = (object: MosObject) => !isVoxGraphic(object) && (object.editableObjects || []).some(field => (field.role === 'title' || field.name.trim().toLocaleLowerCase() === 'titlu') && field.value.trim() !== '');
+const hasTitleValue = (object: MosObject) => !isVoxGraphic(object) && !isNameGraphic(object) && (object.editableObjects || []).some(field => (field.role === 'title' || field.name.trim().toLocaleLowerCase() === 'titlu') && field.value.trim() !== '');
 const stableMosKey = (object: MosObject, occurrence: number) => `mos:${encodeURIComponent(keyFor(object))}:${occurrence}`;
 
 function prioritizeFirstTitle(rows: MosSequenceRow[], objects: MosObject[]): MosSequenceRow[] {
@@ -18,11 +19,11 @@ function prioritizeFirstTitle(rows: MosSequenceRow[], objects: MosObject[]): Mos
     const index = rows.findIndex(row => row.kind === 'mos' && row.object && [
         keyFor(row.object), row.object.objectKey, ...(row.object.memberObjectKeys || []),
     ].some(identity => !!identity && identities.has(identity)));
-    if (index <= 0) return rows;
+    if (index < 0) return rows;
 
     const result = [...rows];
     const [titleRow] = result.splice(index, 1);
-    result.unshift(titleRow);
+    result.unshift({...titleRow, zone: 'before', manuallyPositioned: false});
     return result;
 }
 

@@ -42,6 +42,20 @@ test('saved order keeps the title first and leaves a VOX marker between the sync
     assert.equal(sequence[0].object.commandId, 'title');
 });
 
+test('an unlocated title stays ahead of the divider and name templates are not treated as titles', () => {
+    const speaker = {commandId: 'speaker', objectKey: 'speaker-key', slug: '02_Nume', editableObjects: [{name: 'Titlu', value: 'Ana Șerban', role: 'title'}]};
+    const sequence = orderMosSequence([
+        {kind: 'mos', position: 10, sourceLine: 1, count: null, object: speaker, snippet: 'Intervenția Anei'},
+        {kind: 'mos', position: null, sourceLine: null, count: null, object: original, snippet: ''},
+    ], [speaker, original]);
+
+    assert.equal(sequence[0].object.commandId, 'title');
+    assert.equal(sequence[0].unlocated, true);
+    assert.equal(sequence[0].zone, 'before');
+    assert.equal(sequence[0].manuallyPositioned, false);
+    assert.equal(sequence.some(row => row.object?.commandId === 'speaker' && row.zone === 'after'), false);
+});
+
 test('repeated speaker commands create only the occurrences selected by the timeline', () => {
     const speakers = Array.from({length: 6}, (_, index) => ({
         commandId: `daniel-${index}`, objectKey: `speaker-${index}`, slug: '06_Nume_Ultima_Ora',
