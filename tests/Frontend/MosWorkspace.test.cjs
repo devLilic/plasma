@@ -12,6 +12,7 @@ const sequenceCode = ts.transpileModule(sequenceSource, {compilerOptions: {modul
 const sequenceModule = {exports: {}};
 new Function('require', 'module', 'exports', sequenceCode)(require, sequenceModule, sequenceModule.exports);
 const source = readFileSync(path.resolve(__dirname, '../../resources/js/Components/Articles/MosWorkspace.tsx'), 'utf8');
+const styles = readFileSync(path.resolve(__dirname, '../../resources/css/app.css'), 'utf8');
 const compiled = ts.transpileModule(source, {compilerOptions: {jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS}}).outputText;
 const componentModule = {exports: {}};
 const mockRequire = id => {
@@ -153,6 +154,14 @@ test('unlocated MOS graphics are separated and saved user positions are restored
     assert.match(html, /poziționat manual/);
     assert.ok(html.indexOf('Absentă') < html.indexOf('Fără poziție automată / mutate manual'));
     assert.ok(html.indexOf('Fără poziție automată / mutate manual') < html.indexOf('Încă negăsită'));
+});
+
+test('MOS drag exposes a clear insertion marker on rows and a highlighted separator target', () => {
+    assert.match(source, /setDropTarget\(current => current === target \? current : target\)/);
+    assert.match(source, /mos-drop-indicator \$\{dropAfter \? 'mos-drop-indicator-after' : 'mos-drop-indicator-before'\}/);
+    assert.match(source, /mos-divider-drop-active/);
+    assert.match(styles, /\.mos-drop-indicator::before[^\n]*background: #286ee7/);
+    assert.match(styles, /\.mos-sequence-divider\.mos-divider-drop-active[^\n]*border: 2px dashed/);
 });
 
 test('on-air MOS graphics show Resume and stay marked green while on air', () => {

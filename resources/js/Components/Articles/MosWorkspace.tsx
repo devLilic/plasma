@@ -50,6 +50,7 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
     const [orphanError, setOrphanError] = useState<string | null>(null);
     const [sequencePreferences, setSequencePreferences] = useState<{articleId: number; entryOrder: string[]; entryZones: Record<string, 'before' | 'after'>} | null>(null);
     const [draggedEntryKey, setDraggedEntryKey] = useState<string | null>(null);
+    const [dropTarget, setDropTarget] = useState<string | null>(null);
     const [sequenceSaving, setSequenceSaving] = useState(false);
 
     useEffect(() => {
@@ -115,10 +116,32 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
         if (!draggedEntryKey) return;
         const next = moveMosSequenceRow(sequence, draggedEntryKey, targetKey, targetZone, afterTarget);
         setDraggedEntryKey(null);
+        setDropTarget(null);
         if (next.some((row, index) => row.key !== sequence[index]?.key || row.zone !== sequence[index]?.zone)) void persistSequence(next);
     };
 
-    const dragOverEntry = (event: DragEvent) => event.preventDefault();
+    const dragOverRow = (event: DragEvent, row: MosSequenceRow) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        const rect = event.currentTarget.getBoundingClientRect();
+        const position = event.clientY > rect.top + rect.height / 2 ? 'after' : 'before';
+        const target = `${row.key}:${position}`;
+        setDropTarget(current => current === target ? current : target);
+    };
+
+    const dragOverDivider = (event: DragEvent) => {
+        event.preventDefault();
+        event.dataTransfer.dropEffect = 'move';
+        const rect = event.currentTarget.getBoundingClientRect();
+        const position = event.clientY < rect.top + rect.height / 2 ? 'before' : 'after';
+        const target = `divider:${position}`;
+        setDropTarget(current => current === target ? current : target);
+    };
+
+    const leaveDropTarget = (event: DragEvent, targetPrefix: string) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setDropTarget(current => current?.startsWith(targetPrefix) ? null : current);
+    };
 
     const renderSequenceRow = (row: MosSequenceRow) => {
         if (row.kind === 'vox') return <li className="mos-sequence-vox" key={row.key} data-sequence-key={row.key}>{row.count === null ? 'VOX-uri' : row.count === 1 ? '1 VOX' : `${row.count} VOX-uri`}{row.snippet && <small>{row.snippet}</small>}</li>;
@@ -138,9 +161,12 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
         const canEdit = !!object.editable && !!object.objectKey && !!object.revision && object.editableObjects.some(field => !!field.fieldKey);
         const invalidParams = object.editableObjects.some(field => field.value.length > 2000 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(field.value));
         const playReady = !!object.slug && (playbackAction === 'RESUME' || (!dirty && !invalidParams));
-        return <li className="mos-sequence-mos" key={row.key} data-sequence-key={row.key} data-zone={row.zone} onDragOver={dragOverEntry} onDrop={event => dropEntry(event, row.key, row.zone, event.clientY > event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2)}>
+        const dropBefore = dropTarget === `${row.key}:before`;
+        const dropAfter = dropTarget === `${row.key}:after`;
+        return <li className={`mos-sequence-mos${dropBefore ? ' mos-drop-before' : ''}${dropAfter ? ' mos-drop-after' : ''}`} key={row.key} data-sequence-key={row.key} data-zone={row.zone} onDragOver={event => dragOverRow(event, row)} onDragLeave={event => leaveDropTarget(event, `${row.key}:`)} onDrop={event => dropEntry(event, row.key, row.zone, event.clientY > event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2)}>
+            {(dropBefore || dropAfter) && <span className={`mos-drop-indicator ${dropAfter ? 'mos-drop-indicator-after' : 'mos-drop-indicator-before'}`} aria-hidden="true">Plasează aici</span>}
             <section className={`mos-override-card ${isOnAir || isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
-                <button type="button" className="mos-drag-handle" draggable={!sequenceSaving} onDragStart={event => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', row.key); setDraggedEntryKey(row.key); }} onDragEnd={() => setDraggedEntryKey(null)} aria-label={`Reordonează ${object.slug || 'grafică MOS'}`} title="Trage pentru reordonare">⠿</button>
+                <button type="button" className="mos-drag-handle" draggable={!sequenceSaving} onDragStart={event => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', row.key); setDraggedEntryKey(row.key); setDropTarget(null); }} onDragEnd={() => { setDraggedEntryKey(null); setDropTarget(null); }} aria-label={`Reordonează ${object.slug || 'grafică MOS'}`} title="Trage pentru reordonare">⠿</button>
                 <div className="mos-graphic-tools" aria-label={`Opțiuni ${object.slug || 'grafică MOS'}`}>
                     {row.manuallyPositioned && <span className="mos-manually-positioned">poziționat manual</span>}
                     {canEdit && <button type="button" className="mos-edit-corrections" onClick={() => { setErrors(current => ({...current, [key]: ''})); setEditingKey(key); }} aria-label={`Editează corecțiile pentru ${object.slug || 'grafică MOS'}`}><PencilSquareIcon className="h-3.5 w-3.5"/>Editează</button>}
@@ -242,8 +268,8 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
                 <ol className="mos-sequence" aria-label="Elemente MOS ordonate automat">
                     {sequence.filter(row => row.zone === 'before').map(renderSequenceRow)}
                 </ol>
-                {(sequence.some(row => row.zone === 'after') || draggedEntryKey) && <div className="mos-sequence-divider" role="separator" aria-label="Elemente MOS fără poziție automată sau poziționate manual" onDragOver={dragOverEntry} onDrop={event => dropEntry(event, null, event.clientY < event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2 ? 'before' : 'after')}>
-                    <span>Fără poziție automată / mutate manual</span>
+                {(sequence.some(row => row.zone === 'after') || draggedEntryKey) && <div className={`mos-sequence-divider${dropTarget?.startsWith('divider:') ? ' mos-divider-drop-active' : ''}`} role="separator" aria-label="Elemente MOS fără poziție automată sau poziționate manual" onDragOver={dragOverDivider} onDragLeave={event => leaveDropTarget(event, 'divider:')} onDrop={event => dropEntry(event, null, event.clientY < event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2 ? 'before' : 'after')}>
+                    <span>{dropTarget?.startsWith('divider:') ? `Plasează ${dropTarget.endsWith(':before') ? 'înainte de' : 'după'} separator` : 'Fără poziție automată / mutate manual'}</span>
                 </div>}
                 {sequence.some(row => row.zone === 'after') && <ol className="mos-sequence" aria-label="Elemente MOS neidentificate automat sau mutate manual">
                     {sequence.filter(row => row.zone === 'after').map(renderSequenceRow)}
