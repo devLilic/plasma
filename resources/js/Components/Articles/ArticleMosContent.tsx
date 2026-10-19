@@ -1,9 +1,17 @@
-import {ReactNode} from 'react';
+import {DragEvent, ReactNode} from 'react';
 import {MapPinIcon} from '@heroicons/react/24/outline';
 import {MosObject} from '@/types';
 import {compareMosFieldOrder} from '@/Components/Articles/mosFieldOrder';
 
-const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: MosObject[]; compact?: boolean; action?: ReactNode}) => {
+type TemplateLabelProps = {
+    draggable?: boolean
+    onDragStart?: (event: DragEvent<HTMLSpanElement>) => void
+    onDragEnd?: (event: DragEvent<HTMLSpanElement>) => void
+    title?: string
+    'aria-label'?: string
+}
+
+const ArticleMosContent = ({objects = [], compact = false, action, templateLabelProps}: {objects?: MosObject[]; compact?: boolean; action?: ReactNode; templateLabelProps?: TemplateLabelProps}) => {
     const populated = objects.filter(object => object.editableObjects.some(field => field.value.trim() !== ''));
     if (!populated.length) return null;
 
@@ -17,7 +25,7 @@ const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: M
                 return <div key={`${object.commandId}-${index}`} className={`${compact ? 'mos-compact-mos-object' : 'min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>
                     {object.slug && !compact && <p className="mb-2 text-[10px] font-semibold text-[#286ee7]">{object.slug}</p>}
                     <div className={compact ? 'mos-compact-value-row' : ''}>
-                        {compact && object.slug && <span className="mos-inline-template-label">{object.slug}</span>}
+                        {compact && object.slug && <span className="mos-inline-template-label" {...templateLabelProps}>{object.slug}</span>}
                         <div className={compact ? 'min-w-0 flex-1 space-y-1' : 'space-y-1.5'}>
                             {fields.map((field, fieldIndex) => {
                                 const fieldName = field.name.toLocaleLowerCase('ro').normalize('NFD').replace(/\p{M}/gu, '');

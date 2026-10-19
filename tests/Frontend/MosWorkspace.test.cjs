@@ -23,7 +23,7 @@ const mockRequire = id => {
         DialogTitle: ({children, className}) => React.createElement('h3', {className}, children),
     };
     if (id === '@heroicons/react/24/outline') return Object.fromEntries(['ChevronLeftIcon', 'ChevronRightIcon', 'PencilSquareIcon', 'ArrowPathIcon', 'XMarkIcon', 'PlayIcon', 'StopIcon'].map(name => [name, () => null]));
-    if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, objects[0]?.slug && React.createElement('span', {className: 'mos-inline-template-label'}, objects[0].slug), React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
+    if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action, templateLabelProps}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, objects[0]?.slug && React.createElement('span', {className: 'mos-inline-template-label', ...templateLabelProps}, objects[0].slug), React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
     if (id === '@/Components/Articles/mosSequence') return sequenceModule.exports;
     if (id === '@/Components/Articles/mosFieldOrder') return {compareMosFieldOrder: (left, right) => ({short_title: 0, title: 1, value: 2}[left.role] - {short_title: 0, title: 1, value: 2}[right.role])};
     return require(id);
@@ -129,11 +129,14 @@ test('MOS cards omit graphic order numbers, show name snippets without a label a
     assert.doesNotMatch(html, /Primele 7 cuvinte:/);
     assert.match(html, /Primele șapte cuvinte spuse de persoană/);
     assert.match(html, /class="mos-speech-snippet"/);
-    assert.match(html, /class="mos-drag-handle"[\s\S]*Reordonează 06_Nume_Ultima_Ora/);
+    assert.match(html, /class="mos-inline-template-label" draggable="true"[\s\S]*06_Nume_Ultima_Ora/);
+    assert.doesNotMatch(html, /mos-drag-handle/);
     assert.match(html, /class="mos-graphic-tools"[\s\S]*Editează corecțiile pentru 06_Nume_Ultima_Ora/);
     assert.match(html, /class="mos-compact-value-row"[\s\S]*mos-inline-template-label[\s\S]*06_Nume_Ultima_Ora[\s\S]*Ana Șerban[\s\S]*class="mos-playback-icon"/);
     assert.match(html, /aria-label="PLAY 06_Nume_Ultima_Ora către LB-Portal"/);
     assert.match(html, /disabled=""/);
+    assert.match(styles, /\.mos-sequence-mos:hover \.mos-edit-corrections[^\n]*opacity: 1/);
+    assert.match(styles, /\.mos-edit-corrections \{[^\n]*opacity: 0/);
     assert.doesNotMatch(html, /Primele șapte cuvinte spuse de persoană…|„Primele șapte cuvinte/);
 });
 
@@ -200,6 +203,7 @@ test('empty graphic-only templates render with PLAY while VOX graphics stay hidd
     const graphicHtml = render({article: graphicArticle, lbPortalStatus: 'ready', showLBPortalControls: false});
 
     assert.match(graphicHtml, /class="mos-graphic-only"[^>]*>.*09_impact_emotional.*class="mos-playback-icon"/s);
+    assert.match(graphicHtml, /class="mos-inline-template-label" draggable="true"[^>]*>09_impact_emotional/);
     assert.match(graphicHtml, /aria-label="PLAY 09_impact_emotional către LB-Portal"/);
     assert.match(graphicHtml, /class="mos-playback-icon"(?! disabled)/);
 

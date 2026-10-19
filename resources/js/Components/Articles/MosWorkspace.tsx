@@ -161,20 +161,32 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
         const canEdit = !!object.editable && !!object.objectKey && !!object.revision && object.editableObjects.some(field => !!field.fieldKey);
         const invalidParams = object.editableObjects.some(field => field.value.length > 2000 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(field.value));
         const playReady = !!object.slug && (playbackAction === 'RESUME' || (!dirty && !invalidParams));
+        const beginMosDrag = (event: DragEvent<HTMLSpanElement>) => {
+            event.dataTransfer.effectAllowed = 'move';
+            event.dataTransfer.setData('text/plain', row.key);
+            setDraggedEntryKey(row.key);
+            setDropTarget(null);
+        };
+        const templateLabelProps = {
+            draggable: !sequenceSaving,
+            onDragStart: beginMosDrag,
+            onDragEnd: () => { setDraggedEntryKey(null); setDropTarget(null); },
+            title: 'Trage pentru reordonare',
+            'aria-label': `Trage pentru a reordona ${object.slug || 'grafică MOS'}`,
+        };
         const dropBefore = dropTarget === `${row.key}:before`;
         const dropAfter = dropTarget === `${row.key}:after`;
         return <li className={`mos-sequence-mos${dropBefore ? ' mos-drop-before' : ''}${dropAfter ? ' mos-drop-after' : ''}`} key={row.key} data-sequence-key={row.key} data-zone={row.zone} onDragOver={event => dragOverRow(event, row)} onDragLeave={event => leaveDropTarget(event, `${row.key}:`)} onDrop={event => dropEntry(event, row.key, row.zone, event.clientY > event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2)}>
             {(dropBefore || dropAfter) && <span className={`mos-drop-indicator ${dropAfter ? 'mos-drop-indicator-after' : 'mos-drop-indicator-before'}`} aria-hidden="true">Plasează aici</span>}
             <section className={`mos-override-card ${isOnAir || isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
-                <button type="button" className="mos-drag-handle" draggable={!sequenceSaving} onDragStart={event => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', row.key); setDraggedEntryKey(row.key); setDropTarget(null); }} onDragEnd={() => { setDraggedEntryKey(null); setDropTarget(null); }} aria-label={`Reordonează ${object.slug || 'grafică MOS'}`} title="Trage pentru reordonare">⠿</button>
                 <div className="mos-graphic-tools" aria-label={`Opțiuni ${object.slug || 'grafică MOS'}`}>
                     {row.manuallyPositioned && <span className="mos-manually-positioned">poziționat manual</span>}
                     {canEdit && <button type="button" className="mos-edit-corrections" onClick={() => { setErrors(current => ({...current, [key]: ''})); setEditingKey(key); }} aria-label={`Editează corecțiile pentru ${object.slug || 'grafică MOS'}`}><PencilSquareIcon className="h-3.5 w-3.5"/>Editează</button>}
                 </div>
                 {(object.memberObjectKeys?.length || 0) > 1 && <small className="mos-member-count">Grafica reprezintă {object.memberObjectKeys!.length} segmente MOS identice.</small>}
                 {hasTextValues
-                    ? <ArticleMosContent objects={[object]} compact action={<button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button>}/>
-                    : <div className="mos-graphic-only"><span className="mos-inline-template-label">{object.slug}</span><button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button></div>}
+                    ? <ArticleMosContent objects={[object]} compact templateLabelProps={templateLabelProps} action={<button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button>}/>
+                    : <div className="mos-graphic-only"><span className="mos-inline-template-label" {...templateLabelProps}>{object.slug}</span><button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button></div>}
                 {row.snippet && <p className="mos-speech-snippet">{row.snippet}</p>}
                 {showLBPortalControls && (lbPortalStatus === 'loading' || lbPortalStatus === 'unconfigured' || lbPortalStatus === 'error' || !playReady) && <div className="mos-profile-controls">
                     <div className="mos-profile-buttons">
