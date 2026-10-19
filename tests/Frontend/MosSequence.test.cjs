@@ -28,6 +28,20 @@ test('operator MOS sequence follows source order, shows each occurrence, and ove
     assert.equal(new Set(sequence.map(row => row.key)).size, sequence.length);
 });
 
+test('saved order keeps the title first and leaves a VOX marker between the syncs from the text scan', () => {
+    const speaker = {commandId: 'speaker', objectKey: 'mos-b', slug: '02_Nume', editableObjects: [{name: 'Nume', value: 'Ana', role: 'value'}]};
+    const sequence = orderMosSequence([
+        {kind: 'mos', position: null, sourceLine: null, count: null, object: original, snippet: ''},
+        {kind: 'mos', position: 10, sourceLine: 1, count: null, object: speaker, snippet: 'Prima sincroană'},
+        {kind: 'vox', position: 20, sourceLine: 3, count: 1, object: null, snippet: ''},
+        {kind: 'mos', position: 30, sourceLine: 5, count: null, object: speaker, snippet: 'A doua sincroană'},
+    ], [original, speaker], ['vox:3', 'mos:mos-b:1', 'mos:mos-a:1', 'mos:mos-b:2']);
+
+    assert.deepEqual(sequence.map(row => row.kind), ['mos', 'mos', 'vox', 'mos']);
+    assert.deepEqual(sequence.map(row => row.snippet), ['', 'Prima sincroană', '', 'A doua sincroană']);
+    assert.equal(sequence[0].object.commandId, 'title');
+});
+
 test('repeated speaker commands create only the occurrences selected by the timeline', () => {
     const speakers = Array.from({length: 6}, (_, index) => ({
         commandId: `daniel-${index}`, objectKey: `speaker-${index}`, slug: '06_Nume_Ultima_Ora',

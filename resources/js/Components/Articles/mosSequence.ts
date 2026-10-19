@@ -7,7 +7,24 @@ export type MosSequenceRow =
 const keyFor = (object: MosObject) => object.objectKey || object.commandId;
 const isVoxGraphic = (object: MosObject) => /^(?:\d+[_-])?VOX(?:[_-]|$)/i.test(object.slug || '');
 const hasEditableValues = (object: MosObject) => (object.editableObjects || []).some(field => field.value.trim() !== '');
+const hasTitleValue = (object: MosObject) => !isVoxGraphic(object) && (object.editableObjects || []).some(field => (field.role === 'title' || field.name.trim().toLocaleLowerCase() === 'titlu') && field.value.trim() !== '');
 const stableMosKey = (object: MosObject, occurrence: number) => `mos:${encodeURIComponent(keyFor(object))}:${occurrence}`;
+
+function prioritizeFirstTitle(rows: MosSequenceRow[], objects: MosObject[]): MosSequenceRow[] {
+    const title = objects.find(hasTitleValue);
+    if (!title) return rows;
+
+    const identities = new Set([keyFor(title), title.objectKey, ...(title.memberObjectKeys || [])].filter((identity): identity is string => !!identity));
+    const index = rows.findIndex(row => row.kind === 'mos' && row.object && [
+        keyFor(row.object), row.object.objectKey, ...(row.object.memberObjectKeys || []),
+    ].some(identity => !!identity && identities.has(identity)));
+    if (index <= 0) return rows;
+
+    const result = [...rows];
+    const [titleRow] = result.splice(index, 1);
+    result.unshift(titleRow);
+    return result;
+}
 
 export function orderMosSequence(
     entries: MosTimelineEntry[] | null | undefined,
@@ -18,9 +35,9 @@ export function orderMosSequence(
     // Older article payloads have no timeline. Keep their original MOS list usable;
     // an explicitly supplied empty timeline is authoritative.
     if (entries == null) {
-        return applySavedOrder(objects.map((object, index) => ({
+        return prioritizeFirstTitle(applySavedOrder(objects.map((object, index) => ({
             kind: 'mos' as const, key: stableMosKey(object, index + 1), object, snippet: '', unlocated: false, zone: 'before' as const, manuallyPositioned: false,
-        })), savedOrder, savedZones);
+        })), savedOrder, savedZones), objects);
     }
     const currentByObjectKey = new Map(objects.filter(object => object.objectKey).map(object => [object.objectKey!, object]));
     const commandIdCounts = new Map<string, number>();
@@ -62,20 +79,25 @@ export function orderMosSequence(
         occurrences.set(identity, occurrence);
         ordered.push({kind: 'mos', key: stableMosKey(object, occurrence), object, snippet: '', unlocated: true, zone: 'after', manuallyPositioned: false});
     });
-    return applySavedOrder(ordered, savedOrder, savedZones);
+    return prioritizeFirstTitle(applySavedOrder(ordered, savedOrder, savedZones), objects);
 }
 
 function applySavedOrder(rows: MosSequenceRow[], savedOrder: string[], savedZones: Record<string, 'before' | 'after'>): MosSequenceRow[] {
     const byKey = new Map(rows.map(row => [row.key, row]));
-    const ordered: MosSequenceRow[] = [];
+    const orderedMos: MosSequenceRow[] = [];
     const seen = new Set<string>();
     for (const key of savedOrder) {
         const row = byKey.get(key);
-        if (!row || seen.has(key)) continue;
-        ordered.push(row);
+        if (!row || row.kind !== 'mos' || seen.has(key)) continue;
+        orderedMos.push(row);
         seen.add(key);
     }
-    for (const row of rows) if (!seen.has(row.key)) ordered.push(row);
+    for (const row of rows) if (row.kind === 'mos' && !seen.has(row.key)) orderedMos.push(row);
+
+    // VOX markers are anchored to the text scan and are not part of the saved
+    // MOS drag order. Reorder MOS rows only into the existing MOS slots.
+    let nextMos = 0;
+    const ordered = rows.map(row => row.kind === 'vox' ? row : orderedMos[nextMos++]);
 
     return ordered.map(row => {
         const zone = savedZones[row.key] || (row.kind === 'mos' && row.unlocated ? 'after' : 'before');
