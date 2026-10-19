@@ -280,16 +280,54 @@ class ArticleMosTimelineTest extends TestCase
         ];
         $text = "VOX\nTEXT Continuare.\nSNC ANA ȘERBAN\nPrima intervenție are șapte cuvinte distincte aici.\nTEXT Continuare.\nSNC BOGDAN STAN\nAltă intervenție cu text.\nTEXT Continuare.\nSNC ANA ȘERBAN\nA doua intervenție conține alte cuvinte aici.\nVOX";
         $events = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
-        $this->assertSame(['ana', 'bogdan', null, 'ana', null, 'first', 'middle', 'middle-two', 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
-        foreach ([5, 6, 7, 8] as $index) {
+        $this->assertSame(['first', 'ana', 'bogdan', null, 'ana', null, 'middle', 'middle-two', 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        foreach ([0, 6, 7, 8] as $index) {
             $this->assertNull($events[$index]['position']);
             $this->assertNull($events[$index]['sourceLine']);
             $this->assertSame('', $events[$index]['snippet']);
         }
-        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[0]['snippet']);
-        $this->assertSame('A doua intervenție conține alte cuvinte aici', $events[3]['snippet']);
+        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[1]['snippet']);
+        $this->assertSame('A doua intervenție conține alte cuvinte aici', $events[4]['snippet']);
         $this->assertSame(app(ArticleMosTimeline::class)->scan("BETA\n".$text, $objects), array_values(array_filter($events, fn ($event) => $event['position'] !== null)));
         Http::assertNothingSent();
+    }
+
+    public function test_first_title_graphic_is_promoted_before_vox_when_it_has_no_text_match(): void
+    {
+        $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN');
+        $title = $this->graphic('title', 'Titlu', 'TITLU ABSENT DIN TEXT');
+        $text = "VOX\nSNC ANA ȘERBAN\nPrima intervenție are câteva cuvinte distincte aici.";
+
+        $events = app(ArticleMosTimeline::class)->forArticle(
+            new Article,
+            [$speaker, $title],
+            [['type' => 'BETA', 'paragraphs' => [$text]]],
+        );
+
+        $this->assertSame(['title', 'ana', null], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        $this->assertNull($events[0]['position']);
+        $this->assertSame('mos', $events[0]['kind']);
+        $this->assertSame('vox', $events[2]['kind']);
+    }
+
+    public function test_vox_between_repeated_syncs_keeps_its_text_position_after_title_priority(): void
+    {
+        $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN');
+        $title = $this->graphic('title', 'Titlu', 'TITLU ABSENT DIN TEXT');
+        $text = "SNC ANA ȘERBAN\nPrima intervenție are șapte cuvinte distincte aici.\nVOX\nSNC ANA ȘERBAN\nA doua intervenție are alte șapte cuvinte distincte.";
+
+        $events = app(ArticleMosTimeline::class)->forArticle(
+            new Article,
+            [$speaker, $title],
+            [['type' => 'BETA', 'paragraphs' => [$text]]],
+        );
+
+        $this->assertSame(['title', 'ana', null, 'ana'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        $this->assertSame(['mos', 'mos', 'vox', 'mos'], array_column($events, 'kind'));
+        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[1]['snippet']);
+        $this->assertSame('A doua intervenție are alte șapte cuvinte', $events[3]['snippet']);
+        $this->assertGreaterThan($events[1]['position'], $events[2]['position']);
+        $this->assertGreaterThan($events[2]['position'], $events[3]['position']);
     }
 
     public function test_without_matches_all_visible_graphics_are_added_once_in_mos_order_including_unknown_fields(): void

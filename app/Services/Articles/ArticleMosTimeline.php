@@ -55,8 +55,32 @@ class ArticleMosTimeline
             }
         }
 
-        return [...$events, ...array_map(fn ($object) => ['kind' => 'mos', 'position' => null,
+        $timeline = [...$events, ...array_map(fn ($object) => ['kind' => 'mos', 'position' => null,
             'sourceLine' => null, 'count' => null, 'object' => $object, 'snippet' => ''], array_values($graphics))];
+
+        // A title graphic is the story's visual heading, so keep the first
+        // title from the ENPS MOS list at the start even when it has no text match.
+        foreach ($objects as $object) {
+            if ($this->isVoxGraphic($object)
+                || ! array_filter($object['editableObjects'] ?? [], fn ($field) => EnpsBasicContent::editableRole($field['name'] ?? '') === 'title' && trim($field['value'] ?? '') !== '')) {
+                continue;
+            }
+
+            $titleKey = $this->objectKey($object);
+            foreach ($timeline as $index => $event) {
+                if ($event['kind'] === 'mos' && $this->objectKey($event['object']) === $titleKey) {
+                    if ($index > 0) {
+                        $titleEvent = $timeline[$index];
+                        array_splice($timeline, $index, 1);
+                        array_unshift($timeline, $titleEvent);
+                    }
+
+                    return $timeline;
+                }
+            }
+        }
+
+        return $timeline;
     }
 
     private function objectKey(array $object): string
