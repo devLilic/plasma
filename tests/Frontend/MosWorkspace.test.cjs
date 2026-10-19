@@ -167,7 +167,7 @@ test('MOS drag exposes a clear insertion marker on rows and a highlighted separa
     assert.match(styles, /\.mos-sequence-divider\.mos-divider-drop-active[^\n]*border: 2px dashed/);
 });
 
-test('on-air MOS graphics show Resume and stay marked green while on air', () => {
+test('on-air MOS graphics use the Resume icon without button text and stay marked green', () => {
     const objects = ['active', 'paused'].map((playbackState, index) => ({
         commandId: `command-${index}`, objectKey: `object-${index}`, revision: `rev-${index}`, slug: `template-${index}`, editable: false, playbackState,
         editableObjects: [{name: 'Titlu', value: `Titlu ${index}`, role: 'title'}],
@@ -178,7 +178,8 @@ test('on-air MOS graphics show Resume and stay marked green while on air', () =>
     assert.match(html, /aria-label="RESUME template-0 către LB-Portal"/);
     assert.match(html, /aria-label="RESUME template-1 către LB-Portal"/);
     assert.equal((html.match(/mos-override-card-on-air/g) || []).length, 2);
-    assert.equal((html.match(/>Resume<\/span>/g) || []).length, 2);
+    assert.doesNotMatch(html, /Resume<\/span>/);
+    assert.match(source, /playbackAction === 'RESUME' \? <ArrowPathIcon/);
 });
 
 test('LB-Portal keeps PLAY available on another same-section timed graphic', () => {
