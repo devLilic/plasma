@@ -282,10 +282,10 @@ class ArticleMosTimeline
         }
         $firstGraphicOccurrences = [];
         $laterOccurrences = [];
+        $firstGraphicSlots = [];
         $seenGraphics = [];
         foreach ($grouped as $index => $event) {
             if ($event['kind'] !== 'mos') {
-                $laterOccurrences[] = [$index, $event];
                 continue;
             }
             $identity = $this->speakerKey($event['object']) ?? $this->objectKey($event['object']);
@@ -295,13 +295,38 @@ class ArticleMosTimeline
             }
             $seenGraphics[$identity] = true;
             $firstGraphicOccurrences[] = [$sourceOrder[$identity] ?? PHP_INT_MAX, $index, $event];
+            $firstGraphicSlots[] = $index;
         }
+        sort($firstGraphicSlots);
         usort($firstGraphicOccurrences, fn ($left, $right) => [$left[0], $left[1]] <=> [$right[0], $right[1]]);
 
-        $ordered = [
-            ...array_map(fn ($entry) => $entry[2], $firstGraphicOccurrences),
-            ...array_map(fn ($entry) => $entry[1], $laterOccurrences),
-        ];
+        $voxByGraphicSlot = [];
+        $lastFirstGraphicSlot = $firstGraphicSlots === [] ? null : $firstGraphicSlots[array_key_last($firstGraphicSlots)];
+        foreach ($grouped as $index => $event) {
+            if ($event['kind'] !== 'vox') {
+                continue;
+            }
+            if ($lastFirstGraphicSlot === null || $index > $lastFirstGraphicSlot) {
+                $laterOccurrences[] = [$index, $event];
+                continue;
+            }
+
+            $slot = count(array_filter($firstGraphicSlots, fn ($firstGraphicSlot) => $firstGraphicSlot < $index));
+            $voxByGraphicSlot[$slot][] = $event;
+        }
+        usort($laterOccurrences, fn ($left, $right) => $left[0] <=> $right[0]);
+
+        $ordered = [];
+        foreach ($firstGraphicOccurrences as $index => $entry) {
+            foreach ($voxByGraphicSlot[$index] ?? [] as $vox) {
+                $ordered[] = $vox;
+            }
+            $ordered[] = $entry[2];
+        }
+        foreach ($voxByGraphicSlot[count($firstGraphicOccurrences)] ?? [] as $vox) {
+            $ordered[] = $vox;
+        }
+        array_push($ordered, ...array_map(fn ($entry) => $entry[1], $laterOccurrences));
 
         return array_map(fn ($event) => array_diff_key($event, ['lastLine' => true]), $ordered);
     }
