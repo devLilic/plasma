@@ -8,7 +8,7 @@ const source = path.resolve(__dirname, '../../resources/js/Components/Articles/m
 const code = ts.transpileModule(fs.readFileSync(source, 'utf8'), {compilerOptions: {module: ts.ModuleKind.CommonJS}}).outputText;
 const loaded = {exports: {}};
 new Function('require', 'module', 'exports', code)(require, loaded, loaded.exports);
-const {orderMosSequence} = loaded.exports;
+const {orderMosSequence, moveMosSequenceRow} = loaded.exports;
 const original = {commandId: 'title', objectKey: 'mos-a', slug: '05_Titlu_Ultima_Ora', editableObjects: [{name: 'Titlu', value: 'Importat', role: 'title'}]};
 const locallyCorrected = {...original, editableObjects: [{...original.editableObjects[0], value: 'Corectat local'}]};
 const unplaced = {commandId: 'person', objectKey: 'mos-b', slug: '06_Nume_Ultima_Ora', editableObjects: [{name: 'Nume', value: 'Ana', role: 'value'}]};
@@ -115,4 +115,35 @@ test('VOX templates stay excluded while backend-completed and graphic-only templ
 test('an omitted legacy timeline still falls back to the original MOS objects', () => {
     const sequence = orderMosSequence(undefined, [original, unplaced]);
     assert.deepEqual(sequence.map(row => row.object.commandId), ['title', 'person']);
+});
+
+test('repeated graphic occurrences have stable independent keys and saved order reconciles against changed source rows', () => {
+    const repeated = {commandId: 'speaker', objectKey: 'speaker-key', slug: '02_Nume', editableObjects: [{name: 'Nume', value: 'Ion'}]};
+    const another = {commandId: 'other', objectKey: 'other-key', slug: '02_Nume', editableObjects: [{name: 'Nume', value: 'Elena'}]};
+    const timeline = [
+        {kind: 'mos', position: 1, sourceLine: 0, count: null, object: repeated, snippet: 'Ion 1'},
+        {kind: 'mos', position: 2, sourceLine: 1, count: null, object: another, snippet: 'Elena 1'},
+        {kind: 'mos', position: 3, sourceLine: 2, count: null, object: repeated, snippet: 'Ion 2'},
+    ];
+    const sequence = orderMosSequence(timeline, [repeated, another]);
+
+    assert.deepEqual(sequence.map(row => row.key), ['mos:speaker-key:1', 'mos:other-key:1', 'mos:speaker-key:2']);
+    const restored = orderMosSequence(timeline.slice(0, 2), [repeated, another], ['mos:speaker-key:2', 'stale-entry', 'mos:other-key:1']);
+    assert.deepEqual(restored.map(row => row.key), ['mos:other-key:1', 'mos:speaker-key:1']);
+});
+
+test('dragging one repeated MOS occurrence across the divider marks only that occurrence manually positioned', () => {
+    const repeated = {commandId: 'speaker', objectKey: 'speaker-key', slug: '02_Nume', editableObjects: [{name: 'Nume', value: 'Ion'}]};
+    const entries = [
+        {kind: 'mos', position: 1, sourceLine: 0, count: null, object: repeated, snippet: 'Ion 1'},
+        {kind: 'mos', position: null, sourceLine: null, count: null, object: repeated, snippet: ''},
+        {kind: 'mos', position: 3, sourceLine: 2, count: null, object: repeated, snippet: 'Ion 2'},
+    ];
+    const sequence = orderMosSequence(entries, [repeated]);
+    const moved = moveMosSequenceRow(sequence, 'mos:speaker-key:2', 'mos:speaker-key:1', 'before');
+
+    assert.deepEqual(moved.map(row => row.key), ['mos:speaker-key:2', 'mos:speaker-key:1', 'mos:speaker-key:3']);
+    assert.equal(moved[0].zone, 'before');
+    assert.equal(moved[0].manuallyPositioned, true);
+    assert.equal(moved[1].manuallyPositioned, false);
 });

@@ -5,6 +5,7 @@ namespace App\Http\Resources;
 use App\Services\Enps\EnpsBasicContent;
 use App\Services\Articles\ArticleMosTimeline;
 use App\Services\Articles\MosOverrideService;
+use App\Services\Articles\ArticleMosSequenceOrderService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -31,6 +32,7 @@ class ArticleResource extends JsonResource
         $sourceMosObjects = $mosOverrides->objectsForArticle($this->resource, applyOverrides: false);
         $mosObjects = $mosOverrides->objectsForArticle($this->resource);
         $mosTimeline = app(ArticleMosTimeline::class)->forArticle($this->resource, $sourceMosObjects, $contentSections ?: []);
+        $mosSequenceOrder = app(ArticleMosSequenceOrderService::class)->forArticle($this->resource);
         $effectiveByKey = collect($mosObjects)->filter(fn ($object) => is_string($object['objectKey'] ?? null))->keyBy('objectKey');
         foreach ($mosTimeline as &$entry) {
             $sourceObject = $entry['object'] ?? null;
@@ -61,6 +63,8 @@ class ArticleResource extends JsonResource
             'enps_marker_color' => $this->enps_marker_color,
             'mos_objects' => $mosObjects,
             'mos_timeline' => $mosTimeline,
+            'mos_sequence_order' => $mosSequenceOrder['entryOrder'],
+            'mos_sequence_zones' => $mosSequenceOrder['entryZones'],
             'playlist_id' => $this->playlist_id,
             'playlist_order' => $this->playlist_order,
             'image' => $this->image ? ImageResource::make($this->image) : null,

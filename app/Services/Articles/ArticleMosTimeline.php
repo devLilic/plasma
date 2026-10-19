@@ -251,7 +251,35 @@ class ArticleMosTimeline
             $grouped[] = [...$event, 'lastLine' => $event['sourceLine']];
         }
 
-        return array_map(fn ($event) => array_diff_key($event, ['lastLine' => true]), $grouped);
+        $sourceOrder = [];
+        foreach ($objects as $index => $object) {
+            $identity = $this->speakerKey($object) ?? $this->objectKey($object);
+            $sourceOrder[$identity] ??= $index;
+        }
+        $firstGraphicOccurrences = [];
+        $laterOccurrences = [];
+        $seenGraphics = [];
+        foreach ($grouped as $index => $event) {
+            if ($event['kind'] !== 'mos') {
+                $laterOccurrences[] = [$index, $event];
+                continue;
+            }
+            $identity = $this->speakerKey($event['object']) ?? $this->objectKey($event['object']);
+            if (isset($seenGraphics[$identity])) {
+                $laterOccurrences[] = [$index, $event];
+                continue;
+            }
+            $seenGraphics[$identity] = true;
+            $firstGraphicOccurrences[] = [$sourceOrder[$identity] ?? PHP_INT_MAX, $index, $event];
+        }
+        usort($firstGraphicOccurrences, fn ($left, $right) => [$left[0], $left[1]] <=> [$right[0], $right[1]]);
+
+        $ordered = [
+            ...array_map(fn ($entry) => $entry[2], $firstGraphicOccurrences),
+            ...array_map(fn ($entry) => $entry[1], $laterOccurrences),
+        ];
+
+        return array_map(fn ($event) => array_diff_key($event, ['lastLine' => true]), $ordered);
     }
 
     private function insideTitleMatch(array $match, array $titleMatches): bool

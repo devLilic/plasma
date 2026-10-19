@@ -74,6 +74,8 @@ export interface Article {
     article_types: ArticleType[]
     mos_objects?: MosObject[]
     mos_timeline?: MosTimelineEntry[]
+    mos_sequence_order?: string[]
+    mos_sequence_zones?: Record<string, 'before' | 'after'>
       enps_marker_color?: "yellow" | "red" | "green" | null
     playlist_id: number
     playlist_order: number

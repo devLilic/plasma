@@ -9,6 +9,7 @@ use App\Http\Controllers\LBPortalConnectionController;
 use App\Http\Controllers\NameGraphicTemplatesSettingsController;
 use App\Http\Controllers\OSConConnectionController;
 use App\Http\Controllers\PlaylistMosOverrideController;
+use App\Http\Controllers\PlaylistMosSequenceOrderController;
 use App\Http\Controllers\PlasmaViewerController;
 use App\Http\Controllers\PlasmaViewerMediaController;
 use App\Http\Controllers\PlaylistsController;
@@ -80,6 +81,10 @@ Route::middleware('auth')->group(function () {
         ->name('playlists.refresh-parsing');
     Route::patch('/playlists/{playlist}/mos/{objectKey}', [PlaylistMosOverrideController::class, 'update'])->whereNumber('playlist')->name('playlists.mos.update');
     Route::delete('/playlists/{playlist}/mos/{objectKey}', [PlaylistMosOverrideController::class, 'reset'])->whereNumber('playlist')->name('playlists.mos.reset');
+    Route::patch('/playlists/{playlist}/articles/{article}/mos-order', [PlaylistMosSequenceOrderController::class, 'update'])
+        ->whereNumber('playlist')
+        ->whereNumber('article')
+        ->name('playlists.mos-order.update');
     Route::get('/playlists/{playlist}/mos-overrides', [PlaylistMosOverrideController::class, 'index'])->whereNumber('playlist')->name('playlists.mos-overrides.index');
     Route::delete('/playlists/{playlist}/mos-overrides/{override}', [PlaylistMosOverrideController::class, 'destroy'])->whereNumber('playlist')->name('playlists.mos-overrides.destroy');
 

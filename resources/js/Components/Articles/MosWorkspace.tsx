@@ -1,11 +1,11 @@
-import {useEffect, useMemo, useState} from 'react';
+import {DragEvent, useEffect, useMemo, useState} from 'react';
 import axios from 'axios';
 import {Dialog, DialogPanel, DialogTitle} from '@headlessui/react';
 import {ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon, ArrowPathIcon, XMarkIcon, PlayIcon} from '@heroicons/react/24/outline';
 import {Article, MosObject} from '@/types';
 import ArticleMosContent from '@/Components/Articles/ArticleMosContent';
 import type {LBPortalStatus, MosPlaybackAction, MosPlaybackState} from '@/Components/Articles/useLBPortalController';
-import {MosSequenceRow, orderMosSequence} from '@/Components/Articles/mosSequence';
+import {MosSequenceRow, moveMosSequenceRow, orderMosSequence} from '@/Components/Articles/mosSequence';
 import {compareMosFieldOrder} from '@/Components/Articles/mosFieldOrder';
 
 interface MosOverrideResponse {data: MosObject}
@@ -48,6 +48,9 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
     const [liveModeNoticeId, setLiveModeNoticeId] = useState(0);
     const [orphans, setOrphans] = useState<MosOrphan[]>([]);
     const [orphanError, setOrphanError] = useState<string | null>(null);
+    const [sequencePreferences, setSequencePreferences] = useState<{articleId: number; entryOrder: string[]; entryZones: Record<string, 'before' | 'after'>} | null>(null);
+    const [draggedEntryKey, setDraggedEntryKey] = useState<string | null>(null);
+    const [sequenceSaving, setSequenceSaving] = useState(false);
 
     useEffect(() => {
         if (!article?.playlist_id) return;
@@ -77,7 +80,87 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
         return cached && (source.revision === cached.baseRevision || source.revision === cached.object.revision) ? cached.object : source;
     }), [article?.mos_objects, saved]);
 
-    const sequence = useMemo(() => orderMosSequence(article?.mos_timeline, objects), [article?.mos_timeline, objects]);
+    const activeSequencePreferences = sequencePreferences && sequencePreferences.articleId === article?.id
+        ? sequencePreferences
+        : {articleId: article?.id ?? 0, entryOrder: article?.mos_sequence_order || [], entryZones: article?.mos_sequence_zones || {}};
+    const sequence = useMemo(() => orderMosSequence(article?.mos_timeline, objects, activeSequencePreferences.entryOrder, activeSequencePreferences.entryZones), [article?.mos_timeline, objects, activeSequencePreferences]);
+
+    const persistSequence = async (rows: MosSequenceRow[]) => {
+        if (!article?.playlist_id) return;
+        const next = {
+            articleId: article.id,
+            entryOrder: rows.map(row => row.key),
+            entryZones: Object.fromEntries(rows.filter(row => row.kind === 'mos' && row.manuallyPositioned).map(row => [row.key, row.zone])) as Record<string, 'before' | 'after'>,
+        };
+        const previous = activeSequencePreferences;
+        setSequencePreferences(next);
+        setSequenceSaving(true);
+        try {
+            const response = await axios.patch<{data: {entryOrder: string[]; entryZones: Record<string, 'before' | 'after'>}}>(
+                route('playlists.mos-order.update', {playlist: article.playlist_id, article: article.id}),
+                {entryOrder: next.entryOrder, entryZones: next.entryZones},
+                {headers: {Accept: 'application/json'}},
+            );
+            setSequencePreferences({articleId: article.id, ...response.data.data});
+        } catch {
+            setSequencePreferences(previous.articleId ? previous : null);
+            window.dispatchEvent(new CustomEvent('plasma:toast', {detail: {message: 'Ordinea elementelor MOS nu a putut fi salvată.'}}));
+        } finally {
+            setSequenceSaving(false);
+        }
+    };
+
+    const dropEntry = (event: DragEvent, targetKey: string | null, targetZone: 'before' | 'after', afterTarget = false) => {
+        event.preventDefault();
+        if (!draggedEntryKey) return;
+        const next = moveMosSequenceRow(sequence, draggedEntryKey, targetKey, targetZone, afterTarget);
+        setDraggedEntryKey(null);
+        if (next.some((row, index) => row.key !== sequence[index]?.key || row.zone !== sequence[index]?.zone)) void persistSequence(next);
+    };
+
+    const dragOverEntry = (event: DragEvent) => event.preventDefault();
+
+    const renderSequenceRow = (row: MosSequenceRow) => {
+        if (row.kind === 'vox') return <li className="mos-sequence-vox" key={row.key} data-sequence-key={row.key}>{row.count === null ? 'VOX-uri' : row.count === 1 ? '1 VOX' : `${row.count} VOX-uri`}{row.snippet && <small>{row.snippet}</small>}</li>;
+        const object = row.object;
+        if (!object) return <li className="mos-sequence-missing" key={row.key} data-sequence-key={row.key}><span>Grafică MOS indisponibilă în sursă.</span>{row.snippet && <small>{row.snippet}</small>}</li>;
+        const hasTextValues = object.editableObjects.some(field => field.value.trim() !== '');
+        if (/^(?:\d+[_-])?VOX(?:[_-]|$)/i.test(object.slug || '') || (!hasTextValues && !object.slug)) return null;
+        const key = keyFor(object);
+        const draft = drafts[key] || {};
+        const dirty = object.editableObjects.some(field => field.fieldKey && Object.hasOwn(draft, field.fieldKey) && draft[field.fieldKey] !== field.value);
+        const playbackState = playbackStates[key]
+            ? playbackStates[key].onAir ? 'onair' : 'off'
+            : !showLBPortalControls && (object.playbackState === 'active' || object.playbackState === 'paused') ? 'onair' : 'off';
+        const playbackAction: MosPlaybackAction = playbackState === 'onair' ? 'RESUME' : 'PLAY';
+        const isLastPlayed = lastPlayedObjectKey === key;
+        const isOnAir = playbackState === 'onair';
+        const canEdit = !!object.editable && !!object.objectKey && !!object.revision && object.editableObjects.some(field => !!field.fieldKey);
+        const invalidParams = object.editableObjects.some(field => field.value.length > 2000 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(field.value));
+        const playReady = !!object.slug && (playbackAction === 'RESUME' || (!dirty && !invalidParams));
+        return <li className="mos-sequence-mos" key={row.key} data-sequence-key={row.key} data-zone={row.zone} onDragOver={dragOverEntry} onDrop={event => dropEntry(event, row.key, row.zone, event.clientY > event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2)}>
+            <section className={`mos-override-card ${isOnAir || isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
+                <div className="mos-graphic-tools" aria-label={`Opțiuni ${object.slug || 'grafică MOS'}`}>
+                    <button type="button" className="mos-drag-handle" draggable={!sequenceSaving} onDragStart={event => { event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setData('text/plain', row.key); setDraggedEntryKey(row.key); }} onDragEnd={() => setDraggedEntryKey(null)} aria-label={`Reordonează ${object.slug || 'grafică MOS'}`} title="Trage pentru reordonare">⠿</button>
+                    {row.manuallyPositioned && <span className="mos-manually-positioned">poziționat manual</span>}
+                    {canEdit && <button type="button" className="mos-edit-corrections" onClick={() => { setErrors(current => ({...current, [key]: ''})); setEditingKey(key); }} aria-label={`Editează corecțiile pentru ${object.slug || 'grafică MOS'}`}><PencilSquareIcon className="h-3.5 w-3.5"/>Editează</button>}
+                </div>
+                {(object.memberObjectKeys?.length || 0) > 1 && <small className="mos-member-count">Grafica reprezintă {object.memberObjectKeys!.length} segmente MOS identice.</small>}
+                {hasTextValues
+                    ? <ArticleMosContent objects={[object]} compact action={<button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button>}/>
+                    : <div className="mos-graphic-only"><span className="mos-inline-template-label">{object.slug}</span><button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button></div>}
+                {row.snippet && <p className="mos-speech-snippet">{row.snippet}</p>}
+                {showLBPortalControls && (lbPortalStatus === 'loading' || lbPortalStatus === 'unconfigured' || lbPortalStatus === 'error' || !playReady) && <div className="mos-profile-controls">
+                    <div className="mos-profile-buttons">
+                        {lbPortalStatus === 'loading' && <small>Se încarcă setările LB-Portal…</small>}
+                        {lbPortalStatus === 'unconfigured' && <small>Configurează IP-ul, portul și cheia LB-Portal în <a href={`${route('profile.edit')}#lb-portal`}>Setări</a>.</small>}
+                        {lbPortalStatus === 'error' && <small>Setările LB-Portal nu sunt disponibile. Reîncarcă pagina sau verifică autentificarea.</small>}
+                        {!playReady && (dirty ? <small>Salvează corecțiile locale înainte de PLAY.</small> : invalidParams ? <small>Valorile trebuie să aibă maximum 2.000 de caractere și să nu conțină caractere de control.</small> : <small>Grafica nu conține un template sau câmpuri MOS.</small>)}
+                    </div>
+                </div>}
+            </section>
+        </li>;
+    };
 
     const saveObject = async (source: MosObject) => {
         if (!article || !source.objectKey || !source.revision) return false;
@@ -155,46 +238,17 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
             </nav>
         </header>
         <div className="mos-workspace-scroll">
-            {sequence.length ? <ol className="mos-sequence">
-                {sequence.map((row, index) => {
-                    if (row.kind === 'vox') return <li className="mos-sequence-vox" key={row.key}><span>{row.count === null ? 'VOX-uri' : row.count === 1 ? '1 VOX' : `${row.count} VOX-uri`}</span>{row.snippet && <small>{row.snippet}</small>}</li>;
-                    const object = row.object;
-                    if (!object) return <li className="mos-sequence-missing" key={row.key}><span>Grafică MOS indisponibilă în sursă.</span>{row.snippet && <small>{row.snippet}</small>}</li>;
-                    const hasTextValues = object.editableObjects.some(field => field.value.trim() !== '');
-                    if (/^(?:\d+[_-])?VOX(?:[_-]|$)/i.test(object.slug || '') || (!hasTextValues && !object.slug)) return null;
-                    const key = keyFor(object);
-                    const draft = drafts[key] || {};
-                    const dirty = object.editableObjects.some(field => field.fieldKey && Object.hasOwn(draft, field.fieldKey) && draft[field.fieldKey] !== field.value);
-                    const playbackState = playbackStates[key]
-                        ? playbackStates[key].onAir ? 'onair' : 'off'
-                        : !showLBPortalControls && (object.playbackState === 'active' || object.playbackState === 'paused') ? 'onair' : 'off';
-                    const playbackAction: MosPlaybackAction = playbackState === 'onair' ? 'RESUME' : 'PLAY';
-                    const isLastPlayed = lastPlayedObjectKey === key;
-                    const isOnAir = playbackState === 'onair';
-                    const canEdit = !!object.editable && !!object.objectKey && !!object.revision && object.editableObjects.some(field => !!field.fieldKey);
-                    const invalidParams = object.editableObjects.some(field => field.value.length > 2000 || /[\x00-\x08\x0b\x0c\x0e-\x1f]/.test(field.value));
-                    const playReady = !!object.slug && (playbackAction === 'RESUME' || (!dirty && !invalidParams));
-                    return <li className="mos-sequence-mos" key={row.key}><section className={`mos-override-card ${isOnAir || isLastPlayed ? 'mos-override-card-on-air' : ''}`} data-last-played={isLastPlayed || undefined}>
-                        {hasTextValues && <div className="mos-graphic-tools" aria-label={`Opțiuni ${object.slug || 'grafică MOS'}`}>
-                            <span className="mos-graphic-template-badge">{object.slug || 'Grafică MOS'}</span>
-                            {canEdit && <button type="button" className="mos-edit-corrections" onClick={() => { setErrors(current => ({...current, [key]: ''})); setEditingKey(key); }} aria-label={`Editează corecțiile pentru ${object.slug || 'grafică MOS'}`}><PencilSquareIcon className="h-3.5 w-3.5"/>Editează</button>}
-                        </div>}
-                        {(object.memberObjectKeys?.length || 0) > 1 && <small className="mos-member-count">Grafica reprezintă {object.memberObjectKeys!.length} segmente MOS identice.</small>}
-                        {hasTextValues
-                            ? <ArticleMosContent objects={[object]} compact action={<button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug || 'grafică MOS'} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button>}/>
-                            : <div className="mos-graphic-only"><span>{object.slug}</span><button type="button" data-action={playbackAction} className="mos-playback-icon" disabled={(live && lbPortalStatus !== 'ready') || commandBusy || !playReady} onClick={() => requestMosPlay(live, object, onPlay, () => setLiveModeNoticeId(current => current + 1), playbackAction)} aria-label={`${playbackAction} ${object.slug} către LB-Portal`} title={`${playbackAction} către LB-Portal`}>{playbackAction === 'RESUME' ? <ArrowPathIcon className="h-4 w-4" aria-hidden="true"/> : <PlayIcon className="h-4 w-4" aria-hidden="true"/>}{playbackAction === 'RESUME' && <span>Resume</span>}</button></div>}
-                        {row.snippet && <p className="mos-speech-snippet">{row.snippet}</p>}
-                        {showLBPortalControls && (lbPortalStatus === 'loading' || lbPortalStatus === 'unconfigured' || lbPortalStatus === 'error' || !playReady) && <div className="mos-profile-controls">
-                            <div className="mos-profile-buttons">
-                                {lbPortalStatus === 'loading' && <small>Se încarcă setările LB-Portal…</small>}
-                                {lbPortalStatus === 'unconfigured' && <small>Configurează IP-ul, portul și cheia LB-Portal în <a href={`${route('profile.edit')}#lb-portal`}>Setări</a>.</small>}
-                                {lbPortalStatus === 'error' && <small>Setările LB-Portal nu sunt disponibile. Reîncarcă pagina sau verifică autentificarea.</small>}
-                                {!playReady && (dirty ? <small>Salvează corecțiile locale înainte de PLAY.</small> : invalidParams ? <small>Valorile trebuie să aibă maximum 2.000 de caractere și să nu conțină caractere de control.</small> : <small>Grafica nu conține un template sau câmpuri MOS.</small>)}
-                            </div>
-                        </div>}
-                    </section></li>;
-                })}
-            </ol> : <p className="mos-no-objects">Articolul nu are valori MOS disponibile.</p>}
+            {sequence.length ? <>
+                <ol className="mos-sequence" aria-label="Elemente MOS ordonate automat">
+                    {sequence.filter(row => row.zone === 'before').map(renderSequenceRow)}
+                </ol>
+                {(sequence.some(row => row.zone === 'after') || draggedEntryKey) && <div className="mos-sequence-divider" role="separator" aria-label="Elemente MOS fără poziție automată sau poziționate manual" onDragOver={dragOverEntry} onDrop={event => dropEntry(event, null, event.clientY < event.currentTarget.getBoundingClientRect().top + event.currentTarget.getBoundingClientRect().height / 2 ? 'before' : 'after')}>
+                    <span>Fără poziție automată / mutate manual</span>
+                </div>}
+                {sequence.some(row => row.zone === 'after') && <ol className="mos-sequence" aria-label="Elemente MOS neidentificate automat sau mutate manual">
+                    {sequence.filter(row => row.zone === 'after').map(renderSequenceRow)}
+                </ol>}
+            </> : <p className="mos-no-objects">Articolul nu are valori MOS disponibile.</p>}
             {orphanError && <p className="mos-error" role="alert">{orphanError}</p>}
             {!!orphans.length && <details className="mos-orphans"><summary>Corecții fără grafică sursă · {orphans.length}</summary>{orphans.map(orphan => <div key={orphan.id}><span>{orphan.fieldName}: {orphan.value}</span><button type="button" onClick={() => void removeOrphan(orphan)}>Elimină</button></div>)}</details>}
         </div>

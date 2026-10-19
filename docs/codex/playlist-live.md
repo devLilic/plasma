@@ -26,8 +26,14 @@ Schimbarea valorii originale păstrează corecția pe aceeași identitate și se
 
 PATCH și DELETE verifică revizia și răspund cu 409 la intervenții concurente. Obiectele agregate afișează identitățile membrilor și cer explicit aplicarea tuturor aparițiilor; simpla corecție a unei apariții nu se transferă duplicatelor. Salvarea nu schimbă grafica activă; PLAY folosește valorile salvate, nu drafturile nesalvate.
 
+## Ordinea și reordonarea listei MOS
+
+Prima apariție identificată a fiecărei grafici unice urmează ordinea obiectelor MOS din ENPS. Aparițiile repetate ale aceleiași grafici sunt redate după poziția lor în text, în ordinea segmentelor din script. Graficele fără corespondent în text apar la final, sub separatorul „Fără poziție automată / mutate manual”. VOX-urile își păstrează rolul de marcaje galbene, fără carduri MOS suplimentare.
+
+Fiecare card MOS are un mâner de drag & drop; aparițiile repetate se mută independent. Ordinea se salvează per articol în `article_mos_sequence_orders`, separat de conținutul și corecțiile sursă. Rândurile existente își păstrează poziția după reîncărcare; intrările dispărute sunt ignorate, iar cele noi se adaugă conform ordinii calculate. Mutarea peste separator salvează poziționarea manuală și zona aleasă; cardurile manuale sunt marcate vizibil. Slugul template-ului, de exemplu `02_Nume`, apare inline înaintea valorilor MOS.
+
 ## Verificare
 
-Testele PHP rulează exclusiv cu `APP_ENV=testing`, SQLite în memorie, verificat prin `TestIsolationTest`. Verificările relevante sunt `PlaylistMosOverrideTest`, `ArticleMosTimelineTest`, `EnpsPlaylistImportTest`, `EnpsWebIntegrationTest`, `PlaylistParsingRefreshTest` și `PlasmaViewerIntegrationTest`. Frontend-ul se verifică prin testele Node din `tests/Frontend` și `npm run build`.
+Testele PHP rulează exclusiv cu `APP_ENV=testing`, SQLite în memorie, verificat prin `TestIsolationTest`. Verificările relevante sunt `PlaylistMosOverrideTest`, `ArticleMosTimelineTest`, `ArticleMosSequenceOrderTest`, `EnpsPlaylistImportTest`, `EnpsWebIntegrationTest`, `PlaylistParsingRefreshTest` și `PlasmaViewerIntegrationTest`. Frontend-ul se verifică prin testele Node din `tests/Frontend` și `npm run build`.
 
 Acceptanța comenzilor LiveBoard rămâne manuală pe instalația reală: redarea efectivă, durata animației Person și ieșirea graficii. Testele automate folosesc simularea LB-Portal sau receiverul TCP mock și nu dovedesc output-ul video real.

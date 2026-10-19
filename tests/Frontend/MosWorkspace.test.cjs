@@ -22,7 +22,7 @@ const mockRequire = id => {
         DialogTitle: ({children, className}) => React.createElement('h3', {className}, children),
     };
     if (id === '@heroicons/react/24/outline') return Object.fromEntries(['ChevronLeftIcon', 'ChevronRightIcon', 'PencilSquareIcon', 'ArrowPathIcon', 'XMarkIcon', 'PlayIcon', 'StopIcon'].map(name => [name, () => null]));
-    if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
+    if (id === '@/Components/Articles/ArticleMosContent') return {__esModule: true, default: ({objects, action}) => React.createElement('div', {className: 'mos-compact-value-row', 'data-testid': 'mos-values'}, objects[0]?.slug && React.createElement('span', {className: 'mos-inline-template-label'}, objects[0].slug), React.createElement('span', null, objects.flatMap(object => object.editableObjects.map(field => field.value)).join(' ')), action)};
     if (id === '@/Components/Articles/mosSequence') return sequenceModule.exports;
     if (id === '@/Components/Articles/mosFieldOrder') return {compareMosFieldOrder: (left, right) => ({short_title: 0, title: 1, value: 2}[left.role] - {short_title: 0, title: 1, value: 2}[right.role])};
     return require(id);
@@ -128,11 +128,30 @@ test('MOS cards omit graphic order numbers, show name snippets without a label a
     assert.doesNotMatch(html, /Primele 7 cuvinte:/);
     assert.match(html, /Primele șapte cuvinte spuse de persoană/);
     assert.match(html, /class="mos-speech-snippet"/);
-    assert.match(html, /class="mos-graphic-tools"[\s\S]*06_Nume_Ultima_Ora[\s\S]*Editează corecțiile pentru 06_Nume_Ultima_Ora/);
-    assert.match(html, /class="mos-compact-value-row"[\s\S]*Ana Șerban[\s\S]*class="mos-playback-icon"/);
+    assert.match(html, /class="mos-graphic-tools"[\s\S]*Reordonează 06_Nume_Ultima_Ora[\s\S]*Editează corecțiile pentru 06_Nume_Ultima_Ora/);
+    assert.match(html, /class="mos-compact-value-row"[\s\S]*mos-inline-template-label[\s\S]*06_Nume_Ultima_Ora[\s\S]*Ana Șerban[\s\S]*class="mos-playback-icon"/);
     assert.match(html, /aria-label="PLAY 06_Nume_Ultima_Ora către LB-Portal"/);
     assert.match(html, /disabled=""/);
     assert.doesNotMatch(html, /Primele șapte cuvinte spuse de persoană…|„Primele șapte cuvinte/);
+});
+
+test('unlocated MOS graphics are separated and saved user positions are restored independently', () => {
+    const matched = {...article.mos_objects[0], objectKey: 'matched'};
+    const missing = {...article.mos_objects[0], commandId: 'missing', objectKey: 'missing', slug: '02_Nume', editableObjects: [{name: 'Nume', value: 'Absentă'}]};
+    const stillUnplaced = {...missing, commandId: 'still-unplaced', objectKey: 'still-unplaced', slug: '03_Nume', editableObjects: [{name: 'Nume', value: 'Încă negăsită'}]};
+    const separatedArticle = {
+        ...article,
+        mos_objects: [matched, missing, stillUnplaced],
+        mos_timeline: [{kind: 'mos', position: 1, sourceLine: 0, count: null, object: matched, snippet: ''}, {kind: 'mos', position: null, sourceLine: null, count: null, object: missing, snippet: ''}, {kind: 'mos', position: null, sourceLine: null, count: null, object: stillUnplaced, snippet: ''}],
+        mos_sequence_order: ['mos:missing:1', 'mos:matched:1', 'mos:still-unplaced:1'],
+        mos_sequence_zones: {'mos:missing:1': 'before'},
+    };
+    const html = render({article: separatedArticle, showLBPortalControls: false});
+
+    assert.match(html, /role="separator" aria-label="Elemente MOS fără poziție automată sau poziționate manual"/);
+    assert.match(html, /poziționat manual/);
+    assert.ok(html.indexOf('Absentă') < html.indexOf('Fără poziție automată / mutate manual'));
+    assert.ok(html.indexOf('Fără poziție automată / mutate manual') < html.indexOf('Încă negăsită'));
 });
 
 test('on-air MOS graphics show Resume and stay marked green while on air', () => {

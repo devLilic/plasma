@@ -158,14 +158,12 @@ class ArticleMosTimelineTest extends TestCase
         $scanned = app(ArticleMosTimeline::class)->scan($text, $objects);
 
         $expectedIds = [
-            'story-title', ...array_column($attributions, 2),
+            'story-title', 'daniel-1', 'ion-1', 'cristian', 'joseph', 'oleg',
+            'daniel-2', 'daniel-3', 'daniel-4', 'daniel-5', 'ion-2', 'daniel-6', 'ion-3',
         ];
         $this->assertSame($expectedIds, array_column(array_column($scanned, 'object'), 'commandId'));
         $this->assertCount(13, $scanned);
-        $this->assertSame(
-            array_values(array_unique(array_column($scanned, 'sourceLine'))),
-            array_column($scanned, 'sourceLine'),
-        );
+        $this->assertSame([0, 1, 7, 9, 13, 21, 3, 5, 11, 15, 17, 19, 23], array_column($scanned, 'sourceLine'));
 
         $complete = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
         $this->assertSame($expectedIds, array_column(array_column($complete, 'object'), 'commandId'));
@@ -217,10 +215,10 @@ class ArticleMosTimelineTest extends TestCase
 
         $events = app(ArticleMosTimeline::class)->scan($text, [$fuzzy, $exact]);
 
-        $this->assertSame(['exact', 'fuzzy'], array_column(array_column($events, 'object'), 'commandId'));
+        $this->assertSame(['fuzzy', 'exact'], array_column(array_column($events, 'object'), 'commandId'));
         $this->assertSame([
-            'Prima declarație conține 2 idei clare pentru',
             'A doua declarație conține 3 idei clare',
+            'Prima declarație conține 2 idei clare pentru',
         ], array_column($events, 'snippet'));
     }
 
@@ -282,13 +280,13 @@ class ArticleMosTimelineTest extends TestCase
         ];
         $text = "VOX\nTEXT Continuare.\nSNC ANA ȘERBAN\nPrima intervenție are șapte cuvinte distincte aici.\nTEXT Continuare.\nSNC BOGDAN STAN\nAltă intervenție cu text.\nTEXT Continuare.\nSNC ANA ȘERBAN\nA doua intervenție conține alte cuvinte aici.\nVOX";
         $events = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
-        $this->assertSame([null, 'ana', 'bogdan', 'ana', null, 'first', 'middle', 'middle-two', 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        $this->assertSame(['ana', 'bogdan', null, 'ana', null, 'first', 'middle', 'middle-two', 'last'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
         foreach ([5, 6, 7, 8] as $index) {
             $this->assertNull($events[$index]['position']);
             $this->assertNull($events[$index]['sourceLine']);
             $this->assertSame('', $events[$index]['snippet']);
         }
-        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[1]['snippet']);
+        $this->assertSame('Prima intervenție are șapte cuvinte distincte aici', $events[0]['snippet']);
         $this->assertSame('A doua intervenție conține alte cuvinte aici', $events[3]['snippet']);
         $this->assertSame(app(ArticleMosTimeline::class)->scan("BETA\n".$text, $objects), array_values(array_filter($events, fn ($event) => $event['position'] !== null)));
         Http::assertNothingSent();
@@ -328,14 +326,10 @@ class ArticleMosTimelineTest extends TestCase
         ];
         $before = $text;
         $events = app(ArticleMosTimeline::class)->scan($text, $objects);
-        $this->assertSame(['title', 'reporter', null, 'nosatii'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
-        $this->assertSame(['', 'Unul dintre aparatele de zbor a explodat', '', 'Cinci incidente raportate și fixate așa ca'], array_column($events, 'snippet'));
-        $this->assertNull($events[2]['count']);
+        $this->assertSame(['nosatii', 'title', 'reporter', null], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        $this->assertSame(['Cinci incidente raportate și fixate așa ca', '', 'Unul dintre aparatele de zbor a explodat', ''], array_column($events, 'snippet'));
+        $this->assertNull($events[3]['count']);
         $this->assertSame($before, $text);
-        $positions = array_column($events, 'position');
-        $sorted = $positions;
-        sort($sorted);
-        $this->assertSame($sorted, $positions);
     }
 
     public function test_repeated_speakers_are_found_at_each_cue_but_narrative_mentions_and_absent_graphics_are_not(): void
@@ -368,9 +362,27 @@ class ArticleMosTimelineTest extends TestCase
         $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN', 'reporter');
         $text = "MUNCA PESTE PROGRAM\nINTRO Munca peste program\nSNC ANA ȘERBAN\nPrima intervenție are șapte cuvinte distincte aici. Continuare.\nTEXT MUNCA PESTE PROGRAM\nO ALTĂ ȘTIRE\nSNC ANA ȘERBAN\nA doua intervenție conține alte cuvinte aici. Continuare.";
         $events = app(ArticleMosTimeline::class)->scan($text, [$title, $duplicate, $other, $speaker]);
-        $this->assertSame(['title', 'ana', 'other-title', 'ana'], array_column(array_column($events, 'object'), 'commandId'));
-        $this->assertSame(['', 'Prima intervenție are șapte cuvinte distincte aici', '', 'A doua intervenție conține alte cuvinte aici'], array_column($events, 'snippet'));
-        $this->assertSame([0, 2, 5, 6], array_column($events, 'sourceLine'));
+        $this->assertSame(['title', 'other-title', 'ana', 'ana'], array_column(array_column($events, 'object'), 'commandId'));
+        $this->assertSame(['', '', 'Prima intervenție are șapte cuvinte distincte aici', 'A doua intervenție conține alte cuvinte aici'], array_column($events, 'snippet'));
+        $this->assertSame([0, 5, 2, 6], array_column($events, 'sourceLine'));
+    }
+
+    public function test_first_unique_speaker_occurrences_follow_enps_order_and_repeats_follow_text_order(): void
+    {
+        $ion = $this->graphic('ion', 'NUME', 'ION TABARTA');
+        $elena = $this->graphic('elena', 'NUME', 'ELENA POPESCU');
+        $text = implode("\n", [
+            'SNC ELENA POPESCU', 'Prima intervenție a Elenei are cuvinte distincte.',
+            'SNC ION TABARTA', 'Prima intervenție a lui Ion are cuvinte distincte.',
+            'SNC ION TABARTA', 'A doua intervenție a lui Ion are alte cuvinte.',
+            'SNC ION TABARTA', 'A treia intervenție a lui Ion are alte cuvinte.',
+            'SNC ELENA POPESCU', 'A doua intervenție a Elenei are alte cuvinte.',
+        ]);
+
+        $events = app(ArticleMosTimeline::class)->scan($text, [$ion, $elena]);
+
+        $this->assertSame(['ion', 'elena', 'ion', 'ion', 'elena'], array_column(array_column($events, 'object'), 'commandId'));
+        $this->assertSame([2, 0, 4, 6, 8], array_column($events, 'sourceLine'));
     }
 
     public function test_same_regular_title_with_different_short_titles_keeps_both_graphics(): void
