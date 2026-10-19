@@ -158,12 +158,12 @@ class ArticleMosTimelineTest extends TestCase
         $scanned = app(ArticleMosTimeline::class)->scan($text, $objects);
 
         $expectedIds = [
-            'story-title', 'daniel-1', 'ion-1', 'cristian', 'joseph', 'oleg',
-            'daniel-2', 'daniel-3', 'daniel-4', 'daniel-5', 'ion-2', 'daniel-6', 'ion-3',
+            'story-title', 'daniel-1', 'daniel-2', 'daniel-3', 'ion-1', 'cristian',
+            'daniel-4', 'joseph', 'daniel-5', 'ion-2', 'daniel-6', 'oleg', 'ion-3',
         ];
         $this->assertSame($expectedIds, array_column(array_column($scanned, 'object'), 'commandId'));
         $this->assertCount(13, $scanned);
-        $this->assertSame([0, 1, 7, 9, 13, 21, 3, 5, 11, 15, 17, 19, 23], array_column($scanned, 'sourceLine'));
+        $this->assertSame([0, 1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23], array_column($scanned, 'sourceLine'));
 
         $complete = app(ArticleMosTimeline::class)->forArticle(new Article, $objects, [['type' => 'BETA', 'paragraphs' => [$text]]]);
         $this->assertSame($expectedIds, array_column(array_column($complete, 'object'), 'commandId'));
@@ -339,7 +339,7 @@ class ArticleMosTimelineTest extends TestCase
             $mihaela,
             $reporter,
         ];
-        $text = "SNC MIHAELA KAWINSKA\nPrima intervenție are cuvinte distincte aici.\nVOXURI 3\nMaterial vox cu descriere.\nSNC GABRIELA SULEAC\nReporter prezintă materialul.\nVOX\nAlt material vox aici.\nSNC MIHAELA KAWINSKA\nA doua intervenție are alte cuvinte distincte.";
+        $text = "VOXURI 3\nMaterial vox cu descriere.\nSNC MIHAELA KAWINSKA\nPrima intervenție are cuvinte distincte aici.\nTEXT Continuare.\nVOX\nAlt material vox aici.\nSNC MIHAELA KAWINSKA\nA doua intervenție are alte cuvinte distincte.\nTEXT Încheierea materialului.\nSNC GABRIELA SULEAC\nReporter la finalul textului.";
 
         $events = app(ArticleMosTimeline::class)->forArticle(
             new Article,
@@ -347,9 +347,9 @@ class ArticleMosTimelineTest extends TestCase
             [['type' => 'BETA', 'paragraphs' => [$text]]],
         );
 
-        $this->assertSame(['title', 'mihaela', null, 'reporter', null, 'mihaela'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
-        $this->assertSame(['mos', 'mos', 'vox', 'mos', 'vox', 'mos'], array_column($events, 'kind'));
-        $this->assertSame(3, $events[2]['count']);
+        $this->assertSame(['title', null, 'mihaela', null, 'mihaela', 'reporter'], array_map(fn ($event) => $event['object']['commandId'] ?? null, $events));
+        $this->assertSame(['mos', 'vox', 'mos', 'vox', 'mos', 'mos'], array_column($events, 'kind'));
+        $this->assertSame(3, $events[1]['count']);
         $this->assertGreaterThan($events[1]['position'], $events[2]['position']);
         $this->assertGreaterThan($events[2]['position'], $events[3]['position']);
         $this->assertGreaterThan($events[3]['position'], $events[4]['position']);

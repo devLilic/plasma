@@ -281,8 +281,14 @@ class ArticleMosTimeline
             $sourceOrder[$identity] ??= $index;
         }
         $firstGraphicOccurrences = [];
-        $laterOccurrences = [];
         $firstGraphicSlots = [];
+        $titleIdentities = [];
+        foreach ($objects as $object) {
+            if (! $this->isNameGraphic($object)
+                && array_filter($object['editableObjects'] ?? [], fn ($field) => EnpsBasicContent::editableRole($field['name'] ?? '') === 'title' && trim($field['value'] ?? '') !== '') !== []) {
+                $titleIdentities[$this->objectKey($object)] = true;
+            }
+        }
         $seenGraphics = [];
         foreach ($grouped as $index => $event) {
             if ($event['kind'] !== 'mos') {
@@ -290,43 +296,49 @@ class ArticleMosTimeline
             }
             $identity = $this->speakerKey($event['object']) ?? $this->objectKey($event['object']);
             if (isset($seenGraphics[$identity])) {
-                $laterOccurrences[] = [$index, $event];
                 continue;
             }
             $seenGraphics[$identity] = true;
             $firstGraphicOccurrences[] = [$sourceOrder[$identity] ?? PHP_INT_MAX, $index, $event];
-            $firstGraphicSlots[] = $index;
+            if (! isset($titleIdentities[$this->objectKey($event['object'])])) {
+                $firstGraphicSlots[] = $index;
+            }
         }
         sort($firstGraphicSlots);
         usort($firstGraphicOccurrences, fn ($left, $right) => [$left[0], $left[1]] <=> [$right[0], $right[1]]);
 
-        $voxByGraphicSlot = [];
-        $lastFirstGraphicSlot = $firstGraphicSlots === [] ? null : $firstGraphicSlots[array_key_last($firstGraphicSlots)];
+        $interstitialOccurrences = [];
         foreach ($grouped as $index => $event) {
-            if ($event['kind'] !== 'vox') {
+            if ($event['kind'] === 'mos') {
+                $identity = $this->speakerKey($event['object']) ?? $this->objectKey($event['object']);
+                if (! isset($seenGraphics[$identity]) || ($firstGraphicOccurrences !== [] && in_array($index, array_column($firstGraphicOccurrences, 1), true))) {
+                    continue;
+                }
+            } elseif ($event['kind'] !== 'vox') {
                 continue;
             }
-            if ($lastFirstGraphicSlot === null || $index > $lastFirstGraphicSlot) {
-                $laterOccurrences[] = [$index, $event];
-                continue;
-            }
-
             $slot = count(array_filter($firstGraphicSlots, fn ($firstGraphicSlot) => $firstGraphicSlot < $index));
-            $voxByGraphicSlot[$slot][] = $event;
+            $interstitialOccurrences[$slot][] = [$index, $event];
         }
-        usort($laterOccurrences, fn ($left, $right) => $left[0] <=> $right[0]);
+        foreach ($interstitialOccurrences as &$occurrences) {
+            usort($occurrences, fn ($left, $right) => $left[0] <=> $right[0]);
+        }
+        unset($occurrences);
 
         $ordered = [];
-        foreach ($firstGraphicOccurrences as $index => $entry) {
-            foreach ($voxByGraphicSlot[$index] ?? [] as $vox) {
-                $ordered[] = $vox;
+        $graphicSlot = 0;
+        foreach ($firstGraphicOccurrences as $entry) {
+            if (! isset($titleIdentities[$this->objectKey($entry[2]['object'])])) {
+                foreach ($interstitialOccurrences[$graphicSlot] ?? [] as [, $event]) {
+                    $ordered[] = $event;
+                }
+                $graphicSlot++;
             }
             $ordered[] = $entry[2];
         }
-        foreach ($voxByGraphicSlot[count($firstGraphicOccurrences)] ?? [] as $vox) {
-            $ordered[] = $vox;
+        foreach ($interstitialOccurrences[$graphicSlot] ?? [] as [, $event]) {
+            $ordered[] = $event;
         }
-        array_push($ordered, ...array_map(fn ($entry) => $entry[1], $laterOccurrences));
 
         return array_map(fn ($event) => array_diff_key($event, ['lastLine' => true]), $ordered);
     }
