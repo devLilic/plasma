@@ -128,7 +128,8 @@ test('MOS cards omit graphic order numbers, show name snippets without a label a
     assert.doesNotMatch(html, /Primele 7 cuvinte:/);
     assert.match(html, /Primele șapte cuvinte spuse de persoană/);
     assert.match(html, /class="mos-speech-snippet"/);
-    assert.match(html, /class="mos-graphic-tools"[\s\S]*Reordonează 06_Nume_Ultima_Ora[\s\S]*Editează corecțiile pentru 06_Nume_Ultima_Ora/);
+    assert.match(html, /class="mos-drag-handle"[\s\S]*Reordonează 06_Nume_Ultima_Ora/);
+    assert.match(html, /class="mos-graphic-tools"[\s\S]*Editează corecțiile pentru 06_Nume_Ultima_Ora/);
     assert.match(html, /class="mos-compact-value-row"[\s\S]*mos-inline-template-label[\s\S]*06_Nume_Ultima_Ora[\s\S]*Ana Șerban[\s\S]*class="mos-playback-icon"/);
     assert.match(html, /aria-label="PLAY 06_Nume_Ultima_Ora către LB-Portal"/);
     assert.match(html, /disabled=""/);

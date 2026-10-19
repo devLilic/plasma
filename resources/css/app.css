@@ -246,7 +246,7 @@
     .mos-article-nav button { display: flex; width: 30px; height: 30px; align-items: center; justify-content: center; border: 1px solid rgba(113,128,154,.18); border-radius: 9px; background: rgba(255,255,255,.6); color: #526078; }
     .mos-article-nav button:disabled { cursor: not-allowed; opacity: .35; }
     .mos-workspace-scroll { min-height: 0; flex: 1; overflow-y: auto; padding: 7px 2px 4px; }
-    .mos-sequence { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
+    .mos-sequence { display: grid; gap: 6px; margin: 0; padding: 0 0 0 28px; list-style: none; }
     .mos-sequence-mos { position: relative; min-width: 0; }
     .mos-sequence-divider { display: flex; min-height: 22px; align-items: center; gap: 8px; color: #7c899d; font-size: 9px; font-weight: 700; text-align: center; }
     .mos-sequence-divider::before, .mos-sequence-divider::after { flex: 1; border-top: 1px solid rgba(113,128,154,.35); content: ''; }
@@ -262,7 +262,8 @@
     .mos-graphic-template-badge { display: inline-flex; min-height: 22px; align-items: center; border: 1px solid rgba(40,110,231,.16); border-radius: 8px; background: #f5f8ff; padding: 0 7px; color: #286ee7; font-size: 9px; font-weight: 700; box-shadow: 0 3px 10px rgba(34,65,115,.08); }
     .mos-edit-corrections { display: inline-flex; min-height: 25px; align-items: center; gap: 4px; border: 1px solid rgba(113,128,154,.18); border-radius: 8px; background: rgba(255,255,255,.72); padding: 0 7px; color: #526078; font-size: 9px; font-weight: 800; }
     .mos-edit-corrections:hover { border-color: rgba(40,110,231,.25); background: white; color: #286ee7; }
-    .mos-drag-handle { display: inline-flex; width: 22px; min-height: 22px; align-items: center; justify-content: center; border: 1px solid rgba(40,110,231,.16); border-radius: 8px; background: #f5f8ff; color: #526078; cursor: grab; font-size: 16px; line-height: 1; }
+    .mos-drag-handle { position: absolute; z-index: 2; top: 50%; left: -28px; display: inline-flex; width: 22px; min-height: 22px; align-items: center; justify-content: center; transform: translateY(-50%); border: 1px solid rgba(40,110,231,.16); border-radius: 8px; background: #f5f8ff; color: #526078; cursor: grab; font-size: 16px; line-height: 1; opacity: 0; transition: opacity .14s ease; }
+    .mos-sequence-mos:hover .mos-drag-handle, .mos-sequence-mos:focus-within .mos-drag-handle { opacity: 1; }
     .mos-drag-handle:active { cursor: grabbing; }
     .mos-drag-handle:disabled { cursor: wait; opacity: .5; }
     .mos-manually-positioned { border-radius: 7px; background: #fff7e6; padding: 3px 6px; color: #936314; font-size: 8px; font-weight: 700; }
@@ -286,8 +287,11 @@
     .mos-member-count { display: block; margin: -2px 0 5px; color: #71809a; font-size: 8px; }
     .mos-param-map-details, .mos-orphans { margin-top: 6px; border-top: 1px solid rgba(113,128,154,.12); padding-top: 5px; }
     .mos-param-map-details > summary, .mos-orphans > summary { cursor: pointer; color: #64728a; font-size: 9px; font-weight: 800; list-style-position: inside; }
-    .mos-compact-value-row { display: flex; min-width: 0; align-items: center; gap: 8px; }
-    .mos-inline-template-label { display: inline-flex; min-height: 28px; max-width: 42%; flex: 0 1 auto; align-items: center; overflow: hidden; border: 1px solid rgba(113,128,154,.3); border-radius: 8px; background: rgba(255,255,255,.74); padding: 0 9px; color: #526078; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+    .mos-compact-mos-object { min-width: 0; overflow: hidden; border: 1px solid rgba(40,120,255,.1); border-radius: 11px; background: rgba(237,244,255,.6); }
+    .mos-compact-value-row { display: flex; min-width: 0; align-items: stretch; gap: 0; }
+    .mos-compact-value-row > div:not(.mos-playback-icon) { padding: 8px 10px; }
+    .mos-compact-value-row > .mos-playback-icon { align-self: center; margin: 8px; }
+    .mos-inline-template-label { display: inline-flex; min-height: 0; max-width: 42%; flex: 0 1 auto; align-self: stretch; align-items: center; overflow: hidden; border: 0; border-right: 1px solid rgba(113,128,154,.3); border-radius: 10px 0 0 10px; background: rgba(255,255,255,.74); padding: 0 12px; color: #526078; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
     .mos-graphic-only { display: flex; min-height: 54px; align-items: center; justify-content: space-between; gap: 12px; border-radius: 12px; background: rgba(237,244,255,.6); padding: 8px 10px; color: #2c3443; font-size: 13px; font-weight: 700; }
     .mos-override-card [data-mos-role], .mos-speech-snippet { font-family: Arial, "Noto Sans", sans-serif; }
     .mos-speech-snippet { overflow: hidden; margin: 6px 10px 0 0; border-radius: 0 8px 8px 0; background: rgba(255,255,255,.5); padding: 6px 10px 6px 12px; color: #526078; font-size: 14px; line-height: 1.4; }

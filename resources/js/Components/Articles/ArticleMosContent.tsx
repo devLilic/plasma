@@ -14,7 +14,7 @@ const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: M
                 const fields = object.editableObjects.filter(field => field.value.trim() !== '').sort(compareMosFieldOrder);
                 const isTitle = fields.some(field => field.role === 'title' || field.role === 'short_title');
                 const isLocation = object.slug === '08_Locatie';
-                return <div key={`${object.commandId}-${index}`} className={`min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>
+                return <div key={`${object.commandId}-${index}`} className={`${compact ? 'mos-compact-mos-object' : 'min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>
                     {object.slug && !compact && <p className="mb-2 text-[10px] font-semibold text-[#286ee7]">{object.slug}</p>}
                     <div className={compact ? 'mos-compact-value-row' : ''}>
                         {compact && object.slug && <span className="mos-inline-template-label">{object.slug}</span>}
