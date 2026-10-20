@@ -117,7 +117,11 @@ class ArticleMosTimeline
         if (! array_filter($fields, fn ($field) => $field[0] === 'name') && $this->isNameGraphic($object)) {
             foreach ($object['editableObjects'] ?? [] as $field) {
                 if (trim($field['value'] ?? '') !== '') {
-                    $fields[] = ['name', $this->normalized($field['name'] ?? 'Text'), $this->normalized($field['value'])];
+                    [$name, $inlineFunction] = $this->nameGraphicParts($field['value'] ?? '');
+                    $fields[] = ['name', $this->normalized($field['name'] ?? 'Text'), $this->normalized($name)];
+                    if ($inlineFunction !== '') {
+                        $fields[] = ['function', $this->normalized($field['name'] ?? 'Text'), $this->normalized($inlineFunction)];
+                    }
                     break;
                 }
             }
@@ -184,7 +188,17 @@ class ArticleMosTimeline
                     $names = array_slice($names, 0, 1, true);
                 }
                 foreach ($titles ?: $names as $field) {
-                    $match = $this->findValue($line, $field['value'], $titles === []);
+                    $inlineFunction = '';
+                    if ($titles === [] && $this->isNameGraphic($object)) {
+                        [$nameValue, $inlineFunction] = $this->nameGraphicParts($field['value'] ?? '');
+                        $match = $this->findValue($line, $nameValue, true);
+                        if ($match !== null && $inlineFunction !== ''
+                            && ! $this->functionTailMatches(substr($line, $match['end']), $inlineFunction)) {
+                            $match = null;
+                        }
+                    } else {
+                        $match = $this->findValue($line, $field['value'], $titles === []);
+                    }
                     if ($match === null) {
                         continue;
                     }
@@ -215,6 +229,9 @@ class ArticleMosTimeline
                                     break;
                                 }
                             }
+                        }
+                        if ($inlineFunction !== '') {
+                            $functionMatch = $this->functionTailMatches(substr($line, $match['end']), $inlineFunction);
                         }
                         $candidate = ['object' => $object, 'match' => $match,
                             'distance' => $match['distance'] ?? 0, 'functionMatch' => $functionMatch];
@@ -428,6 +445,18 @@ class ArticleMosTimeline
                 return true;
             }
         }
+        if ($this->isNameGraphic($object)) {
+            foreach ($object['editableObjects'] ?? [] as $field) {
+                if (trim($field['value'] ?? '') === '') {
+                    continue;
+                }
+                [, $inlineFunction] = $this->nameGraphicParts($field['value']);
+                if ($inlineFunction !== '' && $this->functionTailMatches($tail, $inlineFunction)) {
+                    return true;
+                }
+                break;
+            }
+        }
 
         return $name === mb_strtoupper($name) && (preg_match('/^[ \t]*[,:;–-]/u', $afterName)
             || $line === mb_strtoupper($line));
@@ -439,9 +468,26 @@ class ArticleMosTimeline
             foreach ($object['editableObjects'] as $field) {
                 if (in_array($this->normalized($field['name']), ['nume', 'name'], true)) {
                     $match = $this->findValue($line, $field['value'], true);
+                    if ($match === null && $this->isNameGraphic($object)) {
+                        [$nameValue] = $this->nameGraphicParts($field['value'] ?? '');
+                        $match = $this->findValue($line, $nameValue, true);
+                    }
                     if ($match !== null && $this->isSpeakerHeading($line, $match, $object)) {
                         return true;
                     }
+                }
+            }
+            if ($this->isNameGraphic($object)) {
+                foreach ($object['editableObjects'] ?? [] as $field) {
+                    if (trim($field['value'] ?? '') === '') {
+                        continue;
+                    }
+                    [$nameValue] = $this->nameGraphicParts($field['value']);
+                    $match = $this->findValue($line, $nameValue, true);
+                    if ($match !== null && $this->isSpeakerHeading($line, $match, $object)) {
+                        return true;
+                    }
+                    break;
                 }
             }
         }
@@ -518,6 +564,68 @@ class ArticleMosTimeline
         }
 
         return $bestMatch;
+    }
+
+    /** Split a configured name graphic's composite Titlu/Text field at its first comma. */
+    private function nameGraphicParts(string $value): array
+    {
+        $parts = explode(',', $value, 2);
+
+        return [trim($parts[0]), trim($parts[1] ?? '')];
+    }
+
+    /** Match at least half of the script's meaningful attribution tokens against the MOS suffix. */
+    private function functionTailMatches(string $tail, string $mosFunction): bool
+    {
+        $tail = preg_replace('/\s+\d{3,5}\s+T\.?\s*C\.?/iu', '', $tail);
+        $tail = preg_split('/\bT\.?\s*C\.?\b|(?<!\d)\d{1,2}[:.]\d{2}(?:[-–]\d{1,2}[:.]\d{2})?(?!\d)/iu', $tail, 2)[0] ?? '';
+        $stopwords = ['a', 'al', 'ale', 'ai', 'cu', 'cadrul', 'de', 'din', 'in', 'la', 'le', 'lui', 'pe', 'pentru', 'si', 'un', 'unei', 'unui'];
+        preg_match_all('/[\p{L}\p{N}]+/u', $tail, $sourceMatches);
+        preg_match_all('/[\p{L}\p{N}]+/u', $mosFunction, $mosMatches);
+        $source = array_values(array_filter(array_map(fn ($token) => $this->normalized($token), $sourceMatches[0]),
+            fn ($token) => $token !== '' && ! in_array($token, $stopwords, true)));
+        $mos = array_values(array_filter(array_map(fn ($token) => $this->normalized($token), $mosMatches[0]),
+            fn ($token) => $token !== '' && ! in_array($token, $stopwords, true)));
+        if ($source === [] || $mos === []) {
+            return false;
+        }
+
+        $used = [];
+        $matched = 0;
+        foreach ($source as $sourceToken) {
+            foreach ($mos as $index => $mosToken) {
+                if (isset($used[$index])) {
+                    continue;
+                }
+                if ($this->functionTokensMatch($sourceToken, $mosToken)) {
+                    $used[$index] = true;
+                    $matched++;
+                    break;
+                }
+            }
+        }
+
+        return $matched > 0 && $matched * 2 >= count($source);
+    }
+
+    private function functionTokensMatch(string $left, string $right): bool
+    {
+        if ($left === $right || levenshtein($left, $right) <= 1) {
+            return true;
+        }
+
+        return $this->romanianInflectionStem($left) === $this->romanianInflectionStem($right);
+    }
+
+    private function romanianInflectionStem(string $token): string
+    {
+        foreach (['urilor', 'iilor', 'ului', 'elor', 'ilor', 'ul', 'lor', 'le', 'i'] as $suffix) {
+            if (strlen($token) - strlen($suffix) >= 4 && str_ends_with($token, $suffix)) {
+                return substr($token, 0, -strlen($suffix));
+            }
+        }
+
+        return $token;
     }
 
     private function speechStart(array $lines, int $index, int $end, array $object, array $objects): string

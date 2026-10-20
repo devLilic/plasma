@@ -40,6 +40,42 @@ class ArticleMosTimelineTest extends TestCase
         $this->assertSame('Deficitul comercial al Republicii Moldova a depășit', $events[0]['snippet']);
     }
 
+    public function test_configured_02_name_graphic_matches_person_name_and_partial_composite_function(): void
+    {
+        $cases = [
+            ['article-9-victoria', 'VICTORIA ANDRIŢCHI', 'director, Institutul pentru Educație', 'director, Institutului Național pentru Educație și Leadership', 'VICTORIA ANDRIŢCHI'],
+            ['article-6-berlinschi', 'ALEXANDRU BERLINSCHI', 'deputatul Partidului Nostru', 'deputat, Partidul Nostru', 'ALEXANDRU BERLINSCHI'],
+            ['article-13-domnica', 'DOMNICA CĂPĂȚÎNĂ', 'producător de brânză', 'producător 0729 TC 01:07 ... 01:15', 'DOMNICA CĂPĂȚÎNĂ'],
+        ];
+
+        foreach ($cases as [$id, $name, $mosFunction, $scriptFunction, $spokenName]) {
+            $object = ['commandId' => $id, 'slug' => '02_Nume', 'editableObjects' => [
+                ['name' => 'Titlu', 'value' => "$name, $mosFunction", 'role' => 'title'],
+            ]];
+            $line = "SNC $spokenName, $scriptFunction";
+            $text = "$line\nDeclarația continuă cu explicația pe care o ascultă publicul.";
+
+            $events = app(ArticleMosTimeline::class)->scan($text, [$object]);
+
+            $this->assertCount(1, $events, $id);
+            $this->assertSame($id, $events[0]['object']['commandId']);
+            $this->assertSame(strpos($line, $spokenName), $events[0]['position']);
+            $this->assertSame('Declarația continuă cu explicația pe care o', $events[0]['snippet']);
+        }
+    }
+
+    public function test_configured_02_name_graphic_does_not_match_when_composite_function_has_no_overlap(): void
+    {
+        $object = ['commandId' => 'no-role-overlap', 'slug' => '02_Nume', 'editableObjects' => [
+            ['name' => 'Titlu', 'value' => 'VICTORIA ANDRIŢCHI, actriță de teatru', 'role' => 'title'],
+        ]];
+        $text = "SNC VICTORIA ANDRIŢCHI, director, Institutului Național pentru Educație și Leadership\nDeclarația continuă cu explicația pentru public.";
+
+        $events = app(ArticleMosTimeline::class)->scan($text, [$object]);
+
+        $this->assertSame([], $events);
+    }
+
     public function test_repeated_story_attributions_do_not_cross_match_equivalent_commands_or_the_headline(): void
     {
         $headline = $this->graphic('headline', 'Titlu', 'MARTA KOS: NEGOCIERILE CU UE AR PUTEA FI ÎNCHEIATE ÎN 2028');
