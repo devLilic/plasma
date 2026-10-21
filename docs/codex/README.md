@@ -18,6 +18,10 @@ Acest director descrie comportamente și decizii de proiect care trebuie păstra
 
 ## Regula de întreținere
 
+Zona OnAir din LB-Portal consultă exporturile CSV PA prin Refresh manual și folder configurat per proiect, cu selector independent de proiectul activ pentru LiveBoard. Această etapă nu trimite comenzi și nu schimbă contractul HTTP Plasma; delimitarea este consemnată în [contractul PLAY](lb-portal-mos-play.md#scopul-etapei-curente) și în `C:\Projects\LB-Portal\docs\CODEX_ONAIR_CSV.md`.
+
+Verificarea OnAir: 130 teste relevante LB-Portal, 32 verificări Electron izolate și build NSIS trecute; limitările suitei generale sunt consemnate separat în documentul OnAir. Codul Plasma nu a fost modificat.
+
 [Durata automată MOS](lb-portal-mos-play.md#durata-automată-și-revenirea-mos-la-starea-implicită) este transmisă de LB-Portal prin `automaticDurationSeconds` și `remainingDurationMs`. Plasma revine local din verde/Resume la implicit/Play la expirare, cu temporizatoare per secțiune și păstrarea timpului rămas la PLAY identic. Actualizarea este aditivă și se livrează întâi în LB-Portal, apoi în Plasma.
 
 Verificarea duratei automate, 19 octombrie 2026: **75 teste LB-Portal, 25 teste frontend Plasma și ambele build-uri de producție — PASS**, inclusiv installer NSIS actualizat. Probele folosesc receiverul/controllerul și TCP mock, plus temporizatoare frontend controlate, fără instalație LiveBoard reală.
