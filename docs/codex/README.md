@@ -22,6 +22,8 @@ Zona OnAir din LB-Portal consultă exporturile CSV PA prin Refresh manual și fo
 
 Mapările CSV OnAir se configurează separat de sursele MOS, după tipul graficii și template-ul primit din export, și pregătesc valori pentru targeturile LiveBoard existente. Previziunea datelor și taburile Invitați/Beta nu activează proiecte și nu schimbă payloadul sau comenzile Plasma.
 
+Interfața OnAir aliniază supratitlul și titlul lângă numărul original CSV și oferă Refresh CSV într-o bară fixă în stânga pentru liste lungi; operația de import și contractul Plasma rămân cele documentate.
+
 Pentru locații și intervenții telefonice fără template în CSV, LB-Portal permite template-uri implicite per proiect; un template nevid din export are prioritate. Detaliile și verificările sunt în documentul OnAir din LB-Portal.
 
 Verificarea extinderii OnAir: 141 teste relevante LB-Portal, 45 verificări Electron izolate, QA renderer și build NSIS trecute; limitările suitei generale și ale capturilor native sunt consemnate separat în documentul OnAir. Codul Plasma nu a fost modificat.
