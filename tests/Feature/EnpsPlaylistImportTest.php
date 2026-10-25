@@ -67,6 +67,28 @@ class EnpsPlaylistImportTest extends TestCase
         $this->assertSame(['Text beta.'], $articles[0]->sections[1]['paragraphs']);
     }
 
+    public function test_adapter_groups_amb_off_compound_slug_as_one_off_story_and_keeps_mos_objects(): void
+    {
+        $mos = json_decode(file_get_contents(base_path('tests/Fixtures/enps/basic-content.json')), true, flags: JSON_THROW_ON_ERROR);
+        $articles = app(EnpsPlaylistAdapter::class)->articles(['CollectionScripts' => [
+            ['ScriptOrder' => 35, 'RecordPointer' => ['ListData' => [
+                'Title' => 'RO INUNDATII ISTANBUL-INTRO',
+                'BeginText' => "RO INUNDATII ISTANBUL\nINTRO: Orașul Istanbul este sub ape.",
+            ]]],
+            ['ScriptOrder' => 36, 'RecordPointer' => ['ListData' => [
+                'Title' => 'RO INUNDATII ISTANBUL-AMB OFF',
+                'BeginText' => "AMBIANȚĂ\nOFF\nÎn unele zone, cantitatea de precipitații a depășit 200 de litri.",
+            ]], 'BasicContent' => $mos],
+        ]]);
+
+        $this->assertCount(1, $articles);
+        $this->assertSame('RO INUNDATII ISTANBUL', $articles[0]->technical_title);
+        $this->assertSame(['RO INUNDATII ISTANBUL-INTRO', 'RO INUNDATII ISTANBUL-AMB OFF'], $articles[0]->slugs);
+        $this->assertSame(['INTRO', 'OFF'], $articles[0]->types);
+        $this->assertSame('OFF', $articles[0]->type);
+        $this->assertCount(5, $articles[0]->mos_objects);
+    }
+
     public function test_real_helsinki_intro_stops_at_bare_off_and_uses_the_intro_record(): void
     {
         $source = json_decode(file_get_contents(base_path('tests/Fixtures/enps/maia-helsinki.json')), true, flags: JSON_THROW_ON_ERROR);

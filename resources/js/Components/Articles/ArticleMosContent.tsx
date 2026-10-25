@@ -1,7 +1,17 @@
-import {ReactNode} from 'react';
+import {DragEvent, ReactNode} from 'react';
+import {MapPinIcon} from '@heroicons/react/24/outline';
 import {MosObject} from '@/types';
+import {compareMosFieldOrder} from '@/Components/Articles/mosFieldOrder';
 
-const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: MosObject[]; compact?: boolean; action?: ReactNode}) => {
+type TemplateLabelProps = {
+    draggable?: boolean
+    onDragStart?: (event: DragEvent<HTMLSpanElement>) => void
+    onDragEnd?: (event: DragEvent<HTMLSpanElement>) => void
+    title?: string
+    'aria-label'?: string
+}
+
+const ArticleMosContent = ({objects = [], compact = false, action, templateLabelProps}: {objects?: MosObject[]; compact?: boolean; action?: ReactNode; templateLabelProps?: TemplateLabelProps}) => {
     const populated = objects.filter(object => object.editableObjects.some(field => field.value.trim() !== ''));
     if (!populated.length) return null;
 
@@ -9,20 +19,19 @@ const ArticleMosContent = ({objects = [], compact = false, action}: {objects?: M
         {!compact && <p className="mb-2.5 text-xs font-bold uppercase tracking-[0.1em] text-[#7c899d]">Elemente MOS</p>}
         <div className={`grid min-w-0 gap-2 ${compact ? '' : 'sm:grid-cols-2'}`}>
             {populated.map((object, index) => {
-                const fields = object.editableObjects.filter(field => field.value.trim() !== '').sort((left, right) => {
-                    const order = {short_title: 0, title: 1, value: 2};
-                    return order[left.role] - order[right.role];
-                });
+                const fields = object.editableObjects.filter(field => field.value.trim() !== '').sort(compareMosFieldOrder);
                 const isTitle = fields.some(field => field.role === 'title' || field.role === 'short_title');
-                return <div key={`${object.commandId}-${index}`} className={`min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 ${compact ? 'px-2.5 py-2' : 'px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>
+                const isLocation = object.slug === '08_Locatie';
+                return <div key={`${object.commandId}-${index}`} className={`${compact ? 'mos-compact-mos-object' : 'min-w-0 rounded-xl border border-[#2878ff]/10 bg-[#edf4ff]/60 px-3 py-2.5'} ${isTitle && !compact ? 'sm:col-span-2' : ''}`}>
                     {object.slug && !compact && <p className="mb-2 text-[10px] font-semibold text-[#286ee7]">{object.slug}</p>}
                     <div className={compact ? 'mos-compact-value-row' : ''}>
+                        {compact && object.slug && <span className="mos-inline-template-label" {...templateLabelProps}>{object.slug}</span>}
                         <div className={compact ? 'min-w-0 flex-1 space-y-1' : 'space-y-1.5'}>
                             {fields.map((field, fieldIndex) => {
                                 const fieldName = field.name.toLocaleLowerCase('ro').normalize('NFD').replace(/\p{M}/gu, '');
                                 const isFunction = ['functie', 'function'].includes(fieldName);
                                 const valueSize = isFunction ? 'text-[12px] leading-[1.45]' : compact ? 'text-[14px] leading-[1.45]' : 'text-[13px] leading-5';
-                                return <p key={fieldIndex} data-mos-role={field.role} className={`min-w-0 whitespace-pre-wrap break-words ${valueSize} ${field.role === 'short_title' ? 'text-[#d62f28]' : 'text-[#2c3443]'} ${fieldName === 'nume' || isTitle ? 'font-semibold' : ''}`}>{field.value}</p>;
+                                return <p key={fieldIndex} data-mos-role={field.role} className={`min-w-0 whitespace-pre-wrap break-words ${valueSize} ${field.role === 'short_title' ? 'text-[#d62f28]' : 'text-[#2c3443]'} ${fieldName === 'nume' || isTitle ? 'font-semibold' : ''} ${isLocation && fieldIndex === 0 ? 'flex items-start gap-1.5' : ''}`}>{isLocation && fieldIndex === 0 && <span className="mos-location-icon" role="img" aria-label="Locație" title="Locație"><MapPinIcon className="h-3.5 w-3.5" aria-hidden="true"/></span>}{field.value}</p>;
                             })}
                         </div>
                         {compact && action}

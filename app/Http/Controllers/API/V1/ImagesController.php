@@ -131,11 +131,31 @@ class ImagesController extends Controller
     {
         $images = Image::query()
             ->where('last_used_at', '<', now()->subMonthsNoOverflow(2))
+            ->whereNull('cleanup_excluded_at')
             ->with('tags')
             ->orderBy('last_used_at')
             ->get();
 
         return ImageResource::collection($images);
+    }
+
+    public function excludeStale(Request $request)
+    {
+        $validated = $request->validate([
+            'data.image_ids' => ['required', 'array', 'min:1', 'max:500'],
+            'data.image_ids.*' => ['integer', 'distinct', 'exists:images,id'],
+        ]);
+
+        $excludedIds = Image::query()
+            ->whereIn('id', $validated['data']['image_ids'])
+            ->where('last_used_at', '<', now()->subMonthsNoOverflow(2))
+            ->pluck('id');
+
+        Image::query()->whereIn('id', $excludedIds)->whereNull('cleanup_excluded_at')->update([
+            'cleanup_excluded_at' => now(),
+        ]);
+
+        return response()->json(['excluded_ids' => $excludedIds->values()]);
     }
 
     public function cleanStale(Request $request, ImageDeletionService $imageDeletion)

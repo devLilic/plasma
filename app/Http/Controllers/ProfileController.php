@@ -5,7 +5,8 @@ namespace App\Http\Controllers;
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Services\Images\ImageQualitySettings;
 use App\Services\Images\ImageStorage;
-use App\Services\OSCon\OSConConnectionSettings;
+use App\Services\LBPortal\LBPortalConnectionSettings;
+use App\Services\Articles\NameGraphicTemplates;
 use App\Services\Playlists\PlaylistTitleExclusions;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -25,7 +26,8 @@ class ProfileController extends Controller
         ImageStorage $imageStorage,
         ImageQualitySettings $imageQualitySettings,
         PlaylistTitleExclusions $titleExclusions,
-        OSConConnectionSettings $osconSettings,
+        LBPortalConnectionSettings $lbPortalSettings,
+        NameGraphicTemplates $nameGraphicTemplates,
     ): Response {
         return Inertia::render('Profile/Edit', [
             'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
@@ -33,7 +35,8 @@ class ProfileController extends Controller
             'imageStoragePath' => $imageStorage->root(),
             'imageMinimumDimensions' => $imageQualitySettings->dimensions(),
             'playlistTitleExclusions' => $titleExclusions->terms(),
-            'osconSettings' => $osconSettings->publicSettings(),
+            'lbPortalSettings' => $lbPortalSettings->publicSettings(),
+            'nameGraphicTemplates' => $nameGraphicTemplates->templates(),
         ]);
     }
 

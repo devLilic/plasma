@@ -4,6 +4,7 @@ import ImageWithLoader from '@/Components/UI/ImageWithLoader';
 import ImageEditorContent from '@/Components/Dialogs/ImageEditor/ImageEditorContent';
 import AdjacentArticleButton from '@/Components/Articles/AdjacentArticleButton';
 import {introPreview} from '@/Utils/editorialText';
+import {ReactNode} from 'react';
 
 export interface ViewerTransform {brightness: number; contrast: number; saturation: number; zoom: number; panX: number; panY: number; flipX: boolean}
 export interface ViewerState {
@@ -20,6 +21,7 @@ export const defaultViewerTransform: ViewerTransform = {brightness: 100, contras
 
 interface LiveImageStageProps {
     article: Article | null
+    playlistToggle?: ReactNode
     previousArticle?: Article | null
     nextArticle?: Article | null
     previousDisabled: boolean
@@ -37,7 +39,7 @@ interface LiveImageStageProps {
     onTransformChange: (transform: ViewerTransform) => void
 }
 
-export function LiveImageStage({article, previousArticle = null, nextArticle = null, previousDisabled, nextDisabled, onPrevious, onNext, viewer, viewerBusy, viewerError, onRefreshViewer, onShow, onShowDefault, onHide, transform, onTransformChange}: LiveImageStageProps) {
+export function LiveImageStage({article, playlistToggle, previousArticle = null, nextArticle = null, previousDisabled, nextDisabled, onPrevious, onNext, viewer, viewerBusy, viewerError, onRefreshViewer, onShow, onShowDefault, onHide, transform, onTransformChange}: LiveImageStageProps) {
     if (!article) return <section className="ios-card live-stage-empty"><p className="ios-eyebrow">PLASMA · PREVIEW</p><h2>Alege un material din playlist</h2><p>Selecția pregătită nu trimite comenzi către PlasmaViewer.</p></section>;
     const image = article.image;
     const defaultImage = !image ? viewer?.defaultImage : null;
@@ -100,6 +102,10 @@ export function LiveImageStage({article, previousArticle = null, nextArticle = n
             <AdjacentArticleButton article={nextArticle} direction="next" disabled={nextDisabled} onClick={onNext}/>
         </nav>
     </div>;
+    const internetContent = intro ? <div className="live-preview-intro live-internet-intro" aria-label="Intro pentru știre">
+        <p className="ios-eyebrow">INTRO ȘTIRE</p>
+        <p>{intro}</p>
+    </div> : null;
 
     return <section className="ios-card live-image-stage" aria-label="Preview și ieșire Plasma">
         <header className="live-stage-header"><div className="min-w-0"><p className="ios-eyebrow">PLASMA · CANDIDAT PENTRU IEȘIRE</p><h2 title={article.subtitle || article.title || article.technical_title}>#{article.playlist_order} {article.subtitle || article.title || article.technical_title}</h2></div>
@@ -107,7 +113,7 @@ export function LiveImageStage({article, previousArticle = null, nextArticle = n
         </header>
         {viewerError && <p className="live-stage-error" role="alert">{viewerError}</p>}
         {viewer?.error && <p className="live-stage-error" role="alert">{viewer.error}</p>}
-        <ImageEditorContent article={article} initialTab="plasma" operatorMode plasmaContent={plasmaContent} onImageSelected={() => undefined}/>
+        <ImageEditorContent article={article} initialTab="plasma" operatorMode operatorLeadingAction={playlistToggle} plasmaContent={plasmaContent} internetContent={internetContent} onImageSelected={() => undefined}/>
     </section>;
 }
 

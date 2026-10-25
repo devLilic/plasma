@@ -34,6 +34,15 @@ test('compact MOS cards omit the repeated template name', () => {
     assert.ok(html.includes('Titlul știrii'));
 });
 
+test('08_Locatie shows a small map marker before its value and other templates do not', () => {
+    const location = renderCompact([{commandId: 'location', slug: '08_Locatie', editableObjects: [{name: 'Locatie', value: 'Chișinău', role: 'value'}]}]);
+    const other = renderCompact([{commandId: 'name', slug: '06_Nume_Ultima_Ora', editableObjects: [{name: 'Nume', value: 'Ana Popescu', role: 'value'}]}]);
+
+    assert.match(location, /class="mos-location-icon" role="img" aria-label="Locație" title="Locație"/);
+    assert.match(location, /mos-location-icon[\s\S]*Chișinău/);
+    assert.doesNotMatch(other, /mos-location-icon|MapPinIcon/);
+});
+
 test('MOS values remain escaped text', () => {
     const html = render([{commandId: 'title', slug: '01_Titlu', editableObjects: [{name: 'TITLU', value: '<script>alert(1)</script>', role: 'title'}]}]);
     assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));

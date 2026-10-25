@@ -8,9 +8,10 @@ import OldImagesCleanup from './Partials/OldImagesCleanup';
 import ImageStorageSettings from './Partials/ImageStorageSettings';
 import ImageQualitySettings from './Partials/ImageQualitySettings';
 import PlaylistTitleExclusionsSettings from './Partials/PlaylistTitleExclusionsSettings';
-import OSConSettings, {type OSConSettingsData} from './Partials/OSConSettings';
+import LBPortalSettings, {type LBPortalSettingsData} from './Partials/LBPortalSettings';
+import NameGraphicTemplatesSettings from './Partials/NameGraphicTemplatesSettings';
 
-export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, imageMinimumDimensions, playlistTitleExclusions, osconSettings }: PageProps<{ mustVerifyEmail: boolean, status?: string, imageStoragePath: string, imageMinimumDimensions: {width: number; height: number}, playlistTitleExclusions: string[], osconSettings: OSConSettingsData }>) {
+export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, imageMinimumDimensions, playlistTitleExclusions, lbPortalSettings, nameGraphicTemplates }: PageProps<{ mustVerifyEmail: boolean, status?: string, imageStoragePath: string, imageMinimumDimensions: {width: number; height: number}, playlistTitleExclusions: string[], lbPortalSettings: LBPortalSettingsData, nameGraphicTemplates: string[] }>) {
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -25,7 +26,8 @@ export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, 
                         <p className="ios-subtitle">Gestionează biblioteca media, datele contului și securitatea.</p>
                     </div>
                     <PlaylistTitleExclusionsSettings initialTerms={playlistTitleExclusions}/>
-                    <OSConSettings settings={osconSettings}/>
+                    <LBPortalSettings settings={lbPortalSettings}/>
+                    <NameGraphicTemplatesSettings initialTemplates={nameGraphicTemplates}/>
                     <ImageStorageSettings initialPath={imageStoragePath}/>
                     <ImageQualitySettings initialDimensions={imageMinimumDimensions}/>
                     <OldImagesCleanup />

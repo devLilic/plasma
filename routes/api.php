@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->get('/user', function (Request $request) {
 Route::prefix('/v1')->middleware('auth:sanctum')->group(function () {
     Route::get('/images/search', [ImagesController::class, 'search']);
     Route::get('/images/stale', [ImagesController::class, 'stale']);
+    Route::post('/images/stale/exclusions', [ImagesController::class, 'excludeStale']);
     Route::delete('/images/stale', [ImagesController::class, 'cleanStale']);
 
     Route::get('/images', [ImagesController::class, 'index']);

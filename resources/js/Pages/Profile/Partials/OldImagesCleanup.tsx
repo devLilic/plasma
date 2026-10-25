@@ -13,6 +13,8 @@ const formatDate = (value: string | null) => value
 const OldImagesCleanup = () => {
     const [images, setImages] = useState<Image[] | null>(null);
     const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+    const [excludedIds, setExcludedIds] = useState<Set<number>>(new Set());
+    const [excluding, setExcluding] = useState(false);
     const [scanning, setScanning] = useState(false);
     const [cleaning, setCleaning] = useState(false);
     const [confirmOpen, setConfirmOpen] = useState(false);
@@ -27,6 +29,7 @@ const OldImagesCleanup = () => {
             const result = await oldImagesApi.scan();
             setImages(result);
             setSelectedIds(new Set(result.map(image => image.id)));
+            setExcludedIds(new Set());
         } catch (requestError: any) {
             setError(requestError?.response?.data?.message ?? 'Imaginile vechi nu au putut fi scanate.');
         } finally {
@@ -34,12 +37,48 @@ const OldImagesCleanup = () => {
         }
     };
 
-    const toggleImage = (id: number) => {
-        setSelectedIds(current => {
-            const next = new Set(current);
-            next.has(id) ? next.delete(id) : next.add(id);
-            return next;
-        });
+    const toggleImage = async (id: number) => {
+        if (selectedIds.has(id)) {
+            setExcluding(true);
+            setError('');
+            try {
+                await oldImagesApi.exclude([id]);
+                setSelectedIds(current => {
+                    const next = new Set(current);
+                    next.delete(id);
+                    return next;
+                });
+                setExcludedIds(current => new Set(current).add(id));
+            } catch (requestError: any) {
+                setError(requestError?.response?.data?.message ?? 'Imaginea nu a putut fi exclusă din scanările viitoare.');
+            } finally {
+                setExcluding(false);
+            }
+            return;
+        }
+
+        setSelectedIds(current => new Set(current).add(id));
+    };
+
+    const toggleAll = async () => {
+        if (!images?.length) return;
+        if (selectedIds.size !== images.length) {
+            setSelectedIds(new Set(images.map(image => image.id)));
+            return;
+        }
+
+        const ids = images.map(image => image.id);
+        setExcluding(true);
+        setError('');
+        try {
+            await oldImagesApi.exclude(ids);
+            setSelectedIds(new Set());
+            setExcludedIds(current => new Set([...current, ...ids]));
+        } catch (requestError: any) {
+            setError(requestError?.response?.data?.message ?? 'Imaginile nu au putut fi excluse din scanările viitoare.');
+        } finally {
+            setExcluding(false);
+        }
     };
 
     const clean = async () => {
@@ -70,10 +109,10 @@ const OldImagesCleanup = () => {
                     </span>
                     <div>
                         <h2 className="ios-section-title">Curățarea imaginilor vechi</h2>
-                        <p className="mt-1 text-sm leading-5 text-[#8e8e93]">Scanează imaginile care nu au fost utilizate de mai mult de două luni. Poți exclude orice imagine înainte de ștergere.</p>
+                        <p className="mt-1 text-sm leading-5 text-[#8e8e93]">Scanează imaginile care nu au fost utilizate de mai mult de două luni. Deselecționarea unei imagini o exclude permanent din scanările viitoare.</p>
                     </div>
                 </div>
-                <button type="button" onClick={scan} disabled={scanning || cleaning} className="ios-secondary-button shrink-0 disabled:cursor-wait disabled:opacity-60">
+                <button type="button" onClick={scan} disabled={scanning || cleaning || excluding} className="ios-secondary-button shrink-0 disabled:cursor-wait disabled:opacity-60">
                     <ClockIcon className={`h-4 w-4 ${scanning ? 'animate-spin' : ''}`}/>
                     {scanning ? 'Scanning…' : 'Scan for old images'}
                 </button>
@@ -94,7 +133,7 @@ const OldImagesCleanup = () => {
                 <>
                     <div className="flex items-center justify-between border-y border-[#e5e5ea] bg-[#f9f9fb] px-5 py-3">
                         <p className="text-sm font-medium text-[#1c1c1e]">{images.length} {images.length === 1 ? 'imagine găsită' : 'imagini găsite'} · {selectedIds.size} selectate</p>
-                        {!!images.length && <button type="button" onClick={() => setSelectedIds(selectedIds.size === images.length ? new Set() : new Set(images.map(image => image.id)))} className="text-sm font-semibold text-[#007aff]">{selectedIds.size === images.length ? 'Deselectează toate' : 'Selectează toate'}</button>}
+                        {!!images.length && <button type="button" disabled={excluding} onClick={toggleAll} className="text-sm font-semibold text-[#007aff] disabled:opacity-50">{selectedIds.size === images.length ? 'Deselectează toate' : 'Selectează toate'}</button>}
                     </div>
 
                     {images.length ? (
@@ -102,11 +141,12 @@ const OldImagesCleanup = () => {
                             {images.map(image => {
                                 const selected = selectedIds.has(image.id);
                                 return (
-                                    <button key={image.id} type="button" onClick={() => toggleImage(image.id)} aria-pressed={selected} className={`group relative overflow-hidden rounded-2xl bg-[#f2f2f7] text-left transition ${selected ? 'ring-2 ring-[#007aff]' : 'opacity-65 hover:opacity-100'}`}>
+                                    <button key={image.id} type="button" onClick={() => void toggleImage(image.id)} disabled={excluding} aria-pressed={selected} className={`group relative overflow-hidden rounded-2xl bg-[#f2f2f7] text-left transition ${selected ? 'ring-2 ring-[#007aff]' : 'opacity-65 hover:opacity-100'} disabled:cursor-wait`}>
                                         <ImageWithLoader src={image.thumbnailUrl} alt={image.tags.map(tag => tag.title).join(', ') || 'Imagine veche'} loading="lazy" decoding="async" containerClassName="aspect-[4/3] w-full" className="h-full w-full object-cover"/>
                                         <span className={`absolute right-2 top-2 flex h-6 w-6 items-center justify-center rounded-full border-2 ${selected ? 'border-[#007aff] bg-[#007aff] text-white' : 'border-white bg-black/25 text-transparent'}`}><CheckCircleIcon className="h-4 w-4"/></span>
                                         <div className="space-y-2 p-3">
                                             <p className="text-xs font-medium text-[#6e6e73]">Ultima utilizare: {formatDate(image.lastUsedAt)}</p>
+                                            {excludedIds.has(image.id) && <p className="text-xs font-semibold text-[#b06a00]">Exclusă din scanările viitoare</p>}
                                             {!!image.tags.length && <div className="flex flex-wrap gap-1.5"><TagsList tags={image.tags}/></div>}
                                         </div>
                                     </button>
@@ -122,7 +162,7 @@ const OldImagesCleanup = () => {
 
                     {!!images.length && (
                         <div className="flex justify-end border-t border-[#e5e5ea] p-5">
-                            <button type="button" onClick={() => setConfirmOpen(true)} disabled={!selectedIds.size || cleaning} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ff3b30] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e9342b] disabled:cursor-not-allowed disabled:opacity-40">Clean old images</button>
+                            <button type="button" onClick={() => setConfirmOpen(true)} disabled={!selectedIds.size || cleaning || excluding} className="inline-flex min-h-11 items-center justify-center rounded-xl bg-[#ff3b30] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#e9342b] disabled:cursor-not-allowed disabled:opacity-40">Clean old images</button>
                         </div>
                     )}
                 </>
