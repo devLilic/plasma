@@ -7,7 +7,9 @@ const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 const root = path.resolve(__dirname, '../..');
 function load(relative) {
-    const file = path.join(root, 'resources/js', relative + (relative.startsWith('Utils/') ? '.ts' : '.tsx'));
+    const modulePath = path.join(root, 'resources/js', relative);
+    const file = [modulePath + '.tsx', modulePath + '.ts'].find(candidate => fs.existsSync(candidate));
+    if (!file) throw new Error(`Unable to resolve ${relative}`);
     const compiled = ts.transpileModule(fs.readFileSync(file, 'utf8'), {compilerOptions: {jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS}}).outputText;
     const mod = {exports: {}};
     const localRequire = name => name === 'react-redux' ? {useDispatch: () => () => {}} : name === '@/Store/article/article.slice' ? {updateTextHighlight: () => {}} : name.startsWith('@/') ? load(name.slice(2)) : require(name);
@@ -57,8 +59,9 @@ test('text stays in the left column including full quotes; missing graphics supp
 test('last-hour titles keep the short title red in the same card and snippet text is escaped', () => {
     const object = {...graphic, slug: '05_Titlu_Ultima_Ora', editableObjects: [{name: 'Titlu', role: 'title', value: 'Titlul obișnuit'}, {name: 'Titlu scurt', role: 'short_title', value: 'Titlul scurt'}]};
     const html = renderToStaticMarkup(React.createElement(Timeline, {entries: [{...entries[0], object, snippet: '<script>alert(1)</script>'}]}));
-    assert.equal((html.match(/class="min-w-0 rounded-xl /g) || []).length, 1);
+    assert.equal((html.match(/mos-compact-mos-object/g) || []).length, 1);
     assert.ok(html.includes('data-mos-role="short_title" class="min-w-0 whitespace-pre-wrap break-words text-[14px] leading-[1.45] text-[#d62f28]'));
+    assert.ok(html.includes('Titlul obișnuit') && html.includes('Titlul scurt'));
     assert.ok(html.includes('&lt;script&gt;alert(1)&lt;/script&gt;'));
     assert.ok(!html.includes('<script>'));
 });

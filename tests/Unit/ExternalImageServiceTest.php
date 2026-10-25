@@ -3,12 +3,15 @@
 namespace Tests\Unit;
 
 use App\Services\Images\ExternalImageService;
+use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
 class ExternalImageServiceTest extends TestCase
 {
+    use RefreshDatabase;
+
     public function test_download_uses_browser_headers_and_a_same_origin_referer(): void
     {
         $source = imagecreatetruecolor(700, 400);

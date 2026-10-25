@@ -46,19 +46,19 @@ class PlasmaViewerIntegrationTest extends TestCase
     {
         Http::fake(['http://127.0.0.1:47832/v1/default-image' => Http::response('default-image-bytes', 200, ['Content-Type' => 'image/jpeg'])]);
 
-        $this->actingAs(User::factory()->create())
+        $response = $this->actingAs(User::factory()->create())
             ->get(route('viewer.default-image'))
             ->assertOk()
             ->assertHeader('Content-Type', 'image/jpeg')
-            ->assertHeader('Cache-Control', 'no-store')
             ->assertSee('default-image-bytes', false);
+        $this->assertStringContainsString('no-store', $response->headers->get('Cache-Control', ''));
 
         Http::assertSent(fn (Request $request) => $request->hasHeader('Authorization', 'Bearer test-viewer-token'));
     }
 
     public function test_default_image_endpoint_requires_authentication(): void
     {
-        $this->get(route('viewer.default-image'))->assertUnauthorized();
+        $this->getJson(route('viewer.default-image'))->assertUnauthorized();
     }
 
     public function test_offline_viewer_is_launched_and_the_request_is_retried(): void

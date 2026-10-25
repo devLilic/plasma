@@ -1,15 +1,30 @@
 const {test} = require('node:test');
 const assert = require('node:assert/strict');
-const {readFileSync} = require('node:fs');
+const {existsSync, readFileSync} = require('node:fs');
 const path = require('node:path');
 const ts = require('typescript');
 const React = require('react');
 const {renderToStaticMarkup} = require('react-dom/server');
 
+const root = path.resolve(__dirname, '../..');
+const localRequire = name => {
+    if (!name.startsWith('@/')) return require(name);
+
+    const modulePath = path.resolve(root, 'resources/js', name.slice(2));
+    const sourcePath = [modulePath + '.ts', modulePath + '.tsx'].find(existsSync);
+    if (!sourcePath) throw new Error(`Unable to resolve ${name}`);
+
+    const source = readFileSync(sourcePath, 'utf8');
+    const compiled = ts.transpileModule(source, {compilerOptions: {jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS}}).outputText;
+    const module = {exports: {}};
+    new Function('require', 'module', 'exports', compiled)(localRequire, module, module.exports);
+    return module.exports;
+};
+
 const source = readFileSync(path.resolve(__dirname, '../../resources/js/Components/Articles/ArticleMosContent.tsx'), 'utf8');
 const compiled = ts.transpileModule(source, {compilerOptions: {jsx: ts.JsxEmit.ReactJSX, module: ts.ModuleKind.CommonJS}}).outputText;
 const componentModule = {exports: {}};
-new Function('require', 'module', 'exports', compiled)(require, componentModule, componentModule.exports);
+new Function('require', 'module', 'exports', compiled)(localRequire, componentModule, componentModule.exports);
 const render = objects => renderToStaticMarkup(React.createElement(componentModule.exports.default, {objects}));
 const renderCompact = objects => renderToStaticMarkup(React.createElement(componentModule.exports.default, {objects, compact: true}));
 
@@ -28,9 +43,10 @@ test('MOS omits empty fields and objects without values', () => {
     assert.equal(html.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim(), 'Elemente MOS 06_Nume_Ultima_Ora Ana');
 });
 
-test('compact MOS cards omit the repeated template name', () => {
+test('compact MOS cards show the template name beside their values', () => {
     const html = renderCompact([{commandId: 'title', slug: '05_Titlu_Ultima_Ora', editableObjects: [{name: 'TITLU', value: 'Titlul știrii', role: 'title'}]}]);
-    assert.ok(!html.includes('05_Titlu_Ultima_Ora'));
+    assert.ok(html.includes('class="mos-inline-template-label"'));
+    assert.ok(html.includes('05_Titlu_Ultima_Ora'));
     assert.ok(html.includes('Titlul știrii'));
 });
 
