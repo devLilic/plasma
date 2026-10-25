@@ -4,6 +4,16 @@ Acest document descrie contractul dintre pagina de operare Plasma și receiverul
 
 ## Scopul etapei curente
 
+LB-Portal include și zona independentă OnAir pentru consultarea exporturilor csvEditor-PA. Folderul se configurează per proiect, iar citirea celor patru fișiere PA se face prin Refresh explicit, în Electron main. Selectorul OnAir nu activează proiectul pentru execuție; datele sunt păstrate numai în memoria sesiunii și nu generează PLAY/RESUME sau cereri HTTP Plasma. Template-urile CSV sunt chei sursă pentru mapările explicite per proiect. Contractul detaliat este `C:\Projects\LB-Portal\docs\CODEX_ONAIR_CSV.md`. Payloadul, autentificarea, CORS, confirmările HTTP și transportul TCP LBC din acest document rămân aplicabile.
+
+OnAir are și mapări salvate per proiect de la tip/template CSV la secțiunile, destinațiile A/B și câmpurile LiveBoard, cu previzualizarea valorilor rezultate. Acestea sunt independente de sursele MOS și nu trimit comenzi sau cereri HTTP. Grupurile sunt taburi cu Invitați (Platou) primul; rolul proiectului activ pentru Plasma rămâne cel descris mai jos.
+
+În OnAir, numărul original CSV este comun supratitlului și titlului, aliniate în același bloc. Bara fixă din stânga permite Refresh CSV și după derularea listelor lungi. Aceste ajustări de interfață reutilizează operația locală de import și păstrează contractul HTTP și rutarea Plasma–LiveBoard existente.
+
+Locațiile și intervențiile telefonice pot avea câte un template implicit configurat în proiectul LB-Portal. Acesta este folosit când rândul CSV nu furnizează un `Template` nevid; un template primit din CSV are prioritate și se păstrează exact. Regula se aplică în catalogul mapărilor și în previzualizarea valorilor, fără modificarea fișierelor sursă ori a contractului HTTP Plasma.
+
+Verificarea extinderii OnAir din 21 octombrie 2026: 141 teste relevante LB-Portal, 45 verificări Electron cu profil temporar, QA renderer la 640/1280/1920 px și build TypeScript/Vite/NSIS trecute. Probele includ surse și mapări per proiect, template-uri implicite, salvare/redeschidere, lipsa comenzilor LiveBoard la import/salvarea metadatelor și păstrarea runtime-ului activ. Documentul OnAir consemnează separat rezultatele inițiale, patru eșecuri ale suitei generale în zone nemodificate, expirarea capturilor native și parametrul de build necesar local pentru eroarea Windows `EPERM` la extragerea Electron. În Plasma s-a actualizat numai documentația pereche.
+
 Plasma trimite grafica selectată ca JSON prin HTTP către LB-Portal; LB-Portal este bridge-ul dintre Plasma și LiveBoard. Receiverul autentifică și înregistrează cererea, rezolvă mapările salvate și execută comanda înainte de răspunsul HTTP. Răspunsul pentru MOS include statusul execuției, starea secțiunii și dacă grafica este ON AIR; consola păstrează raportul detaliat. Pentru comenzile reale către LiveBoard se folosește exclusiv TCP LBControl cu comenzile `LBC_`, după configurare și conectare manuală. Simularea fără socket este doar pentru verificări offline. Confirmarea TCP este acceptarea protocolului, nu confirmarea video. Nu conecta Plasma direct la LiveBoard și nu utiliza OSCon/OSC pentru această integrare.
 
 ## Configurare și securitate
