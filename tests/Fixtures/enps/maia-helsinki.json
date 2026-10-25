@@ -1,0 +1,22 @@
+{
+    "CollectionScripts": [
+        {
+            "ScriptOrder": 20,
+            "RecordPointer": {
+                "ListData": {
+                    "Title": "MD MAIA LA HELSINKI OFF-INTRO",
+                    "BeginText": "Şeful statului Maia Sandu a fost primită astăzi la Palatul Prezidențial din Helsinki de președintele Finlandei, Alexander Stubb. Cei doi șefi de stat vor discuta despre relațiile bilaterale, securitatea europeană și procesul de aderare la Uniunea Europeană. \r\nOFF Cei doi șefi de state vor deschide, de asemenea, Helsinki Security Forum 2026, organizat de Institutul Finlandez de Afaceri Internaționale. Programul vizitei include și întrevederi cu Prim-ministrul Petteri Orpo și cu Președintele Parlamentului finlandez, Jussi Halla-aho (Iuşi Hala Aho). Maia Sandu va purta discuții și cu mai mulți parlamentari dar și alți oficiali finlandezi. Vizita președintei în Finlanda fusese planificată inițial pentru primăvara acestui an, însă a fost anulată atunci de partea finlandeză din motive medicale.\r\n"
+                }
+            }
+        },
+        {
+            "ScriptOrder": 21,
+            "RecordPointer": {
+                "ListData": {
+                    "Title": "MD MAIA LA HELSINKI OFF-OFF",
+                    "BeginText": "Președintele Maia Sandu a fost primită astăzi la Palatul Prezidențial din Helsinki de președintele Finlandei, Alexander Stubb. Cei doi șefi de stat vor discuta despre relațiile bilaterale, securitatea europeană și procesul de aderare la Uniunea Europeană. \r\nOFF Cei doi șefi de state vor deschide, de asemenea, Helsinki Security Forum 2026, organizat de Institutul Finlandez de Afaceri Internaționale. Programul vizitei include și întrevederi cu Prim-ministrul Petteri Orpo și cu Președintele Parlamentului finlandez, Jussi Halla-aho. Maia Sandu va purta discuții și cu mai mulți parlamentari dar și alți oficiali finlandezi. Vizita președintei în Finlanda fusese planificată inițial pentru primăvara acestui an, însă a fost anulată atunci de partea finlandeză din motive medicale.\r\n"
+                }
+            }
+        }
+    ]
+}

@@ -62,7 +62,10 @@ export const cropExternalImage = createAsyncThunk(
             dispatch(imagesActions.upsertImage(image));
             return image;
         } catch (error: any) {
-            return rejectWithValue(error?.response?.data?.message ?? 'Imaginea nu a putut fi salvată.');
+            const response = error?.response?.data;
+            const validationMessage = response?.errors?.['data.url']?.[0]
+                ?? response?.errors?.['data.section']?.[0];
+            return rejectWithValue(validationMessage ?? response?.message ?? 'Imaginea nu a putut fi salvată.');
         }
     },
 );

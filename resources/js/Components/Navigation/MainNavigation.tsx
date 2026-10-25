@@ -4,10 +4,13 @@ import {Button, Menu, MenuHandler, MenuItem, MenuList, Typography} from '@materi
 import {
     ArrowRightStartOnRectangleIcon,
     ArrowUpTrayIcon,
+    Bars3Icon,
     ChevronDownIcon,
     PhotoIcon,
     QueueListIcon,
     Cog6ToothIcon,
+    PlayCircleIcon,
+    XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ApplicationLogo from '@/Components/UI/Logo/ApplicationLogo';
 import {User} from '@/types';
@@ -19,6 +22,7 @@ interface MainNavigationProps {
 
 const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
     const [menuOpen, setMenuOpen] = useState(false);
+    const [compactNavigationOpen, setCompactNavigationOpen] = useState(false);
     const navigation = [
         {label: 'Playlisturi', href: route('playlists.index'), active: route().current('playlists.*'), icon: QueueListIcon},
         {label: 'Imagini', href: route('images.index'), active: route().current('images.index'), icon: PhotoIcon},
@@ -29,7 +33,17 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
         <>
             <nav className="sticky top-0 z-40 px-3 pt-3 sm:px-5">
                 <div className="glass-nav mx-auto flex h-[68px] w-full items-center justify-between rounded-[24px] px-3 sm:px-4 lg:px-5">
-                    <div className="flex items-center gap-8">
+                    <div className="flex min-w-0 items-center gap-2 sm:gap-3 lg:gap-4">
+                        <button
+                            type="button"
+                            className="compact-navigation-toggle h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[#53627a] transition hover:bg-white/65 hover:text-[#286ee7]"
+                            aria-label={compactNavigationOpen ? 'Închide meniul principal' : 'Deschide meniul principal'}
+                            aria-expanded={compactNavigationOpen}
+                            aria-controls="compact-main-navigation"
+                            onClick={() => setCompactNavigationOpen(open => !open)}
+                        >
+                            {compactNavigationOpen ? <XMarkIcon className="h-5 w-5"/> : <Bars3Icon className="h-5 w-5"/>}
+                        </button>
                         <Link href={route('playlists.index')} className="flex items-center gap-3 rounded-2xl" aria-label="Plasma">
                             <ApplicationLogo className="h-10 w-10"/>
                             <span className="hidden sm:block">
@@ -64,6 +78,18 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                             </MenuHandler>
                             <MenuList className="z-50 min-w-[210px] rounded-[20px] border border-white/80 bg-white/75 p-2 shadow-[0_18px_50px_rgba(42,55,94,0.18)] backdrop-blur-2xl" placeholder={null}>
                                 <MenuItem className="p-0" placeholder={null}>
+                                    <Link href={route('llc.test')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
+                                        <PlayCircleIcon className="h-5 w-5 text-[#286ee7]"/>
+                                        Test LLC
+                                    </Link>
+                                </MenuItem>
+                                <MenuItem className="p-0" placeholder={null}>
+                                    <Link href={route('enps.test')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
+                                        <PlayCircleIcon className="h-5 w-5 text-[#286ee7]"/>
+                                        Test ENPS Web
+                                    </Link>
+                                </MenuItem>
+                                <MenuItem className="p-0" placeholder={null}>
                                     <Link href={route('profile.edit')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
                                         <Cog6ToothIcon className="h-5 w-5 text-[#286ee7]"/>
                                         Setări
@@ -79,16 +105,16 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                         </Menu>
                     </div>
                 </div>
-            </nav>
 
-            <nav className="mobile-main-navigation glass-nav fixed inset-x-3 bottom-3 z-40 grid grid-cols-3 rounded-[24px] px-2 pb-[max(0.5rem,env(safe-area-inset-bottom))] pt-2">
-                {navigation.map(item => (
-                    <Link key={item.label} href={item.href}
-                          className={`flex flex-col items-center gap-1 rounded-2xl py-1.5 text-[11px] font-semibold transition ${item.active ? 'bg-white/65 text-[#286ee7] shadow-sm' : 'text-[#7c899d]'}`}>
-                        <item.icon className="h-6 w-6" strokeWidth={item.active ? 2.2 : 1.7}/>
-                        {item.label}
-                    </Link>
-                ))}
+                {compactNavigationOpen && <div id="compact-main-navigation" className="compact-navigation-menu glass-nav absolute left-3 top-[calc(100%+8px)] z-50 grid min-w-52 gap-1 rounded-[20px] p-2 sm:left-5">
+                    {navigation.map(item => (
+                        <Link key={item.label} href={item.href} onClick={() => setCompactNavigationOpen(false)}
+                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${item.active ? 'bg-white/85 text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/60 hover:text-[#172033]'}`}>
+                            <item.icon className="h-5 w-5"/>
+                            {item.label}
+                        </Link>
+                    ))}
+                </div>}
             </nav>
         </>
     );

@@ -4,9 +4,9 @@ import {Typography} from "@material-tailwind/react";
 const InputError = ({message}: { message: string | undefined }) => {
     return (
         <>
-            {message && (<Typography color="red" variant='small'>
+            {message && (<div role="alert"><Typography color="red" variant='small'>
                 {message}
-            </Typography>)}
+            </Typography></div>)}
         </>
     );
 };

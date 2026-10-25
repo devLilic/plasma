@@ -1,0 +1,328 @@
+{
+  "ReadTime": 19.0,
+  "Actual": "00:02:18",
+  "Estimated": "00:00:00",
+  "HardHitFront": "1800-01-01T00:00:00",
+  "HardHitBack": "1800-01-01T00:00:00",
+  "ActualTimeString": {
+    "Key": "Actual",
+    "Value": "02:18"
+  },
+  "PageNum": null,
+  "EditLocked": false,
+  "EditLockedBy": "ACIULEACU",
+  "DefaultLayout": null,
+  "Loading": false,
+  "ObjectProperties": [
+    {
+      "FieldName": "TextCommands",
+      "FieldValue": {
+        "2bd76102-f797-43a8-93c6-7ca6876ca774": "[<mos><itemID>2</itemID><objID>6707f6b1-5357-4881-8084-11952cb72b3e</objID><itemSlug>01_Titlu</itemSlug><objSlug /><objDur>80</objDur><objTB>25</objTB><created>2026-10-02T12:27:11</created><changed>2026-10-02T12:42:08</changed><mosID>TVRMCG</mosID><mosAbstract>CastaliaCG: 01_Titlu</mosAbstract><abstract>CastaliaCG: 01_Titlu</abstract><itemChannel>1</itemChannel><itemEdStart>0</itemEdStart><itemEdDur>75</itemEdDur><itemTrigger>MANUAL</itemTrigger><mosExternalMetadata><mosScope>PLAYLIST</mosScope><mosSchema>http://MOSA4.com/mos/supported_schemas/MOSAXML2.08</mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\01_Titlu.ccg</projectName><visualPriority>50</visualPriority><editableObject type=\"TEXT\"><name>Titlu</name><value>NIVELUL NISTRULUI S-A STABILIZAT LA STAŢIA COSĂUŢI</value></editableObject><thumbnail /></mosPayload></mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath></objPaths></mos>]",
+        "a5bba0d7-f469-4968-b744-bcc870be3ef5": "[<mos><itemID>3</itemID><objID>4946066f-2947-488b-bf26-7683f1c334b4</objID><itemSlug>02_Nume</itemSlug><objSlug></objSlug><objDur>100</objDur><objTB>25</objTB><created>2026-10-02T12:35:24</created><changed>2026-10-02T12:35:24</changed><mosID>TVRMCG</mosID><mosAbstract>CastaliaCG: 02_Nume</mosAbstract><abstract>CastaliaCG: 02_Nume</abstract><itemChannel>1</itemChannel><itemEdStart>0</itemEdStart><itemEdDur>100</itemEdDur><itemTrigger>MANUAL</itemTrigger><mosExternalMetadata><mosScope>PLAYLIST</mosScope><mosSchema>http://MOSA4.com/mos/supported_schemas/MOSAXML2.08</mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\02_Nume.ccg</projectName><visualPriority>50</visualPriority><editableObject type=\"TEXT\"><name>NUME</name><value>IGOR GROSU</value></editableObject><editableObject type=\"TEXT\"><name>Functie</name><value>preşedintele Parlamentului Republicii Moldova</value></editableObject><thumbnail /></mosPayload></mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath></objPaths></mos>]",
+        "6e378ef7-f977-4125-96b2-50a9d577d99d": "[<mos><itemID>4</itemID><objID>ea3eea47-6810-4463-a291-3006449e55a6</objID><itemSlug>02_Nume</itemSlug><objSlug></objSlug><objDur>100</objDur><objTB>25</objTB><created>2026-10-02T12:35:46</created><changed>2026-10-02T12:35:46</changed><mosID>TVRMCG</mosID><mosAbstract>CastaliaCG: 02_Nume</mosAbstract><abstract>CastaliaCG: 02_Nume</abstract><itemChannel>1</itemChannel><itemEdStart>0</itemEdStart><itemEdDur>100</itemEdDur><itemTrigger>MANUAL</itemTrigger><mosExternalMetadata><mosScope>PLAYLIST</mosScope><mosSchema>http://MOSA4.com/mos/supported_schemas/MOSAXML2.08</mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\02_Nume.ccg</projectName><visualPriority>50</visualPriority><editableObject type=\"TEXT\"><name>NUME</name><value>SERGIU LAZARENCU</value></editableObject><editableObject type=\"TEXT\"><name>Functie</name><value>deputat PAS</value></editableObject><thumbnail /></mosPayload></mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath></objPaths></mos>]",
+        "18d9649e-c0c9-4c43-85f6-416a27d1c204": "[<mos><itemID>5</itemID><objID>fa504b7d-7613-49a1-93b9-8f5a3476378a</objID><itemSlug>02_Nume</itemSlug><objSlug></objSlug><objDur>100</objDur><objTB>25</objTB><created>2026-10-02T12:39:09</created><changed>2026-10-02T12:39:09</changed><mosID>TVRMCG</mosID><mosAbstract>CastaliaCG: 02_Nume</mosAbstract><abstract>CastaliaCG: 02_Nume</abstract><itemChannel>1</itemChannel><itemEdStart>0</itemEdStart><itemEdDur>100</itemEdDur><itemTrigger>MANUAL</itemTrigger><mosExternalMetadata><mosScope>PLAYLIST</mosScope><mosSchema>http://MOSA4.com/mos/supported_schemas/MOSAXML2.08</mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\02_Nume.ccg</projectName><visualPriority>50</visualPriority><editableObject type=\"TEXT\"><name>NUME</name><value>VASILE TARLEV</value></editableObject><editableObject type=\"TEXT\"><name>Functie</name><value>deputat neafiliat</value></editableObject><thumbnail /></mosPayload></mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath></objPaths></mos>]",
+        "3ac59cc7-9fe2-49b2-8dfc-639a4dfc4ffe": "[<mos><itemID>6</itemID><objID>2dda3df6-b0b2-4b9f-aa03-c1f8b180bb11</objID><itemSlug>02_Nume</itemSlug><objSlug /><objDur>100</objDur><objTB>25</objTB><created>2026-10-02T12:39:28</created><changed>2026-10-02T12:41:40</changed><mosID>TVRMCG</mosID><mosAbstract>CastaliaCG: 02_Nume</mosAbstract><abstract>CastaliaCG: 02_Nume</abstract><itemChannel>1</itemChannel><itemEdStart>0</itemEdStart><itemEdDur>100</itemEdDur><itemTrigger>MANUAL</itemTrigger><mosExternalMetadata><mosScope>PLAYLIST</mosScope><mosSchema>http://MOSA4.com/mos/supported_schemas/MOSAXML2.08</mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\02_Nume.ccg</projectName><visualPriority>50</visualPriority><editableObject type=\"TEXT\"><name>NUME</name><value>IGOR DODON</value></editableObject><editableObject type=\"TEXT\"><name>Functie</name><value>liderul PSRM</value></editableObject><thumbnail /></mosPayload></mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath></objPaths></mos>]"
+      }
+    },
+    {
+      "FieldName": "Text",
+      "FieldValue": "<html xmlns=\"http://www.w3.org/1999/xhtml\">\r\n<head><title></title></head>\r\n<body><span class=\"MOS-TVRMCG\" id=\"2bd76102-f797-43a8-93c6-7ca6876ca774\"></span><span class=\"MOS-TVRMCG\" id=\"a5bba0d7-f469-4968-b744-bcc870be3ef5\"></span><span class=\"MOS-TVRMCG\" id=\"6e378ef7-f977-4125-96b2-50a9d577d99d\"></span><span class=\"MOS-TVRMCG\" id=\"18d9649e-c0c9-4c43-85f6-416a27d1c204\"></span><span class=\"MOS-TVRMCG\" id=\"3ac59cc7-9fe2-49b2-8dfc-639a4dfc4ffe\"></span><br /><span id=\"BLACKLINE\"></span><span xml:lang=\"ro-ro\">MD&#160;SITUATIE&#160;NISTRU</span><span><br /><br /></span><span xml:lang=\"ro-ro\">NIVELUL&#160;NISTRULUI&#160;S-A&#160;STABILIZAT&#160;LA&#160;STAŢIA&#160;COSĂUŢI</span><span><br /><br /></span><span xml:lang=\"ro-ro\">INTRO:&#160;</span><br /><span xml:lang=\"ro-ro\">Nivelul&#160;apei&#160;în&#160;zona&#160;stației&#160;de&#160;captare&#160;de&#160;la&#160;Cosăuți,&#160;care&#160;asigură&#160;aprovizionarea&#160;cu&#160;apă&#160;a&#160;municipiului&#160;Bălți&#160;și&#160;a&#160;altor&#160;localități&#160;din&#160;nordul&#160;r&#160;moldova,&#160;s-a&#160;stabilizat.&#160;Autoritățile&#160;precizează&#160;că&#160;există&#160;o&#160;rezervă&#160;de&#160;peste&#160;un&#160;metru&#160;până&#160;la&#160;nivelul&#160;minim&#160;necesar&#160;pentru&#160;funcționarea&#160;stației.&#160;În&#160;contextul&#160;crizei&#160;hidrologice,&#160;deputaţii&#160;din&#160;opoziţie&#160;au&#160;cerut&#160;audierea&#160;ministrului&#160;Gheorghe&#160;Hajder.</span><span><br /><br /></span><span xml:lang=\"ro-ro\">BETA</span><span><br /><br /></span><span xml:lang=\"ro-ro\">AMBIANŢĂ&#160;(brut&#160;vechi&#160;parlament&#160;ftp)</span><br /><span xml:lang=\"ro-ro\">Parlamentul_RM_2026-10-02_11-07-28&#160;-&#160;00012</span><br /><span xml:lang=\"ro-ro\">03.22&#160;-&#160;00:34</span><br /><span xml:lang=\"ro-ro\">Să&#160;vină&#160;ministrul&#160;în&#160;faţă.&#160;Ţine&#160;de&#160;securitatea&#160;apei&#160;şi&#160;să&#160;explice&#160;exact&#160;situaţia&#160;de&#160;pe&#160;Nistru,&#160;pe&#160;Prut,&#160;localitate&#160;cu&#160;localitate.&#160;Ce&#160;se&#160;întâmplă&#160;şi&#160;ce&#160;a&#160;fost&#160;întreprins.&#160;</span><br /><span xml:lang=\"ro-ro\">Parlamentul_RM_2026-10-02_11-07-28&#160;-&#160;00012</span><br /><span xml:lang=\"ro-ro\">03:23&#160;-&#160;03:32</span><br /><span xml:lang=\"ro-ro\">Domnule&#160;Grădinaru,&#160;doamna&#160;Ursu&#160;s-a&#160;adresat&#160;frumos&#160;cu&#160;o&#160;iniţiativă.&#160;Să&#160;îi&#160;spui:&#160;\"La&#160;culcare\",&#160;cumva&#160;nu&#160;e&#160;frumos.</span><span><br /><br /><br /><br /></span><span xml:lang=\"ro-ro\">TEXT:&#160;</span><br /><span xml:lang=\"ro-ro\">Deputaţii&#160;susţin&#160;că,&#160;în&#160;localităţile&#160;de&#160;nord,&#160;riscul&#160;privind&#160;aprovizionarea&#160;cu&#160;apă&#160;este&#160;mai&#160;mic&#160;decât&#160;cel&#160;în&#160;zona&#160;Centru.</span><span><br /><br /></span><span xml:lang=\"ro-ro\">IGOR&#160;GROSU,&#160;preşedintele&#160;Parlamentului&#160;Republicii&#160;Moldova</span><br /><span xml:lang=\"ro-ro\">614_4269</span><br /><span xml:lang=\"ro-ro\">17:53&#160;-&#160;18:08</span><br /><span xml:lang=\"ro-ro\">Problema&#160;principală&#160;în&#160;cazul&#160;Chişinăului&#160;e&#160;staţia:&#160;felul&#160;cum&#160;a&#160;fost&#160;proiectată&#160;staţia&#160;versus&#160;cum&#160;e&#160;la&#160;Soroca.&#160;chiar&#160;dacă&#160;nivelul&#160;apei&#160;a&#160;scăzut,&#160;felul&#160;cum&#160;e&#160;proiectată&#160;şi&#160;construită&#160;staţia,&#160;permite&#160;să&#160;folosim&#160;staţia&#160;chiar&#160;la&#160;un&#160;nivel&#160;mai&#160;scăzut.&#160;&#160;&#160;</span><span><br /><br /></span><span xml:lang=\"ro-ro\">SERGIU&#160;LAZARENCU,&#160;deputat&#160;PAS</span><br /><span xml:lang=\"ro-ro\">614_4275</span><br /><span xml:lang=\"ro-ro\">01.01&#160;-&#160;01:26</span><br /><span xml:lang=\"ro-ro\">Din&#160;păcate&#160;nu&#160;avem&#160;precipitaţii&#160;destule&#160;şi&#160;astăzi&#160;toată&#160;cantitatea&#160;de&#160;apă&#160;care&#160;izvorăşte&#160;din&#160;munţii&#160;Carpaţi&#160;trece&#160;tranzit&#160;prin&#160;lacul&#160;de&#160;la&#160;Novodnistrovsk&#160;şi&#160;vine&#160;spre&#160;Chişinău.&#160;Chiar&#160;şi&#160;această&#160;cantitate&#160;mică&#160;ajunge&#160;pentru&#160;aprovizionarea&#160;locuitorilor&#160;Chişinău.&#160;Este&#160;important&#160;ca&#160;staţia&#160;de&#160;captare&#160;să&#160;o&#160;poată&#160;capta.&#160;Chiar&#160;şi&#160;30&#160;de&#160;metri&#160;cubi&#160;pe&#160;secundă&#160;ajunge&#160;pentru&#160;aprovizionarea&#160;cu&#160;apă&#160;a&#160;cetăţenilor.&#160;&#160;</span><span><br /><br /><br /></span><span xml:lang=\"ro-ro\">VASILE&#160;TARLEV,&#160;deputat&#160;neafiliat</span><br /><span xml:lang=\"ro-ro\">614_4270</span><br /><span xml:lang=\"ro-ro\">05:24&#160;&#160;-&#160;05:40</span><br /><span xml:lang=\"ro-ro\">Situaţia&#160;pe&#160;care&#160;o&#160;avem&#160;azi&#160;e&#160;din&#160;vina&#160;neodaptării&#160;deciziilor&#160;corecte&#160;a&#160;autorităţilor.&#160;În&#160;primul&#160;rând,&#160;dacă&#160;nu&#160;vedeau&#160;o&#160;perspectivă&#160;ce&#160;ţine&#160;de&#160;de&#160;Nistru,&#160;urmau&#160;să&#160;întreprindă&#160;acţiuni&#160;urgente&#160;ca&#160;să&#160;avem&#160;apă&#160;de&#160;la&#160;Prut,&#160;de&#160;la&#160;Dunăre&#160;şi&#160;sondele&#160;arteziene.&#160;&#160;</span><br /><span xml:lang=\"ro-ro\">&#160;</span><br /><span xml:lang=\"ro-ro\">IGOR&#160;DODON,&#160;liderul&#160;PSRM</span><br /><span xml:lang=\"ro-ro\">614_4268</span><br /><span xml:lang=\"ro-ro\">06:23&#160;-&#160;06:40</span><br /><span xml:lang=\"ro-ro\">Noi&#160;am&#160;insistat&#160;şi&#160;am&#160;semnat&#160;ca&#160;demarcarea&#160;frontierei&#160;să&#160;aibă&#160;loc&#160;pe&#160;centrul&#160;Nistrului.&#160;au&#160;venit&#160;guvernele&#160;proeuropene&#160;şi&#160;au&#160;cedat&#160;pe&#160;malul&#160;drept.&#160;de&#160;atunci&#160;au&#160;început&#160;toate&#160;problemele:&#160;construcţii&#160;suplimentare.&#160;De&#160;aceea,&#160;soluţia&#160;ar&#160;fi,&#160;dacă&#160;ucrainenii&#160;sunt&#160;prietenii&#160;noștri,&#160;să&#160;deverseze&#160;mai&#160;multă&#160;apă&#160;de&#160;la&#160;baraj.&#160;mai&#160;sus&#160;de&#160;baraj&#160;acolo&#160;totul&#160;este&#160;bine.&#160;</span><span><br /><br /><br /></span><span xml:lang=\"ro-ro\">TEXT:&#160;</span><br /><span xml:lang=\"ro-ro\">Autorităţile&#160;au&#160;anunţat&#160;că&#160;nivelul&#160;apei&#160;în&#160;lacul&#160;de&#160;acumulare&#160;Novodnistrovsk&#160;a&#160;coborât&#160;sub&#160;pragul&#160;critic&#160;de&#160;111&#160;metri,&#160;in&#160;timp&#160;ce&#160;nivelul&#160;normal&#160;este&#160;de&#160;121,5&#160;metri.&#160;Situația&#160;hidrologică&#160;severă&#160;afectează&#160;și&#160;râul&#160;Prut.&#160;Nivelul&#160;apei&#160;din&#160;lacul&#160;de&#160;acumulare&#160;Costești-Stânca&#160;a&#160;scăzut&#160;semnificativ&#160;în&#160;ultima&#160;lună,&#160;iar&#160;autoritățile&#160;au&#160;decis&#160;să&#160;reducă&#160;debitul&#160;de&#160;apă&#160;evacuat&#160;în&#160;râul&#160;Prut.</span><br /></body></html>"
+    },
+    {
+      "FieldName": "VPContainsRTL",
+      "FieldValue": false
+    },
+    {
+      "FieldName": "Type",
+      "FieldValue": 3
+    },
+    {
+      "FieldName": "Owner",
+      "FieldValue": "ICOBUSCEAN"
+    },
+    {
+      "FieldName": "Creator",
+      "FieldValue": "ICOBUSCEAN"
+    },
+    {
+      "FieldName": "ModBy",
+      "FieldValue": "ACIULEACU"
+    },
+    {
+      "FieldName": "AnchorTime",
+      "FieldValue": "2022-01-13T13:44:29Z"
+    },
+    {
+      "FieldName": "Approved",
+      "FieldValue": true
+    },
+    {
+      "FieldName": "pubApproved",
+      "FieldValue": false
+    },
+    {
+      "FieldName": "Guid",
+      "FieldValue": "5CDB6156-8CB7-4D63-906F-91384A0BDE59"
+    },
+    {
+      "FieldName": "Expires",
+      "FieldValue": "2026-11-01T13:17:47Z"
+    },
+    {
+      "FieldName": "ModTime",
+      "FieldValue": "2026-10-02T14:17:47Z"
+    },
+    {
+      "FieldName": "Priority",
+      "FieldValue": 0
+    },
+    {
+      "FieldName": "Version",
+      "FieldValue": 3
+    },
+    {
+      "FieldName": "Status",
+      "FieldValue": "4"
+    },
+    {
+      "FieldName": "WriteCount",
+      "FieldValue": 29
+    },
+    {
+      "FieldName": "RowModTime",
+      "FieldValue": "2026-10-02T16:40:52Z"
+    },
+    {
+      "FieldName": "FileStorageVersion",
+      "FieldValue": "1"
+    },
+    {
+      "FieldName": "RevisionNumber",
+      "FieldValue": 15.0
+    },
+    {
+      "FieldName": "CreatedDateTime",
+      "FieldValue": "2026-09-29T02:05:27Z"
+    },
+    {
+      "FieldName": "ReadTime",
+      "FieldValue": 19.0
+    },
+    {
+      "FieldName": "MediaTime",
+      "FieldValue": 19.2
+    },
+    {
+      "FieldName": "TextTime",
+      "FieldValue": 0.0
+    },
+    {
+      "FieldName": "SourceReadTime",
+      "FieldValue": 134.0
+    },
+    {
+      "FieldName": "SourceMediaTime",
+      "FieldValue": 0.0
+    },
+    {
+      "FieldName": "SourceTextTime",
+      "FieldValue": 0.0
+    },
+    {
+      "FieldName": "EditLocked",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "EditLockedBy",
+      "FieldValue": "ACIULEACU"
+    },
+    {
+      "FieldName": "EditLockTime",
+      "FieldValue": "2026-10-02T13:11:16Z"
+    },
+    {
+      "FieldName": "LastEditorInfo",
+      "FieldValue": "Edited on .net Client at 10/2/2026 1:11:11 PM"
+    },
+    {
+      "FieldName": "ScriptWordCount",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "SelReadTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "SelSourceReadTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "Locked",
+      "FieldValue": false
+    },
+    {
+      "FieldName": "SelMediaTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "SelTextTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "SelSourceMediaTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "SelSourceTextTime",
+      "FieldValue": "0"
+    },
+    {
+      "FieldName": "LastKbdUsed",
+      "FieldValue": "-257620968"
+    },
+    {
+      "FieldName": "MOSIDs",
+      "FieldValue": "TVRMCG\r\nTVRMCG\r\nTVRMCG\r\nTVRMCG\r\nTVRMCG"
+    },
+    {
+      "FieldName": "MOSObjIDs",
+      "FieldValue": "6707f6b1-5357-4881-8084-11952cb72b3e\r\n4946066f-2947-488b-bf26-7683f1c334b4\r\nea3eea47-6810-4463-a291-3006449e55a6\r\nfa504b7d-7613-49a1-93b9-8f5a3476378a\r\n2dda3df6-b0b2-4b9f-aa03-c1f8b180bb11"
+    },
+    {
+      "FieldName": "MOSSlugs",
+      "FieldValue": "01_Titlu\r\n02_Nume\r\n02_Nume\r\n02_Nume\r\n02_Nume"
+    },
+    {
+      "FieldName": "MOSItemAuto",
+      "FieldValue": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "FieldName": "MOSTest2",
+      "FieldValue": [
+        "",
+        "",
+        "",
+        "",
+        ""
+      ]
+    },
+    {
+      "FieldName": "MOSItemTiming",
+      "FieldValue": "\r\n\r\n\r\n\r\n"
+    },
+    {
+      "FieldName": "MOSChannels",
+      "FieldValue": [
+        "1",
+        "1",
+        "1",
+        "1",
+        "1"
+      ]
+    },
+    {
+      "FieldName": "MOSItemDurations",
+      "FieldValue": "0:03\r\n0:04\r\n0:04\r\n0:04\r\n0:04"
+    },
+    {
+      "FieldName": "MOSItemEdDurations",
+      "FieldValue": "0:03\r\n0:04\r\n0:04\r\n0:04\r\n0:04"
+    },
+    {
+      "FieldName": "MOSAbstracts",
+      "FieldValue": "CastaliaCG: 01_Titlu\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume"
+    },
+    {
+      "FieldName": "MOSObjSlugs",
+      "FieldValue": "CastaliaCG: 01_Titlu\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume\r\nCastaliaCG: 02_Nume"
+    },
+    {
+      "FieldName": "MOSItemIDs",
+      "FieldValue": "2\r\n3\r\n4\r\n5\r\n6"
+    },
+    {
+      "FieldName": "MOSTimes",
+      "FieldValue": "\r\n\r\n\r\n\r\n"
+    },
+    {
+      "FieldName": "MOSItemPaths",
+      "FieldValue": "<objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath>\r\n<objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath>\r\n<objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath>\r\n<objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath>\r\n<objProxyPath techDescription=\"Low resolution preview\">http://10.10.87.51:8888/MOSPlugin/castaliacg.png</objProxyPath>"
+    },
+    {
+      "FieldName": "Actual",
+      "FieldValue": "00:02:18"
+    },
+    {
+      "FieldName": "SystemApprovedBy",
+      "FieldValue": "ACIULEACU "
+    },
+    {
+      "FieldName": "Database",
+      "FieldValue": "TVRMENPS1"
+    },
+    {
+      "FieldName": "Path",
+      "FieldValue": "P_NEWS\\W\\R_71ED7E39-2A80-4E09-A1B5-F04050695B2C"
+    },
+    {
+      "FieldName": "Title",
+      "FieldValue": "MD SITUATIE NISTRU DEPUTATI-BETA"
+    },
+    {
+      "FieldName": "OutputType",
+      "FieldValue": 0
+    },
+    {
+      "FieldName": "UserCanWritePermissions",
+      "FieldValue": true
+    },
+    {
+      "FieldName": "UserCanApprovePermissions",
+      "FieldValue": true
+    },
+    {
+      "FieldName": "UserCanNGApprovePermissions",
+      "FieldValue": true
+    }
+  ],
+  "ListData": {
+    "ENPSDatabase": "TVRMENPS1",
+    "Path": "P_NEWS\\W\\R_71ED7E39-2A80-4E09-A1B5-F04050695B2C",
+    "Guid": "5CDB6156-8CB7-4D63-906F-91384A0BDE59",
+    "ContainerTitle": "TELEJURNAL  1900",
+    "ContainerModTime": "2026-10-02T16:00:00Z",
+    "Title": "MD SITUATIE NISTRU DEPUTATI-BETA",
+    "Type": 3,
+    "Priority": 0,
+    "Approved": true,
+    "OutputType": 0,
+    "Creator": "ICOBUSCEAN",
+    "ModBy": "ACIULEACU",
+    "MosObjId": "",
+    "MosControl": false,
+    "ModTime": "2026-10-02T14:17:47Z",
+    "Expires": "2026-11-01T13:17:47Z",
+    "Owner": "ICOBUSCEAN",
+    "BeginText": "MD SITUATIE NISTRU\r\n\r\nNIVELUL NISTRULUI S-A STABILIZAT LA STAŢIA COSĂUŢI\r\n\r\nINTRO: \r\nNivelul apei în zona stației de captare de la Cosăuți, care asigură aprovizionarea cu apă a municipiului Bălți și a altor localități din nordul r moldova, s-a stabilizat. Autoritățile precizează că există o rezervă de peste un metru până la nivelul minim necesar pentru funcționarea stației. În contextul crizei hidrologice, deputaţii din opoziţie au cerut audierea ministrului Gheorghe Hajder.\r\n\r\nBETA\r\n\r\nAMBIANŢĂ (brut vechi parlament ftp)\r\nParlamentul_RM_2026-10-02_11-07-28 - 00012\r\n03.22 - 00:34\r\nSă vină ministrul în faţă. Ţine de securitatea apei şi să explice exact situaţia de pe Nistru, pe Prut, localitate cu localitate. Ce se întâmplă şi ce a fost întreprins. \r\nParlamentul_RM_2026-10-02_11-07-28 - 00012\r\n03:23 - 03:32\r\nDomnule Grădinaru, doamna Ursu s-a adresat frumos cu o iniţiativă. Să îi spui: \"La culcare\", cumva nu e frumos.\r\n\r\n\r\n\r\nTEXT: \r\nDeputaţii susţin că, în localităţile de nord, riscul pr",
+    "FileStorageVersion": 1
+  },
+  "ObjectLinks": {
+    "LinkedRecords": {
+      "$id": "1",
+      "$values": []
+    }
+  },
+  "SocialMediaLinks": [],
+  "LinkedRecords": [],
+  "ObjectTags": {
+    "Tags": []
+  },
+  "ChatData": [],
+  "IsSearchReturnedResult": false
+}

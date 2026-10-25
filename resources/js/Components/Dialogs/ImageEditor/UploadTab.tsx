@@ -44,7 +44,7 @@ const UploadTab = ({}: UploadTabProps) => {
                     <CheckCircleIcon className="h-5 w-5"/>{uploaded} {uploaded === 1 ? 'imagine încărcată' : 'imagini încărcate'} în bibliotecă
                 </div>
             )}
-            {error && <p className="mt-4 rounded-2xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
+            {error && <p role="alert" className="mt-4 rounded-2xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
         </div>
     );
 };

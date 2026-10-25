@@ -79,7 +79,7 @@ const OldImagesCleanup = () => {
                 </button>
             </div>
 
-            {error && <p className="mx-5 mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
+            {error && <p role="alert" className="mx-5 mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
             {message && <p className="mx-5 mt-4 flex items-center gap-2 rounded-xl bg-[#34c759]/10 px-4 py-3 text-sm text-[#248a3d]"><CheckCircleIcon className="h-5 w-5"/>{message}</p>}
 
             {images === null && !scanning && (

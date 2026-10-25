@@ -115,7 +115,11 @@ class ArticleController extends Controller
 
     private function plainText(string $html): string
     {
-        return html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = html_entity_decode(strip_tags($html), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $text = str_replace(["\u{00A0}", "\u{202F}", "\u{2007}"], ' ', $text);
+        $text = str_replace(["\u{00AD}", "\u{200B}", "\u{FEFF}"], '', $text);
+
+        return str_replace(['\\r\\n', '\\n', '\\r', "\r\n", "\r", "\u{2028}", "\u{2029}"], "\n", $text);
     }
 
     public function destroy(Request $request)

@@ -1,0 +1,10 @@
+{
+    "ObjectProperties": [
+        {
+            "FieldName": "TextCommands",
+            "FieldValue": {
+                "ff00babd-4a0b-4b5d-b654-37433bbe5a33": "[<mos><itemID>2<\/itemID><objID>1302e9df-d85b-44d6-b188-ce0e760a2e4c<\/objID><itemSlug>05_Titlu_Ultima_Ora<\/itemSlug><objSlug><\/objSlug><objDur>80<\/objDur><objTB>25<\/objTB><created>2026-10-03T13:03:58<\/created><changed>2026-10-03T13:03:58<\/changed><mosID>TVRMCG<\/mosID><mosAbstract>CastaliaCG: 05_Titlu_Ultima_Ora<\/mosAbstract><abstract>CastaliaCG: 05_Titlu_Ultima_Ora<\/abstract><itemChannel>1<\/itemChannel><itemEdStart>0<\/itemEdStart><itemEdDur>75<\/itemEdDur><itemTrigger>MANUAL<\/itemTrigger><mosExternalMetadata><mosScope>PLAYLIST<\/mosScope><mosSchema>http:\/\/MOSA4.com\/mos\/supported_schemas\/MOSAXML2.08<\/mosSchema><mosPayload><projectName>{absolute.dir}\\\\10.10.87.50\\Grafica_TVR\\CastaliaCG\\project\\1_Telejurnal\\05_Titlu_Ultima_Ora.ccg<\/projectName><visualPriority>50<\/visualPriority><editableObject type=\"TEXT\"><name>Titlu<\/name><value>RUSIA, APEL LA DIPLOMAŢI ŞI STRĂINI SĂ PĂRĂSEASCĂ KIEVUL<\/value><\/editableObject><editableObject type=\"TEXT\"><name>Titlu scurt<\/name><value>KIEVUL, ŢINTA MOSCOVEI<\/value><\/editableObject><\/mosPayload><\/mosExternalMetadata><objPaths><objProxyPath techDescription=\"Low resolution preview\">http:\/\/10.10.87.51:8888\/MOSPlugin\/castaliacg.png<\/objProxyPath><\/objPaths><\/mos>]"
+            }
+        }
+    ]
+}

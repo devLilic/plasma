@@ -8,13 +8,18 @@ use App\Http\Resources\ImageResource;
 use App\Models\Article;
 use App\Models\Image;
 use App\Models\Playlist;
+use App\Services\Enps\EnpsWebClient;
+use App\Services\Enps\EnpsWebException;
+use App\Services\Enps\EnpsWebSession;
 use App\Services\Images\ImageMatcher;
+use App\Services\Playlists\EnpsPlaylistAdapter;
+use App\Services\Playlists\EnpsPlaylistItems;
+use App\Services\Playlists\PlaylistImporter;
 use App\Services\Playlists\PlaylistSourceStorage;
 use Facades\App\Services\Articles\ArticlesService;
 use Illuminate\Http\Request;
-use Illuminate\Support\Arr;
-use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
 use Throwable;
@@ -67,15 +72,7 @@ class PlaylistsController extends Controller
     ) {
         $file = $request->validated('file');
 
-        $latest_playlists = Playlist::latest()->take(2)->get();
-        $previous_articles = collect();
-        if (count($latest_playlists) == 2) {
-            $previous_articles = $latest_playlists[0]->articles->concat($latest_playlists[1]->articles)->unique(function ($article) {
-                return $article->subtitle;
-            });
-        } elseif (count($latest_playlists) == 1) {
-            $previous_articles = $latest_playlists[0]->articles;
-        }
+        $previous_articles = app(PlaylistImporter::class)->previousArticles();
 
         $content = $request->validated('file')->getContent();
         $articles = ArticlesService::generate($content);
@@ -87,7 +84,7 @@ class PlaylistsController extends Controller
                     'title' => today()->format('d m Y').' '.Str::of($file->getClientOriginalName())->before('.HTM')->toString(),
                     'source_htm_path' => $sourcePath,
                 ]);
-                $this->synchronizeArticles($playlist, $articles, $previous_articles, $imageMatcher);
+                app(PlaylistImporter::class)->synchronizeArticles($playlist, $articles, $previous_articles, $imageMatcher);
 
                 return $playlist;
             });
@@ -103,13 +100,19 @@ class PlaylistsController extends Controller
     }
 
     public function refreshParsing(
+        Request $request,
         Playlist $playlist,
         ImageMatcher $imageMatcher,
         PlaylistSourceStorage $sourceStorage,
+        EnpsWebSession $enpsSession,
     ) {
+        if ($playlist->source_type === 'enps') {
+            return $this->refreshEnpsPlaylist($request, $playlist, $imageMatcher, $sourceStorage, $enpsSession);
+        }
+
         if (! $sourceStorage->exists($playlist)) {
             return back()->withErrors([
-                'playlist' => 'Fișierul HTM sursă nu mai este disponibil pentru acest playlist.',
+                'playlist' => 'Sursa HTM salvată nu mai este disponibilă pentru acest playlist.',
             ]);
         }
 
@@ -117,7 +120,7 @@ class PlaylistsController extends Controller
         $existingArticles = $playlist->articles()->get();
 
         DB::transaction(function () use ($playlist, $articles, $existingArticles, $imageMatcher) {
-            $this->synchronizeArticles(
+            app(PlaylistImporter::class)->synchronizeArticles(
                 $playlist,
                 $articles,
                 $existingArticles,
@@ -126,111 +129,109 @@ class PlaylistsController extends Controller
             );
         });
 
-        return redirect()->route('playlists.show', $playlist)->with('status', 'playlist-parsing-refreshed');
+        return redirect()->route('playlists.show', $playlist)->with('status', 'playlist-refreshed');
     }
 
-    /**
-     * @param  array<int, \App\Services\Articles\Article>  $parsedArticles
-     * @param  Collection<int, Article>  $imageCandidates
-     */
-    private function synchronizeArticles(
+    private function refreshEnpsPlaylist(
+        Request $request,
         Playlist $playlist,
-        array $parsedArticles,
-        Collection $imageCandidates,
         ImageMatcher $imageMatcher,
-        bool $removeMissing = false,
-    ): void {
-        $availableArticles = $playlist->articles()->get()->keyBy('id');
-        $reservedArticleIds = collect($parsedArticles)
-            ->map(fn ($parsedArticle) => $availableArticles
-                ->first(fn (Article $article) => $article->subtitle === $parsedArticle->search_slug)?->id)
-            ->filter()
-            ->unique();
-        $retainedIds = [];
+        PlaylistSourceStorage $sourceStorage,
+        EnpsWebSession $enpsSession,
+    ) {
+        if (blank($playlist->source_enps_database) || blank($playlist->source_enps_path) || blank($playlist->source_enps_guid)) {
+            return back()->withErrors(['playlist' => 'Identificatorii sursei ENPS lipsesc pentru acest playlist.']);
+        }
 
-        foreach ($parsedArticles as $order => $parsedArticle) {
-            $article = $this->matchingArticle(
-                $availableArticles,
-                $parsedArticle->search_slug,
-                $parsedArticle->slugs,
-                $reservedArticleIds,
-            );
-            $imageId = $article?->image_id
-                ?: $this->findImage($imageCandidates, $parsedArticle->search_slug, $parsedArticle->title, $imageMatcher);
-            $attributes = [
-                'title' => $parsedArticle->title,
-                'subtitle' => $parsedArticle->search_slug,
-                'technical_title' => $parsedArticle->technical_title,
-                'slugs' => Arr::join($parsedArticle->slugs, '||'),
-                'intro' => $parsedArticle->content,
-                'content_sections' => $parsedArticle->sections,
-                'article_type' => $parsedArticle->type,
-                'article_types' => $parsedArticle->types,
-                'playlist_order' => $order + 1,
-                'image_id' => $imageId ?: null,
-            ];
-
-            if ($article) {
-                $article->update($attributes);
-                $availableArticles->forget($article->id);
+        $connection = $enpsSession->connectionFromSession($request);
+        $stage = 'connection';
+        try {
+            if ($connection === null || blank($connection['tokens']['nom'] ?? null)) {
+                $client = new EnpsWebClient;
+                $connection = $client->connect();
             } else {
-                $article = $playlist->articles()->create($attributes);
+                $client = $enpsSession->clientFromSession($request);
+                try {
+                    $client->ping($connection['tokens']);
+                } catch (EnpsWebException $exception) {
+                    if ($exception->kind !== 'expired') {
+                        throw $exception;
+                    }
+
+                    $enpsSession->clearSession($request);
+                    $client = new EnpsWebClient;
+                    $connection = $client->connect();
+                }
+            }
+            $stage = 'source';
+            try {
+                $payload = $client->rundownWithBasicContent($connection['tokens'], $playlist->source_enps_database, [
+                    'path' => $playlist->source_enps_path,
+                    'guid' => $playlist->source_enps_guid,
+                ]);
+            } catch (EnpsWebException $exception) {
+                if ($exception->kind !== 'expired') {
+                    throw $exception;
+                }
+
+                $enpsSession->clearSession($request);
+                $client = new EnpsWebClient;
+                $connection = $client->connect();
+                $payload = $client->rundownWithBasicContent($connection['tokens'], $playlist->source_enps_database, [
+                    'path' => $playlist->source_enps_path,
+                    'guid' => $playlist->source_enps_guid,
+                ]);
+            }
+            $connection['cookies'] = $client->cookies();
+            $connection['verifiedAt'] = now()->toIso8601String();
+            $enpsSession->storeSession($request, $connection);
+
+            // Parse and validate the complete response before staging or changing persisted data.
+            $stage = 'parsing';
+            $articles = app(EnpsPlaylistAdapter::class)->articles($payload);
+            $stage = 'snapshot';
+            $newSnapshotPath = $sourceStorage->storeEnpsSnapshot($payload);
+            $previousSnapshotPath = $playlist->source_enps_snapshot_path;
+            $existingArticles = $playlist->articles()->get();
+
+            $stage = 'persistence';
+            try {
+                DB::transaction(function () use ($playlist, $articles, $existingArticles, $imageMatcher, $newSnapshotPath, $payload) {
+                    app(PlaylistImporter::class)->synchronizeArticles(
+                        $playlist,
+                        $articles,
+                        $existingArticles,
+                        $imageMatcher,
+                        removeMissing: true,
+                    );
+                    app(EnpsPlaylistItems::class)->synchronize($playlist, $payload);
+                    $playlist->update(['source_enps_snapshot_path' => $newSnapshotPath]);
+                });
+            } catch (Throwable $exception) {
+                $sourceStorage->deletePath($newSnapshotPath);
+                throw $exception;
             }
 
-            $retainedIds[] = $article->id;
-            if ($imageId) {
-                Image::whereKey($imageId)->update(['last_used_at' => now()]);
+            if ($previousSnapshotPath && $previousSnapshotPath !== $newSnapshotPath) {
+                $sourceStorage->deletePath($previousSnapshotPath);
             }
-        }
-
-        if ($removeMissing) {
-            $playlist->articles()->whereNotIn('id', $retainedIds)->delete();
-        }
-    }
-
-    /** @param  array<int, string>  $slugs */
-    private function matchingArticle(
-        Collection $articles,
-        string $subtitle,
-        array $slugs,
-        Collection $reservedArticleIds,
-    ): ?Article {
-        $exactMatch = $articles->first(fn (Article $article) => $article->subtitle === $subtitle);
-        if ($exactMatch) {
-            return $exactMatch;
-        }
-
-        return $articles->first(function (Article $article) use ($slugs, $reservedArticleIds) {
-            if ($reservedArticleIds->contains($article->id)) {
-                return false;
+        } catch (EnpsWebException $exception) {
+            if ($exception->kind === 'expired') {
+                $enpsSession->clearSession($request);
             }
 
-            $storedSlugs = explode('||', (string) $article->slugs);
+            return back()->withErrors(['playlist' => $exception->getMessage()]);
+        } catch (Throwable $exception) {
+            Log::warning('Refresh ENPS eșuat.', [
+                'playlist_id' => $playlist->id,
+                'stage' => $stage,
+                'exception_type' => get_class($exception),
+            ]);
 
-            return count(array_intersect($storedSlugs, $slugs)) > 0;
-        });
-    }
-
-    private function findImage($previous_articles, string $slug, string $title, ImageMatcher $imageMatcher)
-    {
-        $found_article = $previous_articles
-            ->where('subtitle', $slug)
-            ->first(fn ($article) => $article->image_id !== null);
-        if ($found_article) {
-            return $found_article->image_id;
+            return back()->withErrors(['playlist' => 'Playlistul nu a putut fi actualizat. Datele existente au fost păstrate; încearcă din nou.']);
         }
 
-        $normalizedSlug = collect(explode(' ', trim($slug)))
-            ->filter(fn ($word) => ! (int) $word && strlen($word) > 2)
-            ->implode(' ');
-        $found_article = $previous_articles
-            ->where('subtitle', $normalizedSlug)
-            ->first(fn ($article) => $article->image_id !== null);
-        if ($found_article) {
-            return $found_article->image_id;
-        }
-
-        return $imageMatcher->bestMatch([$title, $slug])?->id;
+        return redirect()->route('playlists.show', $playlist)->with('status', 'playlist-refreshed');
     }
 
     /**
@@ -247,7 +248,10 @@ class PlaylistsController extends Controller
             'playlist' => [
                 'id' => $playlist->id,
                 'title' => $playlist->title,
-                'can_refresh_parsing' => $sourceStorage->exists($playlist),
+                'source_type' => $playlist->source_type,
+                'can_refresh_parsing' => $playlist->source_type === 'enps'
+                    ? filled($playlist->source_enps_database) && filled($playlist->source_enps_path) && filled($playlist->source_enps_guid)
+                    : $sourceStorage->exists($playlist),
             ],
             'articles' => ArticleResource::collection(Article::where('playlist_id', $id)->with('image.tags')->orderBy('playlist_order')->get()),
         ]);

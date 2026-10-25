@@ -11,7 +11,7 @@ class ExternalImageServiceTest extends TestCase
 {
     public function test_download_uses_browser_headers_and_a_same_origin_referer(): void
     {
-        $source = imagecreatetruecolor(160, 90);
+        $source = imagecreatetruecolor(700, 400);
         imagefill($source, 0, 0, imagecolorallocate($source, 30, 90, 170));
         ob_start();
         imagejpeg($source, null, 90);
@@ -37,4 +37,31 @@ class ExternalImageServiceTest extends TestCase
             && ($request->header('Referer')[0] ?? null) === 'https://8.8.8.8/'
         );
     }
+
+    public function test_crop_rejects_images_below_the_minimum_quality_dimensions(): void
+    {
+        $source = imagecreatetruecolor(699, 400);
+        ob_start();
+        imagejpeg($source, null, 90);
+        $jpeg = (string) ob_get_clean();
+        imagedestroy($source);
+
+        Http::fake([
+            'https://8.8.8.8/*' => Http::response($jpeg, 200, ['Content-Type' => 'image/jpeg']),
+        ]);
+
+        try {
+            app(ExternalImageService::class)->crop(
+                'https://8.8.8.8/path/photo.jpg',
+                ['x' => 0, 'y' => 0, 'width' => 100, 'height' => 100],
+            );
+            $this->fail('Small images should be rejected.');
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            $this->assertSame(
+                'Imaginea este prea mică. Folosește o imagine de minimum 700 × 400 px.',
+                $exception->errors()['data.url'][0],
+            );
+        }
+    }
+
 }

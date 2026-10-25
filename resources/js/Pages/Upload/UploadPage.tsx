@@ -47,7 +47,7 @@ const UploadPage = ({auth}: PageProps) => {
                 <div className="mx-auto grid max-w-4xl gap-5 md:grid-cols-[minmax(0,1fr)_280px]">
                     <section className="ios-card p-5 sm:p-8">
                         <UploadButton title={uploading ? 'Se încarcă…' : 'Alege imagini'} description="JPG, PNG sau WebP • poți selecta mai multe fișiere" accept="image/jpeg,image/png,image/webp" multiple handleChange={handleChange}/>
-                        {error && <p className="mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
+                        {error && <p role="alert" className="mt-4 rounded-xl bg-[#ff3b30]/10 px-4 py-3 text-sm text-[#ff3b30]">{error}</p>}
                         {selectedNames.length > 0 && (
                             <div className="mt-5 divide-y divide-[#71809a]/10 overflow-hidden rounded-2xl bg-white/45 ring-1 ring-white/70">
                                 {selectedNames.map(name => (

@@ -1,0 +1,59 @@
+{
+    "text": "\n\nMD AMBASADOR RUS CONVOCAT \n\nOZEROV, DESPRE NOILE INCIDENTE: \"CALM, FĂRĂ ISTERIE\"\n\nA DOUA NOTĂ DE PROTEST ÎNTR-O SĂPTĂMÂNĂ\n\nINTRO\n\nDupă incidentele cu drone și rachete din această dimineaţă, ambasadorul agreat al Rusiei în Republica Moldova a fost convocat astăzi la Ministerulul Afacerilor Externe de la Chişinău. Lui Oleg Ozerov i-a fost înmânată o nouă notă de protest. Este a doua oară în doar trei zile când diplomatul rus este chemat la MAE din cauza incidentelor aeriene. \n\n\nTEXT: Ambasardoul agreat al Federaţiei Ruse în Republica Moldova, Oleg Ozerov, spune că va transmite nota de protest la Moscova, dar insistă ca originea aparatelor să fie stabilită în urma unei anchete. \n\nOLEG OZEROV, ambasadorul agreat al Rusiei în Republica Moldova\n\\\\10.10.87.17\\Reporter_Stiri\\OCTOMBRIE\\03\\ambasador rus \n\n T.C. 00:30 - 00:45 MUSCĂ 00:14 - 00:20\n\nTITRE: (montaj: insist să punem cu întrebarea noastră)\n- Atunci, vă rog să menționați, în mod concret, ce dovezi ar considera partea rusă suficiente? \n- Nu vorbim despre asta. Acest lucru ar trebui discutat de experți și specialiști, care ar trebui să se adune la aceeaşi masă. Este vorba despre o investigare calmă a acestor incidente, fără isterie.\n\nTEXT Cu doar două zile în urmă, Ozerov fusese convocat după alte trei survoluri neautorizate. Ieri, întrebat dacă diplomatul rus ar putea fi expulzat, președintele Parlamentului, Igor Grosu, a răspuns că, cităm:  \"totul este posibil\".  Pe de altă parte, întrebat dacă se simte în siguranță în Republica Moldova, Ozerov a spus că e, cităm: confortabil. Am insistat să ne spună cum s-ar simți dacă o dronă ar cădea sau ar trece deasupra Ambasadei Rusiei la Chişinău.\n\nOLEG OZEROV, ambasadorul agreat al Rusiei în Republica Moldova\n T.C. 01:49 - 01:59 MUSCĂ 02:03 - 02:06\n\nTITRE: Nu știu. Vorbiți despre situații ipotetice, puțin probabil să se întâmple. Și chiar dacă s-ar întâmpla… Revin la ceea ce am spus de la început: trebuie făcută o investigație. \n\nTEXT De la începutul războiului pornit de Rusia în Ucraina, autorităţile de la Chişinău au înreigstrat peste 85 de survoluri ilegale în spaţiul aertian al Republicii Moldova. Iar de la începutul anului 2026 au fost 44 de incidente de acest fel. \n\n \n\nREPORTER: CARINA MULLER \nImagine: Vadim Verbnîi \n",
+    "objects": [
+        {
+            "slug": "03_Titlu_Breaking_News",
+            "commandId": "30f83165-54a1-4aaa-b5c4-c728646c4999",
+            "editableObjects": [
+                {
+                    "name": "Titlu",
+                    "type": "TEXT",
+                    "value": "OLEG OZEROV, DESPRE NOILE INCIDENTE: \"CALM, FĂRĂ ISTERIE\""
+                }
+            ]
+        },
+        {
+            "slug": "03_Titlu_Breaking_News",
+            "commandId": "c84332ad-2649-4964-bacd-4f76177e6855",
+            "editableObjects": [
+                {
+                    "name": "Titlu",
+                    "type": "TEXT",
+                    "value": "A DOUA NOTĂ DE PROTEST ÎNTR-O SĂPTĂMÂNĂ"
+                }
+            ]
+        },
+        {
+            "slug": "04_Nume_Breaking_News",
+            "commandId": "3d19543f-02b6-482d-9c76-007f9a45cfe9",
+            "editableObjects": [
+                {
+                    "name": "NUME",
+                    "type": "TEXT",
+                    "value": "OLEG OZEROV"
+                },
+                {
+                    "name": "Functie",
+                    "type": "TEXT",
+                    "value": "ambasadorul agreat al Rusiei în Republica Moldova"
+                }
+            ]
+        },
+        {
+            "slug": "04_Nume_Breaking_News",
+            "commandId": "c705fade-24f8-4995-a4db-ecb115cf9468",
+            "editableObjects": [
+                {
+                    "name": "NUME",
+                    "type": "TEXT",
+                    "value": "REPORTER: CARINA MULLER "
+                },
+                {
+                    "name": "Functie",
+                    "type": "TEXT",
+                    "value": "Imagine: Vadim Verbnîi "
+                }
+            ]
+        }
+    ]
+}

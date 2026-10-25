@@ -6,9 +6,11 @@ import { Head } from '@inertiajs/react';
 import { PageProps } from '@/types';
 import OldImagesCleanup from './Partials/OldImagesCleanup';
 import ImageStorageSettings from './Partials/ImageStorageSettings';
+import ImageQualitySettings from './Partials/ImageQualitySettings';
 import PlaylistTitleExclusionsSettings from './Partials/PlaylistTitleExclusionsSettings';
+import OSConSettings, {type OSConSettingsData} from './Partials/OSConSettings';
 
-export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, playlistTitleExclusions }: PageProps<{ mustVerifyEmail: boolean, status?: string, imageStoragePath: string, playlistTitleExclusions: string[] }>) {
+export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, imageMinimumDimensions, playlistTitleExclusions, osconSettings }: PageProps<{ mustVerifyEmail: boolean, status?: string, imageStoragePath: string, imageMinimumDimensions: {width: number; height: number}, playlistTitleExclusions: string[], osconSettings: OSConSettingsData }>) {
     return (
         <AuthenticatedLayout
             user={auth.user}
@@ -23,7 +25,9 @@ export default function Edit({ auth, mustVerifyEmail, status, imageStoragePath, 
                         <p className="ios-subtitle">Gestionează biblioteca media, datele contului și securitatea.</p>
                     </div>
                     <PlaylistTitleExclusionsSettings initialTerms={playlistTitleExclusions}/>
+                    <OSConSettings settings={osconSettings}/>
                     <ImageStorageSettings initialPath={imageStoragePath}/>
+                    <ImageQualitySettings initialDimensions={imageMinimumDimensions}/>
                     <OldImagesCleanup />
                     <div className="ios-card p-5 sm:p-8">
                         <UpdateProfileInformationForm

@@ -19,6 +19,8 @@ class Article extends Model
         'content_sections',
         'article_type',
         'article_types',
+        'enps_marker_color',
+        'mos_objects',
         'playlist_id',
         'playlist_order',
         'image_id',
@@ -27,6 +29,7 @@ class Article extends Model
     protected $casts = [
         'article_types' => 'array',
         'content_sections' => 'array',
+        'mos_objects' => 'array',
     ];
 
     public function playlist(): BelongsTo

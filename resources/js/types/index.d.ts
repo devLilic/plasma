@@ -17,14 +17,48 @@ export interface Playlist {
     id: number
     title: string
     can_refresh_parsing?: boolean
+    source_type?: 'htm' | 'enps'
 }
 
-export type ArticleType = "BETA" | "OFF" | "TEASE" | "METEO" | "CURS" | "LIVE" | "FAKE" | "HEADER"
+export type ArticleType = "BETA" | "OFF" | "TEASE" | "METEO" | "CURS" | "LIVE" | "FAKE" | "HEADER" | "INTRO" | "SNC" | "SINCRON" | "AMB" | "TEXT"
 
 export interface ArticleSection {
     slug: string
     type: string
     paragraphs: string[]
+}
+
+export type MosFieldRole = 'title' | 'short_title' | 'value'
+
+export interface MosEditableObject {
+    type: string
+    name: string
+    value: string
+    role: MosFieldRole
+    fieldKey?: string | null
+    importedValue?: string
+    isOverridden?: boolean
+    sourceChanged?: boolean
+}
+
+export interface MosObject {
+    commandId: string
+    slug: string
+    playbackState?: 'active' | 'paused' | 'stopped'
+    editableObjects: MosEditableObject[]
+    objectKey?: string
+    memberObjectKeys?: string[]
+    revision?: string
+    editable?: boolean
+}
+
+export interface MosTimelineEntry {
+    kind: 'mos' | 'vox'
+    position: number | null
+    sourceLine: number | null
+    count: number | null
+    object: MosObject | null
+    snippet: string
 }
 
 export interface Article {
@@ -38,6 +72,9 @@ export interface Article {
     content_sections: ArticleSection[]
     article_type: ArticleType
     article_types: ArticleType[]
+    mos_objects?: MosObject[]
+    mos_timeline?: MosTimelineEntry[]
+      enps_marker_color?: "yellow" | "red" | "green" | null
     playlist_id: number
     playlist_order: number
     image: Image | null

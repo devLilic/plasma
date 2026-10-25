@@ -6,6 +6,7 @@ use App\Models\Article;
 use App\Services\Images\ImageStorage;
 use App\Services\PlasmaViewer\PlasmaViewerClient;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Response;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\Str;
@@ -19,12 +20,30 @@ class PlasmaViewerController extends Controller
         return $this->respond(fn () => $client->state());
     }
 
+    public function defaultImage(PlasmaViewerClient $client): Response|JsonResponse
+    {
+        try {
+            $image = $client->defaultImage();
+            if (! $image) return response()->json(['error' => 'Imaginea implicită PlasmaViewer nu este configurată.'], 404);
+
+            return response($image['body'], 200, [
+                'Content-Type' => $image['contentType'],
+                'Cache-Control' => 'no-store',
+                'X-Content-Type-Options' => 'nosniff',
+            ]);
+        } catch (Throwable $error) {
+            report($error);
+            $status = $error instanceof HttpExceptionInterface ? $error->getStatusCode() : 503;
+            return response()->json(['error' => $error->getMessage()], $status);
+        }
+    }
+
     public function command(Request $request, PlasmaViewerClient $client): JsonResponse
     {
         $data = $request->validate([
-            'type' => ['required', 'in:show,transform,hide,disconnect-outputs,window,reset-transform'],
-            'article_id' => ['required_if:type,show', 'integer', 'exists:articles,id'],
-            'transform' => ['required_if:type,show,transform', 'array'],
+            'type' => ['required', 'in:show,show-default,transform,hide,disconnect-outputs,window,reset-transform'],
+            'article_id' => ['required_if:type,show,show-default', 'integer', 'exists:articles,id'],
+            'transform' => ['required_if:type,show,show-default,transform', 'array'],
             'transform.brightness' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.contrast' => ['required_with:transform', 'numeric', 'between:0,200'],
             'transform.saturation' => ['required_with:transform', 'numeric', 'between:0,200'],
@@ -51,6 +70,7 @@ class PlasmaViewerController extends Controller
 
         $payload = match ($data['type']) {
             'show' => $this->showPayload(Article::with('image')->findOrFail($data['article_id']), $data['transform']),
+            'show-default' => $this->showDefaultPayload(Article::findOrFail($data['article_id']), $data['transform']),
             'transform' => $data['transform'],
             'window' => $data['window'],
             default => (object) [],
@@ -86,6 +106,15 @@ class PlasmaViewerController extends Controller
                 ]),
                 'source' => $localSource,
             ],
+            'transform' => $transform,
+        ];
+    }
+
+    private function showDefaultPayload(Article $article, array $transform): array
+    {
+        return [
+            'articleId' => $article->id,
+            'title' => $article->title ?: $article->subtitle,
             'transform' => $transform,
         ];
     }
