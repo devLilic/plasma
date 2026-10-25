@@ -46,7 +46,7 @@ const ImageEditorDialog = ({isOpen, handleDialog}: ImageEditorDialogProps) => {
                 </div>
             </DialogHeader>
             <DialogBody className="!min-h-0 !overflow-x-hidden !p-3 sm:!p-5">
-                <ImageEditorContent onImageSelected={handleDialog}/>
+                <ImageEditorContent article={article} onImageSelected={handleDialog}/>
             </DialogBody>
             <DialogFooter className="!justify-end">
                 <button type="button" onClick={handleDialog} className="ios-secondary-button">Închide</button>

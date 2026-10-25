@@ -5,14 +5,18 @@ import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectAllImages} from '@/Store/image/image.slice';
 import {selectArticleById} from '@/Store/article/article.slice';
 import {rankImagesForArticle} from '@/Utils/imageRelevance';
+import {Article} from '@/types';
 
 interface ImagesListProps {
-    handleDialog: () => void
+    article?: Article
+    articleId?: number
+    onImageSelected: () => void
 }
 
-const ImagesList = ({handleDialog}: ImagesListProps) => {
+const ImagesList = ({article: suppliedArticle, articleId, onImageSelected}: ImagesListProps) => {
     const images = useTypedSelector(selectAllImages);
-    const article = useTypedSelector(state => selectArticleById(state, state.articles.current));
+    const selectedArticle = useTypedSelector(state => selectArticleById(state, state.articles.current));
+    const article = suppliedArticle ?? selectedArticle;
     const rankedImages = useMemo(() => rankImagesForArticle(images, article), [images, article]);
     if (!rankedImages.length) {
         return (
@@ -23,7 +27,7 @@ const ImagesList = ({handleDialog}: ImagesListProps) => {
             </div>
         );
     }
-    return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{rankedImages.map(image => <ImageItem key={image.id} imageId={image.id} handleDialog={handleDialog}/>)}</div>;
+    return <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">{rankedImages.map(image => <ImageItem key={image.id} imageId={image.id} articleId={articleId ?? article?.id ?? 0} onImageSelected={onImageSelected}/>)}</div>;
 };
 
 export default ImagesList;

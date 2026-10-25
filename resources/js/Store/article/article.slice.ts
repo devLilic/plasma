@@ -50,8 +50,8 @@ export const articlesSlice = createSlice({
         setCurrent: (state, action: PayloadAction<{ id: number }>) => {
             state.current = action.payload.id
         },
-        setBackgroundImage: (state, action: PayloadAction<Image>) => {
-            articlesAdapter.updateOne(state, {id: state.current, changes: {image: action.payload}})
+        setLocalBackgroundImage: (state, action: PayloadAction<{articleId: number, image: Image}>) => {
+            articlesAdapter.updateOne(state, {id: action.payload.articleId, changes: {image: action.payload.image}})
         },
         removeBackground: articlesAdapter.updateOne,
         changeNewArticleTitle: (state, action: PayloadAction<string>) => {

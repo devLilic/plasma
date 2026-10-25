@@ -7,20 +7,25 @@ import UploadTab from '@/Components/Dialogs/ImageEditor/UploadTab';
 import Tab from '@/Components/Material/Tab';
 import TabsHeader from '@/Components/Material/TabHeader';
 import TabsBody from '@/Components/Material/TabsBody';
+import {Article} from '@/types';
 
 interface ImageEditorContentProps {
     onImageSelected?: () => void
+    article: Article
+    initialTab?: 'external' | 'local' | 'upload'
+    allowUpload?: boolean
+    autoFocusLibrarySearch?: boolean
 }
 
-const ImageEditorContent = ({onImageSelected = () => undefined}: ImageEditorContentProps) => {
+const ImageEditorContent = ({onImageSelected = () => undefined, article, initialTab = 'external', allowUpload = true, autoFocusLibrarySearch = false}: ImageEditorContentProps) => {
     const tabs = [
         {value: 'external', label: 'Internet', icon: GlobeAltIcon},
         {value: 'local', label: 'Bibliotecă', icon: PhotoIcon},
-        {value: 'upload', label: 'Încarcă', icon: ArrowUpTrayIcon},
-    ];
+        ...(allowUpload ? [{value: 'upload' as const, label: 'Încarcă', icon: ArrowUpTrayIcon}] : []),
+    ] as const;
 
     return (
-        <Tabs value="external">
+        <Tabs value={initialTab}>
             <TabsHeader className="!mx-auto !mb-5 !max-w-xl !rounded-[16px] !border !border-white/60 !bg-white/30 !p-1"
                         indicatorProps={{className: 'rounded-[12px] bg-white/90 shadow-[0_5px_16px_rgba(54,73,115,0.1)] ring-1 ring-white'}}>
                 {tabs.map(item => (
@@ -32,9 +37,9 @@ const ImageEditorContent = ({onImageSelected = () => undefined}: ImageEditorCont
                 ))}
             </TabsHeader>
             <TabsBody>
-                <TabPanel value="external" className="!p-0"><GoogleTab handleModal={onImageSelected}/></TabPanel>
-                <TabPanel value="local" className="!p-0"><LocalTab handleModal={onImageSelected}/></TabPanel>
-                <TabPanel value="upload" className="!p-0"><UploadTab handleModal={onImageSelected}/></TabPanel>
+                <TabPanel value="external" className="!p-0"><GoogleTab article={article} onImageSelected={onImageSelected}/></TabPanel>
+                <TabPanel value="local" className="!p-0"><LocalTab article={article} onImageSelected={onImageSelected} autoFocusSearch={autoFocusLibrarySearch}/></TabPanel>
+                {allowUpload && <TabPanel value="upload" className="!p-0"><UploadTab handleModal={onImageSelected}/></TabPanel>}
             </TabsBody>
         </Tabs>
     );

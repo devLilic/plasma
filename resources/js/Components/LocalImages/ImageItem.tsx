@@ -2,22 +2,26 @@ import React from 'react';
 import TagsList from '@/Components/LocalImages/TagsList';
 import {useTypedSelector} from '@/Hooks/useTypedSelector';
 import {selectImageById} from '@/Store/image/image.slice';
-import {useActions} from '@/Hooks/useActions';
 import ImageWithLoader from '@/Components/UI/ImageWithLoader';
+import {useDispatch} from 'react-redux';
+import {AppDispatch} from '@/Store/store';
+import {setBackgroundImage} from '@/Store/article/article.slice';
 
 interface ImageItemProps {
     imageId: number
-    handleDialog: () => void
+    articleId: number
+    onImageSelected: () => void
 }
 
-const ImageItem = ({imageId, handleDialog}: ImageItemProps) => {
+const ImageItem = ({imageId, articleId, onImageSelected}: ImageItemProps) => {
     const image = useTypedSelector(state => selectImageById(state, imageId));
-    const articleId = useTypedSelector(state => state.articles.current);
-    const {setBackgroundImage} = useActions();
-    const selectImage = () => {
-        setBackgroundImage({article_id: articleId, image_id: imageId});
-        handleDialog();
+    const dispatch = useDispatch<AppDispatch>();
+    const selectImage = async () => {
+        await dispatch(setBackgroundImage({article_id: articleId, image_id: imageId})).unwrap();
+        onImageSelected();
     };
+
+    if (!image) return null;
 
     return (
         <button type="button" onClick={selectImage} className="liquid-media-tile group flex h-full flex-col items-stretch justify-start overflow-hidden rounded-[20px] text-left ring-[#2878ff] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-transparent">
