@@ -3,6 +3,7 @@ import axios from 'axios';
 import {useEffect, useMemo, useState} from 'react';
 import {ArrowPathIcon, ExclamationCircleIcon, XMarkIcon} from '@heroicons/react/24/outline';
 import {router} from '@inertiajs/react';
+import {ENPS_PLAYLIST_QUICK_FILTERS, filterEnpsPlaylists} from '@/Components/Playlist/enpsPlaylistSearch';
 
 type EnpsPlaylist = {
     title: string;
@@ -40,10 +41,7 @@ const EnpsPlaylistImportDialog = ({isOpen, onClose}: Props) => {
     const [duplicate, setDuplicate] = useState<{playlist: EnpsPlaylist; existing: ExistingPlaylist} | null>(null);
     const [selected, setSelected] = useState<EnpsPlaylist | null>(null);
 
-    const visiblePlaylists = useMemo(() => {
-        const query = search.trim().toLocaleLowerCase('ro');
-        return query ? playlists.filter(playlist => playlist.title.toLocaleLowerCase('ro').includes(query)) : playlists;
-    }, [playlists, search]);
+    const visiblePlaylists = useMemo(() => filterEnpsPlaylists(playlists, search), [playlists, search]);
 
     useEffect(() => {
         if (!isOpen) return;
@@ -148,9 +146,21 @@ const EnpsPlaylistImportDialog = ({isOpen, onClose}: Props) => {
                                 </div>
                             ) : (
                                 <>
-                                    <div className="mb-4 flex flex-col gap-3 sm:flex-row">
-                                        <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Caută un playlist…" aria-label="Caută un playlist ENPS"
-                                               className="ios-search min-w-0 flex-1" disabled={loading || importing}/>
+                                    <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-start">
+                                        <div className="flex min-w-0 flex-1 flex-col gap-2">
+                                            <input value={search} onChange={event => setSearch(event.target.value)} placeholder="Caută un playlist…" aria-label="Caută un playlist ENPS"
+                                                   className="ios-search min-w-0" disabled={loading || importing}/>
+                                            <div role="group" aria-label="Filtre rapide pentru playlisturi" className="flex flex-wrap gap-1.5">
+                                                {ENPS_PLAYLIST_QUICK_FILTERS.map(filter => {
+                                                    const isActive = search.trim().toLocaleLowerCase('ro') === filter.toLocaleLowerCase('ro');
+                                                    return <button key={filter} type="button" onClick={() => setSearch(filter)} disabled={loading || importing}
+                                                                   aria-pressed={isActive}
+                                                                   className={`min-h-8 rounded-full border px-3 py-1 text-xs font-semibold transition disabled:cursor-wait disabled:opacity-50 ${isActive ? 'border-[#286ee7]/30 bg-[#286ee7]/10 text-[#286ee7]' : 'border-[#71809a]/20 bg-white/75 text-[#53627a] hover:border-[#286ee7]/30 hover:text-[#286ee7]'}`}>
+                                                        {filter}
+                                                    </button>;
+                                                })}
+                                            </div>
+                                        </div>
                                         <button type="button" onClick={refreshCatalog} disabled={loading || refreshing || importing}
                                                 className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-[#71809a]/20 bg-white/75 px-4 text-sm font-semibold text-[#286ee7] disabled:cursor-wait disabled:opacity-50">
                                             <ArrowPathIcon className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`}/>{refreshing ? 'Se actualizează…' : 'Reîncarcă'}
