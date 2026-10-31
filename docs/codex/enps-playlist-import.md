@@ -12,7 +12,7 @@ Pagina playlistului are acum fluxul operațional [Pregătire / LIVE](playlist-li
 
 - Pagina `/playlists` nu inițiază conexiuni ENPS la încărcare.
 - Acțiunea principală este **Importă din ENPS**. Opțiunea de import HTM rămâne secundară și disponibilă.
-- Conectarea ENPS și citirea catalogului au loc numai în modalul de import, deschis explicit de utilizator. Lista poate fi căutată și reîncărcată. Sub căutare sunt butoane de filtru rapid (`1300`, `1900`, `sport`, `weekend`) care completează câmpul; filtrarea locală rămâne parțială și fără diferență de majuscule/minuscule.
+- Conectarea ENPS și citirea catalogului au loc numai în modalul de import, deschis explicit de utilizator. Lista poate fi căutată și reîncărcată. Sub căutare sunt butoane de filtru rapid (`1300`, `1900`, `sport`, `weekend`, `Retrospectiva`, `Impact Global`) care completează câmpul; filtrarea locală rămâne parțială și fără diferență de majuscule/minuscule.
 - Acțiunile ENPS și HTM stau compact pe același rând când spațiul permite; ENPS are vizual prioritate, HTM rămâne alternativa secundară.
 - Fiecare rând de catalog afișează titlul și dedesubt data/ora fără prefixul „Data și ora:”, cu contrast suficient. Valoarea `workAt` este derivată din câmpurile de dată/oră ale înregistrării ENPS, cu fallback la data/ora dintre parantezele pătrate din titlu; este interpretată în `ENPS_WEB_TIMEZONE` (implicit `Europe/Chisinau`).
 - Selectarea unui playlist nou începe importul. Modalul arată progresul; erorile operaționale apar în notificarea globală din colțul din dreapta jos, iar modalul rămâne disponibil pentru o nouă încercare. La succes se închide și aplicația deschide `/playlists/{id}`.

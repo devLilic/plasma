@@ -18,12 +18,13 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
         const recentMessages = new Map<string, number>();
 
         const addToast = (message: string, type: ToastType = 'error') => {
+            const dedupeKey = `${type}:${message}`;
             const now = Date.now();
             recentMessages.forEach((seenAt, seenMessage) => {
                 if (now - seenAt >= 10000) recentMessages.delete(seenMessage);
             });
-            if (now - (recentMessages.get(message) || 0) < 2500) return;
-            recentMessages.set(message, now);
+            if (now - (recentMessages.get(dedupeKey) || 0) < 2500) return;
+            recentMessages.set(dedupeKey, now);
             setToasts(current => [...current, {id: ++nextId.current, message, type}]);
         };
 
@@ -40,7 +41,7 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
 
                 if (element.dataset.plasmaToastMessage === message) return;
                 element.dataset.plasmaToastMessage = message;
-                addToast(message);
+                addToast(message, element.dataset.plasmaToastType === 'success' ? 'success' : 'error');
             });
         };
 
