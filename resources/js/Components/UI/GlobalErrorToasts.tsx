@@ -1,11 +1,14 @@
 import {useEffect, useRef, useState, type ReactNode} from 'react';
 import {createPortal} from 'react-dom';
-import {ExclamationCircleIcon, XMarkIcon} from '@heroicons/react/24/outline';
+import {CheckCircleIcon, ExclamationCircleIcon, XMarkIcon} from '@heroicons/react/24/outline';
 
 interface ToastMessage {
     id: number
     message: string
+    type: ToastType
 }
+
+type ToastType = 'error' | 'success';
 
 export function GlobalErrorToasts({children}: {children: ReactNode}) {
     const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -14,14 +17,14 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
     useEffect(() => {
         const recentMessages = new Map<string, number>();
 
-        const addToast = (message: string) => {
+        const addToast = (message: string, type: ToastType = 'error') => {
             const now = Date.now();
             recentMessages.forEach((seenAt, seenMessage) => {
                 if (now - seenAt >= 10000) recentMessages.delete(seenMessage);
             });
             if (now - (recentMessages.get(message) || 0) < 2500) return;
             recentMessages.set(message, now);
-            setToasts(current => [...current, {id: ++nextId.current, message}]);
+            setToasts(current => [...current, {id: ++nextId.current, message, type}]);
         };
 
         const collectAlerts = () => {
@@ -42,8 +45,9 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
         };
 
         const collectToastEvent = (event: Event) => {
-            const message = (event as CustomEvent<{message?: string}>).detail?.message?.trim();
-            if (message) addToast(message);
+            const detail = (event as CustomEvent<{message?: string; type?: ToastType}>).detail;
+            const message = detail?.message?.trim();
+            if (message) addToast(message, detail?.type === 'success' ? 'success' : 'error');
         };
 
         const observer = new MutationObserver(collectAlerts);
@@ -68,8 +72,10 @@ export function GlobalErrorToasts({children}: {children: ReactNode}) {
 
     return <>{children}{toasts.length > 0 && createPortal(
         <div className="global-error-toasts" aria-label="Erori recente" aria-live="assertive" aria-relevant="additions text">
-            {toasts.map(toast => <div className="global-error-toast" role="alert" key={toast.id}>
-                <ExclamationCircleIcon className="global-error-toast-icon" aria-hidden="true"/>
+            {toasts.map(toast => <div className={`global-error-toast global-error-toast--${toast.type}`} role="alert" key={toast.id}>
+                {toast.type === 'success'
+                    ? <CheckCircleIcon className="global-error-toast-icon" aria-hidden="true"/>
+                    : <ExclamationCircleIcon className="global-error-toast-icon" aria-hidden="true"/>}
                 <p>{toast.message}</p>
                 <button type="button" aria-label="Închide notificarea" onClick={() => dismiss(toast.id)}><XMarkIcon className="h-4 w-4"/></button>
             </div>)}

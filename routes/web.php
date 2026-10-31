@@ -1,7 +1,6 @@
 <?php
 
 use App\Http\Controllers\EnpsPlaylistImportController;
-use App\Http\Controllers\EnpsTestController;
 use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\ImageStorageSettingsController;
 use App\Http\Controllers\ImageQualitySettingsController;
@@ -18,7 +17,6 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\StoredImageController;
 use App\Http\Controllers\StoredImageThumbnailController;
 use Illuminate\Support\Facades\Route;
-use Inertia\Inertia;
 
 /*
 |--------------------------------------------------------------------------
@@ -50,13 +48,6 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'verified'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/llc-test', fn () => Inertia::render('LLC/TestPage'))->name('llc.test');
-    Route::get('/enps-test', [EnpsTestController::class, 'index'])->name('enps.test');
-    Route::post('/enps-test/connect', [EnpsTestController::class, 'connect'])->name('enps.connect');
-    Route::post('/enps-test/ping', [EnpsTestController::class, 'ping'])->name('enps.ping');
-    Route::post('/enps-test/playlist-content', [EnpsTestController::class, 'playlistContent'])->name('enps.playlist-content');
-    Route::post('/enps-test/refresh-playlists', [EnpsTestController::class, 'refreshPlaylists'])->name('enps.refresh-playlists');
-    Route::post('/enps-test/disconnect', [EnpsTestController::class, 'disconnect'])->name('enps.disconnect');
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -79,6 +70,10 @@ Route::middleware('auth')->group(function () {
     Route::post('/playlists/{playlist}/refresh-parsing', [PlaylistsController::class, 'refreshParsing'])
         ->whereNumber('playlist')
         ->name('playlists.refresh-parsing');
+    Route::post('/playlists/{playlist}/articles/{article}/refresh-mos', [PlaylistsController::class, 'refreshMos'])
+        ->whereNumber('playlist')
+        ->whereNumber('article')
+        ->name('playlists.articles.refresh-mos');
     Route::patch('/playlists/{playlist}/mos/{objectKey}', [PlaylistMosOverrideController::class, 'update'])->whereNumber('playlist')->name('playlists.mos.update');
     Route::delete('/playlists/{playlist}/mos/{objectKey}', [PlaylistMosOverrideController::class, 'reset'])->whereNumber('playlist')->name('playlists.mos.reset');
     Route::patch('/playlists/{playlist}/articles/{article}/mos-order', [PlaylistMosSequenceOrderController::class, 'update'])

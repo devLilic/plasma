@@ -1,5 +1,5 @@
 import React, {ReactNode, useState} from 'react';
-import {Link} from '@inertiajs/react';
+import {Link, usePage} from '@inertiajs/react';
 import {Button, Menu, MenuHandler, MenuItem, MenuList, Typography} from '@material-tailwind/react';
 import {
     ArrowRightStartOnRectangleIcon,
@@ -9,11 +9,10 @@ import {
     PhotoIcon,
     QueueListIcon,
     Cog6ToothIcon,
-    PlayCircleIcon,
     XMarkIcon,
 } from '@heroicons/react/24/outline';
 import ApplicationLogo from '@/Components/UI/Logo/ApplicationLogo';
-import {User} from '@/types';
+import {PageProps, Playlist, User} from '@/types';
 
 interface MainNavigationProps {
     user: User
@@ -23,6 +22,11 @@ interface MainNavigationProps {
 const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
     const [menuOpen, setMenuOpen] = useState(false);
     const [compactNavigationOpen, setCompactNavigationOpen] = useState(false);
+    const page = usePage<PageProps>();
+    const {dailyPlaylists = []} = page.props;
+    const currentPlaylistId = page.url.match(/^\/playlists\/(\d+)(?:\/|$)/)?.[1];
+    const isSoleDailyPlaylistPage = dailyPlaylists.length === 1 && String(dailyPlaylists[0].id) === currentPlaylistId;
+    const showDailyPlaylistMenu = dailyPlaylists.length > 0 && !isSoleDailyPlaylistPage;
     const navigation = [
         {label: 'Playlisturi', href: route('playlists.index'), active: route().current('playlists.*'), icon: QueueListIcon},
         {label: 'Imagini', href: route('images.index'), active: route().current('images.index'), icon: PhotoIcon},
@@ -53,7 +57,21 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                         </Link>
 
                         <div className="desktop-main-navigation hidden items-center gap-1 rounded-[16px] bg-white/35 p-1 ring-1 ring-white/60">
-                            {navigation.map(item => (
+                            {navigation.map(item => item.label === 'Playlisturi' ? (
+                                <div key={item.label} className="group relative">
+                                    <Link href={item.href}
+                                          className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${item.active ? 'bg-white/90 text-[#286ee7] shadow-[0_4px_14px_rgba(63,82,126,0.1)] ring-1 ring-white' : 'text-[#65728a] hover:bg-white/50 hover:text-[#172033]'}`}>
+                                        <item.icon className="h-5 w-5"/>
+                                        {item.label}
+                                        {showDailyPlaylistMenu && <ChevronDownIcon className="h-4 w-4"/>}
+                                    </Link>
+                                    {showDailyPlaylistMenu && <div className="invisible absolute left-0 top-full z-50 w-72 pt-2 opacity-0 transition group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100">
+                                        <div className="rounded-[18px] border border-white/80 bg-white/90 p-2 shadow-[0_18px_50px_rgba(42,55,94,0.18)] backdrop-blur-2xl">
+                                            {dailyPlaylists.map(playlist => <DailyPlaylistLink key={playlist.id} playlist={playlist}/>) }
+                                        </div>
+                                    </div>}
+                                </div>
+                            ) : (
                                 <Link key={item.label} href={item.href}
                                       className={`flex items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold transition ${item.active ? 'bg-white/90 text-[#286ee7] shadow-[0_4px_14px_rgba(63,82,126,0.1)] ring-1 ring-white' : 'text-[#65728a] hover:bg-white/50 hover:text-[#172033]'}`}>
                                     <item.icon className="h-5 w-5"/>
@@ -78,18 +96,6 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                             </MenuHandler>
                             <MenuList className="z-50 min-w-[210px] rounded-[20px] border border-white/80 bg-white/75 p-2 shadow-[0_18px_50px_rgba(42,55,94,0.18)] backdrop-blur-2xl" placeholder={null}>
                                 <MenuItem className="p-0" placeholder={null}>
-                                    <Link href={route('llc.test')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
-                                        <PlayCircleIcon className="h-5 w-5 text-[#286ee7]"/>
-                                        Test LLC
-                                    </Link>
-                                </MenuItem>
-                                <MenuItem className="p-0" placeholder={null}>
-                                    <Link href={route('enps.test')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
-                                        <PlayCircleIcon className="h-5 w-5 text-[#286ee7]"/>
-                                        Test ENPS Web
-                                    </Link>
-                                </MenuItem>
-                                <MenuItem className="p-0" placeholder={null}>
                                     <Link href={route('profile.edit')} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-[#172033] hover:bg-white/70">
                                         <Cog6ToothIcon className="h-5 w-5 text-[#286ee7]"/>
                                         Setări
@@ -107,7 +113,15 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
                 </div>
 
                 {compactNavigationOpen && <div id="compact-main-navigation" className="compact-navigation-menu glass-nav absolute left-3 top-[calc(100%+8px)] z-50 grid min-w-52 gap-1 rounded-[20px] p-2 sm:left-5">
-                    {navigation.map(item => (
+                    {navigation.map(item => item.label === 'Playlisturi' ? <div key={item.label} className="group/menu">
+                        <Link href={item.href} onClick={() => setCompactNavigationOpen(false)}
+                              className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${item.active ? 'bg-white/85 text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/60 hover:text-[#172033]'}`}>
+                            <item.icon className="h-5 w-5"/>{item.label}
+                        </Link>
+                        {showDailyPlaylistMenu && <div className="invisible grid max-h-0 gap-1 overflow-hidden pl-5 opacity-0 transition-all group-hover/menu:visible group-hover/menu:max-h-96 group-hover/menu:opacity-100 group-focus-within/menu:visible group-focus-within/menu:max-h-96 group-focus-within/menu:opacity-100">
+                            {dailyPlaylists.map(playlist => <DailyPlaylistLink key={playlist.id} playlist={playlist} onClick={() => setCompactNavigationOpen(false)} compact/>)}
+                        </div>}
+                    </div> : (
                         <Link key={item.label} href={item.href} onClick={() => setCompactNavigationOpen(false)}
                               className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-semibold transition ${item.active ? 'bg-white/85 text-[#286ee7] shadow-sm' : 'text-[#65728a] hover:bg-white/60 hover:text-[#172033]'}`}>
                             <item.icon className="h-5 w-5"/>
@@ -119,5 +133,13 @@ const MainNavigation = ({user, headerAction}: MainNavigationProps) => {
         </>
     );
 };
+
+const DailyPlaylistLink = ({playlist, onClick, compact = false}: {playlist: Playlist; onClick?: () => void; compact?: boolean}) => (
+    <Link href={route('playlists.show', playlist.id)} onClick={onClick}
+          className={`block truncate rounded-xl px-3 py-2.5 text-sm font-medium transition ${route().current('playlists.show', playlist.id) ? 'bg-[#286ee7]/10 text-[#286ee7]' : 'text-[#53627a] hover:bg-white/70 hover:text-[#172033]'} ${compact ? 'text-xs' : ''}`}
+          title={playlist.title}>
+        {playlist.title}
+    </Link>
+);
 
 export default MainNavigation;

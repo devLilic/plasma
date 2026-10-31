@@ -54,6 +54,9 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
     const currentIndex = currentArticle ? orderedArticles.findIndex(article => article.id === currentArticle.id) : -1;
     const previousCurrentArticle = currentIndex > 0 ? orderedArticles[currentIndex - 1] : null;
     const nextCurrentArticle = currentIndex >= 0 ? orderedArticles[currentIndex + 1] ?? null : null;
+    const mosIndex = mosArticle ? orderedArticles.findIndex(article => article.id === mosArticle.id) : -1;
+    const previousMosArticle = mosIndex > 0 ? orderedArticles[mosIndex - 1] : null;
+    const nextMosArticle = mosIndex >= 0 ? orderedArticles[mosIndex + 1] ?? null : null;
     const previewIndex = previewArticle ? orderedArticles.findIndex(article => article.id === previewArticle.id) : -1;
     const previousPreviewArticle = previewIndex > 0 ? orderedArticles[previewIndex - 1] : null;
     const nextPreviewArticle = previewIndex >= 0 ? orderedArticles[previewIndex + 1] ?? null : null;
@@ -330,7 +333,7 @@ const ArticlesList = ({playlistTitle, renderLayout}: ArticlesListProps) => {
                         : <EmptyOperatorPanel title="Niciun articol selectat" body="Alege o știre din playlist. Selecția nu va fi schimbată automat." />
                     : <LiveImageStage article={previewArticle} playlistToggle={livePlaylistToggle} previousArticle={previousPreviewArticle} nextArticle={nextPreviewArticle} previousDisabled={!previousPreviewArticle} nextDisabled={!nextPreviewArticle} onPrevious={() => movePreview(-1)} onNext={() => movePreview(1)} viewer={viewer} viewerBusy={viewerBusy} viewerError={viewerError} onRefreshViewer={() => void refreshViewer()} onShow={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show', article, draft); }} onShowDefault={(article, draft) => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('show-default', article, draft); }} onHide={() => { if (transformTimer.current) clearTimeout(transformTimer.current); void sendViewerCommand('hide'); }} transform={transform} onTransformChange={setTransform}/>}
             </main>
-            <MosWorkspace article={mosArticle} previousDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) <= 0} nextDisabled={!mosArticle || orderedArticles.findIndex(item => item.id === mosArticle.id) >= orderedArticles.length - 1} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showLBPortalControls lbPortalStatus={lbPortal.status} commandBusy={lbPortal.busy} commandMessage={lbPortal.message} lastPlayedObjectKey={lbPortal.lastPlayedObjectKey} playbackStates={lbPortal.playbackStates} onPlay={lbPortal.sendPlay}/>
+            <MosWorkspace article={mosArticle} previousArticle={previousMosArticle} nextArticle={nextMosArticle} previousDisabled={!previousMosArticle} nextDisabled={!nextMosArticle} onPrevious={() => moveMos(-1)} onNext={() => moveMos(1)} live={mode === 'live'} showLBPortalControls lbPortalStatus={lbPortal.status} commandBusy={lbPortal.busy} commandMessage={lbPortal.message} lastPlayedObjectKey={lbPortal.lastPlayedObjectKey} playbackStates={lbPortal.playbackStates} onPlay={lbPortal.sendPlay}/>
         </div>
 
         <NewArticleDialog isOpen={isNewArticleDialogOpen} handleDialog={() => setIsNewArticleDialogOpen(open => !open)}/>

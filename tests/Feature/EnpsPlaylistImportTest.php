@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Models\Image;
 use App\Models\Playlist;
 use App\Models\User;
+use App\Services\Enps\EnpsWebClient;
 use App\Services\Images\ImageMatcher;
 use App\Services\Playlists\EnpsPlaylistAdapter;
 use App\Services\Playlists\PlaylistTitleExclusions;
@@ -422,6 +423,141 @@ class EnpsPlaylistImportTest extends TestCase
         Http::assertSentCount($requestCount);
     }
 
+    public function test_refresh_mos_updates_only_the_current_nonconsecutive_story_and_keeps_editorial_text(): void
+    {
+        $this->activeSession();
+        app(PlaylistTitleExclusions::class)->save(['IGNORE']);
+        $playlist = Playlist::create(['title' => 'Jurnal MOS', 'source_type' => 'enps', 'source_enps_database' => 'NEWS', 'source_enps_path' => 'P_NEWS\\W', 'source_enps_guid' => 'playlist-guid']);
+        $first = $playlist->articles()->create(['title' => 'Primul', 'subtitle' => 'DUP', 'technical_title' => 'MD DUP', 'slugs' => 'MD DUP-INTRO||MD DUP-BETA', 'intro' => 'Text local 1', 'content_sections' => [['type' => 'BETA', 'slug' => 'MD DUP-BETA', 'paragraphs' => ['Text local 1']]], 'article_type' => 'BETA', 'playlist_order' => 1, 'mos_objects' => [['commandId' => 'old-1']]]);
+        $middle = $playlist->articles()->create(['title' => 'Mijloc', 'subtitle' => 'ALT', 'technical_title' => 'RO ALT', 'slugs' => 'RO ALT-BETA', 'intro' => 'Text local 2', 'article_type' => 'BETA', 'playlist_order' => 2, 'mos_objects' => [['commandId' => 'old-2']]]);
+        $target = $playlist->articles()->create(['title' => 'Al treilea', 'subtitle' => 'DUP', 'technical_title' => 'MD DUP', 'slugs' => 'MD DUP-INTRO||MD DUP-BETA||MD DUP-OFF', 'intro' => 'Text local 3', 'content_sections' => [['type' => 'BETA', 'slug' => 'MD DUP-BETA', 'paragraphs' => ['Text local 3']]], 'article_type' => 'BETA', 'playlist_order' => 3, 'mos_objects' => [['commandId' => 'old-3']]]);
+        $oldBasicContent = fn ($guid) => ['ListData' => ['Guid' => $guid], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Text vechi'], ['FieldName' => 'TextCommands', 'FieldValue' => ['old' => 'old command']], ['FieldName' => 'Other', 'FieldValue' => 'păstrează']]];
+        $firstItem = $playlist->enpsItems()->create(['position' => 1, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\DUP1', 'source_guid' => 'dup-1', 'slug' => 'MD DUP-BETA', 'basic_content' => $oldBasicContent('dup-1'), 'mos_objects' => []]);
+        $middleItem = $playlist->enpsItems()->create(['position' => 2, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\IGNORE', 'source_guid' => 'ignored', 'slug' => 'MD IGNORE THIS-BETA', 'basic_content' => $oldBasicContent('ignored'), 'mos_objects' => []]);
+        $targetItem = $playlist->enpsItems()->create(['position' => 3, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\DUP3', 'source_guid' => 'dup-3', 'slug' => 'MD DUP-BETA', 'basic_content' => $oldBasicContent('dup-3'), 'mos_objects' => []]);
+        $targetSecondItem = $playlist->enpsItems()->create(['position' => 4, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\DUP4', 'source_guid' => 'dup-4', 'slug' => 'MD DUP-OFF', 'basic_content' => $oldBasicContent('dup-4'), 'mos_objects' => []]);
+        $this->storeMosSnapshot($playlist, [
+            $this->snapshotScript(1, 'MD DUP-INTRO'),
+            $this->snapshotScript(2, 'MD DUP-BETA', 'dup-1', 'P_NEWS\\W\\DUP1'),
+            $this->snapshotScript(3, 'MD IGNORE THIS-BETA', 'ignored', 'P_NEWS\\W\\IGNORE'),
+            $this->snapshotScript(4, 'MD BETWEEN-INTRO'),
+            $this->snapshotScript(5, 'MD DUP-INTRO'),
+            $this->snapshotScript(6, 'MD DUP-BETA', 'dup-3', 'P_NEWS\\W\\DUP3'),
+            $this->snapshotScript(7, 'MD DUP-OFF', 'dup-4', 'P_NEWS\\W\\DUP4'),
+        ]);
+
+        Http::fake(function (Request $request) {
+            if (str_ends_with($request->url(), '/api/Ping')) return Http::response(['status' => true]);
+            parse_str(parse_url($request->url(), PHP_URL_QUERY) ?: '', $query);
+            $guid = $query['guid'] ?? '';
+            $content = ['ListData' => ['Guid' => $guid, 'Title' => 'fresh'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Text proaspăt din ENPS'], [
+                'FieldName' => 'TextCommands',
+                'FieldValue' => ['same-command' => '<mos><itemSlug>01_Titlu</itemSlug><itemID>same-item</itemID><editableObject><name>Titlu</name><value>Actualizat</value></editableObject></mos>'],
+            ], ['FieldName' => 'Other', 'FieldValue' => 'nou']]];
+            return Http::response($content);
+        });
+
+        $this->postJson(route('playlists.articles.refresh-mos', [$playlist, $target]))
+            ->assertOk()->assertJsonPath('data.mos_objects.0.editableObjects.0.value', 'Actualizat');
+
+        $this->assertSame('Text local 3', $target->fresh()->intro);
+        $this->assertSame('Text local 3', $target->fresh()->content_sections[0]['paragraphs'][0]);
+        $this->assertSame('old-1', $first->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('old-2', $middle->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('dup-1', $firstItem->fresh()->basic_content['ListData']['Guid']);
+        $this->assertSame('Text vechi', $firstItem->fresh()->basic_content['ObjectProperties'][0]['FieldValue']);
+        $this->assertSame('păstrează', $firstItem->fresh()->basic_content['ObjectProperties'][2]['FieldValue']);
+        $this->assertSame('ignored', $middleItem->fresh()->source_guid);
+        $this->assertSame('dup-3', $targetItem->fresh()->basic_content['ListData']['Guid']);
+        $this->assertSame('Text vechi', $targetItem->fresh()->basic_content['ObjectProperties'][0]['FieldValue']);
+        $this->assertSame('same-command', array_key_first($targetItem->fresh()->basic_content['ObjectProperties'][1]['FieldValue']));
+        $this->assertSame('păstrează', $targetItem->fresh()->basic_content['ObjectProperties'][2]['FieldValue']);
+        $this->assertSame('Actualizat', $targetItem->fresh()->mos_objects[0]['editableObjects'][0]['value']);
+        $this->assertSame('dup-4', $targetSecondItem->fresh()->basic_content['ListData']['Guid']);
+        $this->assertCount(1, $target->fresh()->mos_objects, 'MOS identical across adjacent segments should deduplicate within the story.');
+        Http::assertSentCount(3);
+        Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/api/RundownContent'));
+    }
+
+    public function test_refresh_mos_keeps_all_persisted_values_when_any_source_request_fails(): void
+    {
+        $this->activeSession();
+        $playlist = Playlist::create(['title' => 'Jurnal MOS', 'source_type' => 'enps', 'source_enps_database' => 'NEWS', 'source_enps_path' => 'P_NEWS\\W', 'source_enps_guid' => 'playlist-guid']);
+        $article = $playlist->articles()->create(['title' => 'Material', 'subtitle' => 'MATERIAL', 'technical_title' => 'MD MATERIAL', 'slugs' => 'MD MATERIAL-BETA||MD MATERIAL-OFF', 'intro' => 'Text intact', 'article_type' => 'OFF', 'playlist_order' => 1, 'mos_objects' => [['commandId' => 'before']]]);
+        $first = $playlist->enpsItems()->create(['position' => 1, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\BETA', 'source_guid' => 'beta-guid', 'slug' => 'MD MATERIAL-BETA', 'basic_content' => ['ListData' => ['Guid' => 'beta-guid'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Editorial existent']]], 'mos_objects' => [['commandId' => 'old-beta']]]);
+        $second = $playlist->enpsItems()->create(['position' => 2, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\OFF', 'source_guid' => 'off-guid', 'slug' => 'MD MATERIAL-OFF', 'basic_content' => ['ListData' => ['Guid' => 'off-guid'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Alt text']]], 'mos_objects' => [['commandId' => 'old-off']]]);
+        $this->storeMosSnapshot($playlist, [
+            $this->snapshotScript(1, 'MD MATERIAL-BETA', 'beta-guid', 'P_NEWS\\W\\BETA'),
+            $this->snapshotScript(2, 'MD MATERIAL-OFF', 'off-guid', 'P_NEWS\\W\\OFF'),
+        ]);
+        Http::fake(function (Request $request) {
+            if (str_ends_with($request->url(), '/api/Ping')) return Http::response(['status' => true]);
+            parse_str(parse_url($request->url(), PHP_URL_QUERY) ?: '', $query);
+            if (($query['guid'] ?? '') === 'off-guid') return Http::response(['error' => 'private'], 500);
+            return Http::response(['ListData' => ['Guid' => 'beta-guid'], 'ObjectProperties' => [['FieldName' => 'TextCommands', 'FieldValue' => []]]]);
+        });
+
+        $this->postJson(route('playlists.articles.refresh-mos', [$playlist, $article]))
+            ->assertStatus(503)->assertJsonPath('message', 'Serviciul ENPS Web a refuzat solicitarea.');
+
+        $this->assertSame('Text intact', $article->fresh()->intro);
+        $this->assertSame('before', $article->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('old-beta', $first->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('Editorial existent', $first->fresh()->basic_content['ObjectProperties'][0]['FieldValue']);
+        $this->assertSame('old-off', $second->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('Alt text', $second->fresh()->basic_content['ObjectProperties'][0]['FieldValue']);
+    }
+
+    public function test_refresh_mos_refuses_ambiguous_matching_when_saved_articles_no_longer_match_snapshot_exclusions(): void
+    {
+        $this->activeSession();
+        app(PlaylistTitleExclusions::class)->save([]);
+        $playlist = Playlist::create(['title' => 'Jurnal ambiguu', 'source_type' => 'enps', 'source_enps_database' => 'NEWS', 'source_enps_path' => 'P_NEWS\\W', 'source_enps_guid' => 'playlist-guid']);
+        $article = $playlist->articles()->create(['title' => 'Material', 'subtitle' => 'DUP', 'technical_title' => 'MD DUP', 'slugs' => 'MD DUP-INTRO||MD DUP-BETA', 'intro' => 'Text intact', 'article_type' => 'BETA', 'playlist_order' => 1, 'mos_objects' => [['commandId' => 'before']]]);
+        $item = $playlist->enpsItems()->create(['position' => 1, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\DUP', 'source_guid' => 'dup-guid', 'slug' => 'MD DUP-BETA', 'basic_content' => ['ListData' => ['Guid' => 'dup-guid'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Text existent']]], 'mos_objects' => [['commandId' => 'old']]]);
+        $this->storeMosSnapshot($playlist, [
+            $this->snapshotScript(1, 'MD DUP-INTRO'),
+            $this->snapshotScript(2, 'MD DUP-BETA', 'dup-guid', 'P_NEWS\\W\\DUP'),
+            $this->snapshotScript(3, 'MD BETWEEN-BETA', 'between-guid', 'P_NEWS\\W\\BETWEEN'),
+            $this->snapshotScript(4, 'MD DUP-INTRO'),
+            $this->snapshotScript(5, 'MD DUP-BETA', 'dup-guid-2', 'P_NEWS\\W\\DUP2'),
+        ]);
+        Http::fake();
+
+        $this->postJson(route('playlists.articles.refresh-mos', [$playlist, $article]))
+            ->assertStatus(409)->assertJsonPath('message', 'Sursa MOS este ambiguă pentru acest articol. Reîmprospătează playlistul înainte să actualizezi MOS.');
+
+        $this->assertSame('old', $item->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('before', $article->fresh()->mos_objects[0]['commandId']);
+        Http::assertNothingSent();
+    }
+
+    public function test_refresh_mos_uses_exact_ordered_partial_slug_membership_without_adding_new_segments(): void
+    {
+        $this->activeSession();
+        $playlist = Playlist::create(['title' => 'Jurnal parțial', 'source_type' => 'enps', 'source_enps_database' => 'NEWS', 'source_enps_path' => 'P_NEWS\\W', 'source_enps_guid' => 'playlist-guid']);
+        $article = $playlist->articles()->create(['title' => 'Material', 'subtitle' => 'MATERIAL', 'technical_title' => 'MD MATERIAL', 'slugs' => 'MD MATERIAL-BETA', 'intro' => 'Text păstrat', 'article_type' => 'BETA', 'playlist_order' => 1, 'mos_objects' => [['commandId' => 'old']]]);
+        $beta = $playlist->enpsItems()->create(['position' => 1, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\BETA', 'source_guid' => 'beta-guid', 'slug' => 'MD MATERIAL-BETA', 'basic_content' => ['ListData' => ['Guid' => 'beta-guid'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'Editorial existent']]], 'mos_objects' => [['commandId' => 'old-beta']]]);
+        $off = $playlist->enpsItems()->create(['position' => 2, 'source_database' => 'NEWS', 'source_path' => 'P_NEWS\\W\\OFF', 'source_guid' => 'off-guid', 'slug' => 'MD MATERIAL-OFF', 'basic_content' => ['ListData' => ['Guid' => 'off-guid'], 'ObjectProperties' => [['FieldName' => 'Text', 'FieldValue' => 'OFF vechi']]], 'mos_objects' => [['commandId' => 'old-off']]]);
+        $this->storeMosSnapshot($playlist, [
+            $this->snapshotScript(1, 'MD MATERIAL-INTRO'),
+            $this->snapshotScript(2, 'MD MATERIAL-BETA', 'beta-guid', 'P_NEWS\\W\\BETA'),
+            $this->snapshotScript(3, 'MD MATERIAL-OFF', 'off-guid', 'P_NEWS\\W\\OFF'),
+        ]);
+        Http::fake(function (Request $request) {
+            if (str_ends_with($request->url(), '/api/Ping')) return Http::response(['status' => true]);
+            return Http::response(['ListData' => ['Guid' => 'beta-guid'], 'ObjectProperties' => [['FieldName' => 'TextCommands', 'FieldValue' => ['fresh' => '<mos><itemSlug>01_Titlu</itemSlug><itemID>fresh-item</itemID><editableObject><name>Titlu</name><value>Titlu nou</value></editableObject></mos>']]]]);
+        });
+
+        $this->postJson(route('playlists.articles.refresh-mos', [$playlist, $article]))->assertOk()
+            ->assertJsonPath('data.mos_objects.0.editableObjects.0.value', 'Titlu nou');
+
+        $this->assertSame('Titlu nou', $beta->fresh()->mos_objects[0]['editableObjects'][0]['value']);
+        $this->assertSame('old-off', $off->fresh()->mos_objects[0]['commandId']);
+        $this->assertSame('Text păstrat', $article->fresh()->intro);
+        Http::assertSentCount(2);
+    }
+
     public function test_refresh_authenticates_when_session_is_missing_then_reimports_and_filters_current_enps_content(): void
     {
         config(['services.enps.url' => 'http://enps.test/web/', 'services.enps.username' => 'test-user', 'services.enps.password' => 'private-password', 'services.enps.domain' => '']);
@@ -575,6 +711,29 @@ class EnpsPlaylistImportTest extends TestCase
         $this->postJson('/playlists/enps/catalog')->assertOk()->assertJsonPath('playlists.0.existingPlaylist.title', 'Local')->assertDontSee('secret');
         Http::assertNotSent(fn (Request $request) => str_contains($request->url(), '/api/Logon'));
         Http::assertSent(fn (Request $request) => str_ends_with($request->url(), '/api/Lists') && $request->hasHeader('X-ENPS-TOKEN', 'updated-secret'));
+    }
+
+    public function test_device_key_matches_the_enps_triple_des_protocol_for_leap_and_regular_year_days(): void
+    {
+        $this->assertSame('Fy4EptEezf4qPOUAIMVWrMyDlIfMYjvFrAsY6TamTsh3hUVFjrmnIihDU+w/MF8k', EnpsWebClient::deviceKeyForDay(60));
+        $this->assertSame('Fy4EptEezf4qPOUAIMVWrMyDlIfMYjvFrAsY6TamTsghAC2XqZ1Zh7CXkz+AA1t/', EnpsWebClient::deviceKeyForDay(365));
+        $this->assertSame('Fy4EptEezf4qPOUAIMVWrMyDlIfMYjvFrAsY6TamTsghAC2XqZ1Zhyk02ykNXLZ6', EnpsWebClient::deviceKeyForDay(366));
+    }
+
+    private function storeMosSnapshot(Playlist $playlist, array $scripts): void
+    {
+        $path = 'playlist-enps-sources/'.Str::uuid().'.json';
+        Storage::disk('local')->put($path, json_encode(['CollectionScripts' => $scripts], JSON_UNESCAPED_UNICODE | JSON_THROW_ON_ERROR));
+        $playlist->update(['source_enps_snapshot_path' => $path]);
+    }
+
+    private function snapshotScript(int $order, string $slug, ?string $guid = null, ?string $path = null): array
+    {
+        $script = ['ScriptOrder' => $order, 'RecordPointer' => ['ListData' => ['Title' => $slug, 'BeginText' => 'Editorial neschimbat']]];
+        if ($guid !== null && $path !== null) {
+            $script['_PlasmaSource'] = ['database' => 'NEWS', 'path' => $path, 'guid' => $guid];
+        }
+        return $script;
     }
 
     private function enpsResponse(Request $request, array $payload, array $headers = [])

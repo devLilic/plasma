@@ -41,6 +41,9 @@ export const articlesSlice = createSlice({
         setArticles: (state, action: PayloadAction<Article[]>) => {
             articlesAdapter.setAll(state, action.payload)
         },
+        upsertArticle: (state, action: PayloadAction<Article>) => {
+            articlesAdapter.upsertOne(state, action.payload)
+        },
         setPlaylist: (state, action: PayloadAction<number>) => {
             state.playlist_id = action.payload
         },

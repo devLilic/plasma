@@ -11,6 +11,7 @@ export type PageProps<T extends Record<string, unknown> = Record<string, unknown
     auth: {
         user: User;
     };
+    dailyPlaylists: Playlist[];
 };
 
 export interface Playlist {
@@ -78,6 +79,7 @@ export interface Article {
     mos_sequence_zones?: Record<string, 'before' | 'after'>
       enps_marker_color?: "yellow" | "red" | "green" | null
     playlist_id: number
+    can_refresh_mos?: boolean
     playlist_order: number
     image: Image | null
     current?: boolean

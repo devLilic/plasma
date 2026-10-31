@@ -2,6 +2,7 @@
 
 namespace App\Http\Middleware;
 
+use App\Models\Playlist;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -34,6 +35,18 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $request->user(),
             ],
+            'dailyPlaylists' => function () use ($request) {
+                if (! $request->user()) {
+                    return [];
+                }
+
+                $today = now(config('app.timezone'));
+
+                return Playlist::query()
+                    ->whereBetween('created_at', [$today->copy()->startOfDay(), $today->copy()->endOfDay()])
+                    ->orderByDesc('created_at')
+                    ->get(['id', 'title']);
+            },
         ];
     }
 }

@@ -84,11 +84,6 @@ class EnpsWebClient
         $this->sendAuthed('GET', $this->endpoint('/api/Ping'), $tokens);
     }
 
-    public function logout(array &$tokens): void
-    {
-        $this->sendAuthed('GET', $this->endpoint('/api/Logout'), $tokens);
-    }
-
     public function refreshPlaylists(array &$tokens, string $database, string $homeProgram): array
     {
         $listsResponse = $this->sendAuthed('POST', $this->endpoint('/api/Lists'), $tokens, [
@@ -98,17 +93,6 @@ class EnpsWebClient
         $lists = $this->json($listsResponse, 'ENPS a returnat listele într-un format invalid.');
 
         return $this->playlistsFromLists($lists);
-    }
-
-    public function playlistContent(array &$tokens, string $database, array $playlist): array
-    {
-        $payload = $this->rundownContent($tokens, $database, $playlist);
-
-        if (is_array($payload['CollectionScripts'] ?? null)) {
-            return $this->storiesFromCollectionScripts($payload['CollectionScripts']);
-        }
-
-        return $this->storiesFromRundown($payload);
     }
 
     public function rundownContent(array &$tokens, string $database, array $playlist): array
@@ -181,44 +165,23 @@ class EnpsWebClient
         return $payload;
     }
 
-    private function storiesFromCollectionScripts(array $collectionScripts): array
+    /** Refresh one already identified ENPS record without rereading its rundown. */
+    public function basicContent(array &$tokens, string $database, string $path, string $guid): array
     {
-        $scripts = array_values(array_filter($collectionScripts, 'is_array'));
-        usort($scripts, function (array $left, array $right): int {
-            return (int) ($this->fieldsFromRecord($left)['scriptorder'] ?? 0)
-                <=> (int) ($this->fieldsFromRecord($right)['scriptorder'] ?? 0);
-        });
-
-        $stories = [];
-        foreach ($scripts as $index => $script) {
-            $fields = $this->fieldsFromRecord($script);
-            $story = $this->storyFromFields($fields);
-            if ($story['name'] === null) {
-                continue;
-            }
-
-            $pageNum = $this->firstText($fields, ['pagenum', 'page']);
-            $order = $this->firstText($fields, ['scriptorder', 'order']);
-            $frontTime = $this->firstText($fields, ['fronttime']);
-            $name = $story['name'] ?? ($pageNum !== null ? 'Pagina '.$pageNum : 'Item '.($index + 1));
-            $scriptOrder = $order !== null ? (int) $order : $index + 1;
-            $lastIndex = array_key_last($stories);
-            if ($lastIndex !== null && mb_strtolower($stories[$lastIndex]['name']) === mb_strtolower($name)) {
-                $stories[$lastIndex]['segments'] = array_values(array_unique(array_merge($stories[$lastIndex]['segments'], $story['segments'])));
-
-                continue;
-            }
-            $stories[] = [
-                'name' => $name,
-                'status' => $story['segments'][0] ?? null,
-                'segments' => $story['segments'],
-                'scriptOrder' => $scriptOrder,
-                'pageNum' => $pageNum,
-                'frontTime' => $frontTime,
-            ];
+        $response = $this->sendAuthed('GET', $this->endpoint('/api/BasicContent').'?'.http_build_query([
+            'database' => $database,
+            'path' => $path,
+            'guid' => $guid,
+            'hitHighlightTerm' => '',
+        ]), $tokens);
+        $content = $this->json($response, 'ENPS a returnat BasicContent într-un format invalid.');
+        if (! is_array($content['ListData'] ?? null)
+            || ! is_array($content['ObjectProperties'] ?? null)
+            || strcasecmp((string) ($content['ListData']['Guid'] ?? ''), $guid) !== 0) {
+            throw new EnpsWebException('invalid_response', 'BasicContent ENPS nu corespunde elementului solicitat.', 422);
         }
 
-        return $stories;
+        return EnpsBasicContent::forStorage($content);
     }
 
     public function cookies(): array
@@ -454,29 +417,6 @@ class EnpsWebClient
         return $playlists;
     }
 
-    private function storiesFromRundown(array $response): array
-    {
-        $records = $response['Records'] ?? $response['records'] ?? $response['Items'] ?? $response['items'] ?? [];
-        if (! is_array($records)) {
-            throw new EnpsWebException('invalid_response', 'Răspunsul ENPS nu conține lista de stories a playlistului.');
-        }
-
-        $stories = [];
-        foreach ($records as $record) {
-            if (! is_array($record)) {
-                continue;
-            }
-
-            $story = $this->storyFromFields($this->fieldsFromRecord($record), true);
-            if ($story['name'] === null) {
-                continue;
-            }
-            $stories[] = [...$story, 'status' => $story['segments'][0] ?? null];
-        }
-
-        return $stories;
-    }
-
     private function fieldsFromRecord(array $record): array
     {
         $fields = [];
@@ -503,31 +443,6 @@ class EnpsWebClient
         }
 
         return array_change_key_case(array_merge($record, $fields), CASE_LOWER);
-    }
-
-    private function storyFromFields(array $fields, bool $allowCombinedSuffixes = false): array
-    {
-        $rawName = $this->firstText($fields, ['title', 'slug', 'storytitle', 'recordtitle', 'recordname', 'headline', 'displayname', 'name', 'storyname']);
-        $segments = $this->segmentsFromFields($fields);
-        if ($rawName === null) {
-            return ['name' => null, 'segments' => $segments];
-        }
-
-        $name = trim($rawName);
-        $suffixPattern = $allowCombinedSuffixes
-            ? '/(?:-|\s)(INTRO|INTO|OFF|BETA|LIVE|SNC)(?:[-\s](?:INTRO|INTO|OFF|BETA|LIVE|SNC))*\s*$/iu'
-            : '/-(INTRO|INTO|OFF|BETA|LIVE|SNC|AMB)\s*$/iu';
-        if (preg_match($suffixPattern, $name, $matches, PREG_OFFSET_CAPTURE)) {
-            preg_match_all('/INTRO|INTO|OFF|BETA|LIVE|SNC|AMB/iu', $matches[0][0], $suffixes);
-            if ($segments === []) {
-                $segments = array_map('strtoupper', $suffixes[0]);
-            }
-            $name = rtrim(substr($name, 0, $matches[0][1]), " -\t\n\r\0\x0B");
-        }
-
-        $name = preg_replace('/\s+/u', ' ', $name !== '' ? $name : $rawName) ?? ($name !== '' ? $name : $rawName);
-
-        return ['name' => mb_substr(trim($name), 0, 300), 'segments' => $segments];
     }
 
     private function segmentsFromFields(array $fields): array

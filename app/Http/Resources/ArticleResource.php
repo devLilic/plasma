@@ -66,6 +66,7 @@ class ArticleResource extends JsonResource
             'mos_sequence_order' => $mosSequenceOrder['entryOrder'],
             'mos_sequence_zones' => $mosSequenceOrder['entryZones'],
             'playlist_id' => $this->playlist_id,
+            'can_refresh_mos' => $this->playlist_id !== null && \App\Models\Playlist::query()->whereKey($this->playlist_id)->where('source_type', 'enps')->exists(),
             'playlist_order' => $this->playlist_order,
             'image' => $this->image ? ImageResource::make($this->image) : null,
             'search_by' => '',

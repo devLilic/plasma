@@ -17,6 +17,8 @@ const compiled = ts.transpileModule(source, {compilerOptions: {jsx: ts.JsxEmit.R
 const componentModule = {exports: {}};
 const mockRequire = id => {
     if (id === 'axios') return {default: {get: async () => ({data: {data: []}}), patch: async () => ({}), delete: async () => ({})}};
+    if (id === 'react-redux') return {useDispatch: () => () => {}};
+    if (id === '@/Store/article/article.slice') return {articlesActions: {upsertArticle: value => value}};
     if (id === '@headlessui/react') return {
         Dialog: ({open, children}) => open ? React.createElement('div', {'data-testid': 'dialog'}, children) : null,
         DialogPanel: ({children, className}) => React.createElement('section', {className}, children),

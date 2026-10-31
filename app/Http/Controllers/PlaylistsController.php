@@ -8,6 +8,7 @@ use App\Http\Resources\ImageResource;
 use App\Models\Article;
 use App\Models\Image;
 use App\Models\Playlist;
+use App\Services\Enps\EnpsBasicContent;
 use App\Services\Enps\EnpsWebClient;
 use App\Services\Enps\EnpsWebException;
 use App\Services\Enps\EnpsWebSession;
@@ -16,8 +17,10 @@ use App\Services\Playlists\EnpsPlaylistAdapter;
 use App\Services\Playlists\EnpsPlaylistItems;
 use App\Services\Playlists\PlaylistImporter;
 use App\Services\Playlists\PlaylistSourceStorage;
+use App\Services\Playlists\PlaylistTitleExclusions;
 use Facades\App\Services\Articles\ArticlesService;
 use Illuminate\Http\Request;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -26,6 +29,181 @@ use Throwable;
 
 class PlaylistsController extends Controller
 {
+    public function refreshMos(Request $request, Playlist $playlist, Article $article, EnpsWebSession $enpsSession, PlaylistSourceStorage $sourceStorage): JsonResponse
+    {
+        if ($playlist->source_type !== 'enps' || $article->playlist_id !== $playlist->id) {
+            return response()->json(['message' => 'Articolul nu aparține unui playlist ENPS.'], 422);
+        }
+
+        $items = $playlist->enpsItems()->orderBy('position')->get();
+        $articles = $playlist->articles()->orderBy('playlist_order')->get();
+        try {
+            $snapshot = json_decode($sourceStorage->contents($playlist), true, 512, JSON_THROW_ON_ERROR);
+        } catch (Throwable) {
+            return response()->json(['message' => 'Sursa articolului nu poate fi atribuită sigur. Reîmprospătează playlistul înainte să actualizezi MOS.'], 409);
+        }
+        $resolution = $this->enpsItemsForArticle($article, $articles, $items, is_array($snapshot) ? $snapshot : []);
+        if ($resolution['ambiguous']) {
+            return response()->json(['message' => 'Sursa MOS este ambiguă pentru acest articol. Reîmprospătează playlistul înainte să actualizezi MOS.'], 409);
+        }
+        $selectedItems = $resolution['items'];
+        if ($selectedItems->isEmpty()) {
+            return response()->json(['message' => 'Nu au fost găsite înregistrările ENPS pentru articolul curent.'], 422);
+        }
+
+        $stage = 'connection';
+        try {
+            $connection = $enpsSession->connectionFromSession($request);
+            if ($connection === null || blank($connection['tokens']['nom'] ?? null)) {
+                $client = new EnpsWebClient;
+                $connection = $client->connect();
+            } else {
+                $client = $enpsSession->clientFromSession($request);
+                try {
+                    $client->ping($connection['tokens']);
+                } catch (EnpsWebException $exception) {
+                    if ($exception->kind !== 'expired') throw $exception;
+                    $enpsSession->clearSession($request);
+                    $client = new EnpsWebClient;
+                    $connection = $client->connect();
+                }
+            }
+
+            $stage = 'source';
+            $refreshed = [];
+            foreach ($selectedItems as $item) {
+                try {
+                    $content = $client->basicContent($connection['tokens'], $item->source_database, $item->source_path, $item->source_guid);
+                } catch (EnpsWebException $exception) {
+                    if ($exception->kind !== 'expired') throw $exception;
+                    $enpsSession->clearSession($request);
+                    $client = new EnpsWebClient;
+                    $connection = $client->connect();
+                    $content = $client->basicContent($connection['tokens'], $item->source_database, $item->source_path, $item->source_guid);
+                }
+                $refreshed[] = [$item, $content, EnpsBasicContent::mosObjects($content)];
+            }
+
+            $connection['cookies'] = $client->cookies();
+            $connection['verifiedAt'] = now()->toIso8601String();
+            $enpsSession->storeSession($request, $connection);
+
+            $mosObjects = [];
+            foreach ($refreshed as [, , $objects]) {
+                foreach ($objects as $object) $mosObjects[json_encode($object, JSON_THROW_ON_ERROR)] = $object;
+            }
+            $stage = 'persistence';
+            DB::transaction(function () use ($refreshed, $article, $mosObjects) {
+                foreach ($refreshed as [$item, $content, $objects]) {
+                    $stored = $item->basic_content ?: [];
+                    $incomingCommands = collect($content['ObjectProperties'] ?? [])->first(fn ($property) => is_array($property)
+                        && mb_strtolower((string) ($property['FieldName'] ?? '')) === 'textcommands');
+                    $properties = $stored['ObjectProperties'] ?? [];
+                    $commandIndex = null;
+                    foreach ($properties as $index => $property) {
+                        if (is_array($property) && mb_strtolower((string) ($property['FieldName'] ?? '')) === 'textcommands') {
+                            $commandIndex = $index;
+                            break;
+                        }
+                    }
+                    if ($commandIndex === null) {
+                        if (is_array($incomingCommands)) $properties[] = $incomingCommands;
+                    } else {
+                        $properties[$commandIndex]['FieldValue'] = is_array($incomingCommands['FieldValue'] ?? null) ? $incomingCommands['FieldValue'] : [];
+                    }
+                    $stored['ObjectProperties'] = $properties;
+                    $item->update(['basic_content' => $stored, 'mos_objects' => $objects]);
+                }
+                $article->update(['mos_objects' => array_values($mosObjects)]);
+            });
+
+            return response()->json(['data' => ArticleResource::make($article->fresh()->load('image.tags'))->resolve($request)]);
+        } catch (EnpsWebException $exception) {
+            if ($exception->kind === 'expired') $enpsSession->clearSession($request);
+            return response()->json(['message' => $exception->getMessage()], $exception->status);
+        } catch (Throwable $exception) {
+            Log::warning('Refresh MOS ENPS eșuat.', ['playlist_id' => $playlist->id, 'article_id' => $article->id, 'stage' => $stage, 'exception_type' => get_class($exception)]);
+            return response()->json(['message' => 'Elementele MOS nu au putut fi actualizate. Datele existente au fost păstrate; încearcă din nou.'], 503);
+        }
+    }
+
+    private function enpsItemsForArticle(Article $target, $articles, $items, array $snapshot): array
+    {
+        $excluded = app(PlaylistTitleExclusions::class)->terms();
+        $itemQueues = [];
+        foreach ($items as $item) {
+            $identity = json_encode([$item->source_database, $item->source_path, $item->source_guid, $item->slug], JSON_THROW_ON_ERROR);
+            $itemQueues[$identity][] = $item;
+        }
+
+        $sourceScripts = array_values(array_filter($snapshot['CollectionScripts'] ?? [], 'is_array'));
+        foreach ($sourceScripts as $index => &$script) $script['_PlasmaSnapshotIndex'] = $index;
+        unset($script);
+        usort($sourceScripts, fn ($left, $right) => ((int) ($left['ScriptOrder'] ?? 0) <=> (int) ($right['ScriptOrder'] ?? 0))
+            ?: ($left['_PlasmaSnapshotIndex'] <=> $right['_PlasmaSnapshotIndex']));
+
+        $stories = [];
+        foreach ($sourceScripts as $script) {
+            $slug = trim((string) ($script['RecordPointer']['ListData']['Title'] ?? ''));
+            if ($slug === '') continue;
+            $name = preg_replace('/-(?:INTRO|INTO|BETA|OFF|LIVE|SNC|SINCRON|AMB|TEASE|FAKE|TEXT)(?:[ -]+(?:INTRO|INTO|BETA|OFF|LIVE|SNC|SINCRON|AMB|TEASE|FAKE|TEXT))*\s*$/iu', '', $slug) ?? '';
+            $name = trim($name);
+            if ($name === '') continue;
+            $last = array_key_last($stories);
+            if ($last === null || mb_strtoupper($stories[$last]['name']) !== mb_strtoupper($name)) {
+                $stories[] = ['name' => $name, 'slugs' => [], 'entries' => []];
+                $last = array_key_last($stories);
+            }
+            $entry = ['slug' => $slug, 'item' => null];
+            $source = $script['_PlasmaSource'] ?? null;
+            if (is_array($source)) {
+                $identity = json_encode([$source['database'] ?? null, $source['path'] ?? null, $source['guid'] ?? null, $slug], JSON_THROW_ON_ERROR);
+                if (($itemQueues[$identity] ?? []) !== []) {
+                    $queue = $itemQueues[$identity];
+                    $entry['item'] = array_shift($queue);
+                    $itemQueues[$identity] = $queue;
+                }
+            }
+            $stories[$last]['slugs'][] = $slug;
+            $stories[$last]['entries'][] = $entry;
+        }
+
+        // Exclusions are applied only after reconstructing the complete ordered stories
+        // from the private snapshot, which includes INTRO rows absent from enpsItems.
+        $stories = array_values(array_filter($stories, fn ($story) => ! collect($excluded)
+            ->contains(fn ($term) => str_contains(mb_strtoupper($story['name']), $term))));
+        $targetSlugs = array_values(array_filter(explode('||', $target->slugs ?? '')));
+        $matchingStories = array_values(array_filter($stories, fn ($story) => mb_strtoupper($story['name']) === mb_strtoupper((string) $target->technical_title)
+            && $this->isOrderedSlugSubset($targetSlugs, $story['slugs'])));
+        $matchingArticles = $articles->filter(fn ($candidate) => mb_strtoupper((string) $candidate->technical_title) === mb_strtoupper((string) $target->technical_title)
+            && array_values(array_filter(explode('||', $candidate->slugs ?? ''))) === $targetSlugs)->values();
+        $occurrence = $matchingArticles->search(fn ($candidate) => $candidate->id === $target->id);
+        if ($occurrence === false) return ['items' => collect(), 'ambiguous' => false];
+        if (count($matchingStories) !== $matchingArticles->count()) return ['items' => collect(), 'ambiguous' => true];
+
+        $matchedItems = collect();
+        $expectedIndex = 0;
+        foreach ($matchingStories[$occurrence]['entries'] as $entry) {
+            if (($targetSlugs[$expectedIndex] ?? null) !== $entry['slug']) continue;
+            $expectedIndex++;
+            if ($entry['item'] instanceof \App\Models\PlaylistEnpsItem) $matchedItems->push($entry['item']);
+            if ($expectedIndex === count($targetSlugs)) break;
+        }
+        return ['items' => $matchedItems, 'ambiguous' => false];
+    }
+
+    private function isOrderedSlugSubset(array $expected, array $actual): bool
+    {
+        if ($expected === []) return false;
+        $cursor = 0;
+        foreach ($actual as $slug) {
+            if (($expected[$cursor] ?? null) !== $slug) continue;
+            $cursor++;
+            if ($cursor === count($expected)) return true;
+        }
+        return false;
+    }
+
     /**
      * Display a listing of the resource.
      */

@@ -3,6 +3,9 @@ import axios from 'axios';
 import {Dialog, DialogPanel, DialogTitle} from '@headlessui/react';
 import {ChevronLeftIcon, ChevronRightIcon, PencilSquareIcon, ArrowPathIcon, XMarkIcon, PlayIcon} from '@heroicons/react/24/outline';
 import {Article, MosObject} from '@/types';
+import {useDispatch} from 'react-redux';
+import {AppDispatch} from '@/Store/store';
+import {articlesActions} from '@/Store/article/article.slice';
 import ArticleMosContent from '@/Components/Articles/ArticleMosContent';
 import type {LBPortalStatus, MosPlaybackAction, MosPlaybackState} from '@/Components/Articles/useLBPortalController';
 import {MosSequenceRow, moveMosSequenceRow, orderMosSequence} from '@/Components/Articles/mosSequence';
@@ -13,6 +16,8 @@ interface MosOrphan {id: number; fieldName: string; value: string; createdAt: st
 interface SavedMosObject {object: MosObject; baseRevision?: string}
 interface MosWorkspaceProps {
     article: Article | null
+    previousArticle?: Article | null
+    nextArticle?: Article | null
     previousDisabled?: boolean
     nextDisabled?: boolean
     onPrevious?: () => void
@@ -38,7 +43,8 @@ export async function requestMosPlay(live: boolean, object: MosObject, onPlay?: 
     return onPlay ? onPlay(object, action) : false;
 }
 
-export function MosWorkspace({article, previousDisabled = true, nextDisabled = true, onPrevious, onNext, live, showLBPortalControls = true, lbPortalStatus = 'unconfigured', commandBusy = false, commandMessage, lastPlayedObjectKey, playbackStates = {}, onPlay}: MosWorkspaceProps) {
+export function MosWorkspace({article, previousArticle = null, nextArticle = null, previousDisabled = true, nextDisabled = true, onPrevious, onNext, live, showLBPortalControls = true, lbPortalStatus = 'unconfigured', commandBusy = false, commandMessage, lastPlayedObjectKey, playbackStates = {}, onPlay}: MosWorkspaceProps) {
+    const dispatch = useDispatch<AppDispatch>();
     const [saved, setSaved] = useState<Record<string, SavedMosObject>>({});
     const [drafts, setDrafts] = useState<Record<string, Record<string, string>>>({});
     const [errors, setErrors] = useState<Record<string, string>>({});
@@ -52,6 +58,7 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
     const [draggedEntryKey, setDraggedEntryKey] = useState<string | null>(null);
     const [dropTarget, setDropTarget] = useState<string | null>(null);
     const [sequenceSaving, setSequenceSaving] = useState(false);
+    const [refreshingArticleIds, setRefreshingArticleIds] = useState<number[]>([]);
 
     useEffect(() => {
         if (!article?.playlist_id) return;
@@ -265,15 +272,34 @@ export function MosWorkspace({article, previousDisabled = true, nextDisabled = t
             setEditingKey(null);
         }
     };
+    const refreshMos = async () => {
+        if (!article?.can_refresh_mos) return;
+        const refreshingId = article.id;
+        setRefreshingArticleIds(current => current.includes(refreshingId) ? current : [...current, refreshingId]);
+        try {
+            const response = await axios.post<{data: Article}>(route('playlists.articles.refresh-mos', {playlist: article.playlist_id, article: refreshingId}), {}, {headers: {Accept: 'application/json'}});
+            dispatch(articlesActions.upsertArticle(response.data.data));
+            window.dispatchEvent(new CustomEvent('plasma:toast', {detail: {message: 'Grafica MOS a articolului a fost actualizată din ENPS.', type: 'success'}}));
+        } catch (reason: any) {
+            window.dispatchEvent(new CustomEvent('plasma:toast', {detail: {message: reason.response?.data?.message || 'Elementele MOS nu au putut fi actualizate.'}}));
+        } finally { setRefreshingArticleIds(current => current.filter(id => id !== refreshingId)); }
+    };
 
     return <aside className={`ios-card mos-workspace ${live ? 'mos-workspace-live' : ''}`} aria-label="Editor MOS">
         <header className="mos-workspace-header">
             <div className="min-w-0"><p className="ios-eyebrow">{live ? 'MOS · ARTICOL INDEPENDENT' : 'MOS · ARTICOL CURENT'}</p><h2 title={`#${article.playlist_order} ${titleFor(article)}`}>#{article.playlist_order} {titleFor(article)}</h2></div>
-            <nav className="mos-article-nav" aria-label="Navigare articole MOS">
-                <button type="button" aria-label="Articol MOS anterior" disabled={previousDisabled} onClick={onPrevious}><ChevronLeftIcon className="h-4 w-4"/></button>
-                <button type="button" aria-label="Articol MOS următor" disabled={nextDisabled} onClick={onNext}><ChevronRightIcon className="h-4 w-4"/></button>
-            </nav>
+            <button type="button" className="mos-refresh-button" disabled={!article.can_refresh_mos || refreshingArticleIds.includes(article.id) || sequenceSaving || (!!editingKey && editingDirty)} onClick={() => void refreshMos()} title={article.can_refresh_mos ? 'Actualizează grafica MOS din ENPS pentru acest articol' : 'Disponibil numai pentru articolele provenite din ENPS'}>
+                <ArrowPathIcon className={`h-4 w-4 ${refreshingArticleIds.includes(article.id) ? 'animate-spin' : ''}`} aria-hidden="true"/>{refreshingArticleIds.includes(article.id) ? 'Se actualizează MOS…' : 'Refresh MOS'}
+            </button>
         </header>
+        <nav className="mos-article-nav" aria-label="Navigare articole MOS">
+            <button type="button" className="previous" aria-label={`Articol MOS anterior${previousArticle?.technical_title ? `: ${previousArticle.technical_title}` : ''}`} title={previousArticle?.technical_title || 'Primul articol'} disabled={previousDisabled} onClick={onPrevious}>
+                <ChevronLeftIcon className="h-4 w-4" aria-hidden="true"/><span><small>PREV</small><strong>{previousArticle?.technical_title || 'Primul articol'}</strong></span>
+            </button>
+            <button type="button" className="next" aria-label={`Articol MOS următor${nextArticle?.technical_title ? `: ${nextArticle.technical_title}` : ''}`} title={nextArticle?.technical_title || 'Ultimul articol'} disabled={nextDisabled} onClick={onNext}>
+                <span><small>NEXT</small><strong>{nextArticle?.technical_title || 'Ultimul articol'}</strong></span><ChevronRightIcon className="h-4 w-4" aria-hidden="true"/>
+            </button>
+        </nav>
         <div className="mos-workspace-scroll">
             {sequence.length ? <>
                 <ol className="mos-sequence" aria-label="Elemente MOS ordonate automat">
