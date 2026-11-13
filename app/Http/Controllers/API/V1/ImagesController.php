@@ -44,10 +44,11 @@ class ImagesController extends Controller
             'article_id' => ['nullable', 'integer', 'exists:articles,id'],
         ]);
 
-        $images = Image::query()
-            ->whereHas('tags', fn ($query) => $query->where('title', 'like', '%'.$validated['query'].'%'))
-            ->with('tags')
-            ->get();
+        $images = Image::with('tags')->get()
+            ->filter(fn (Image $image) => $image->tags->contains(
+                fn (Tag $tag) => $imageMatcher->tagMatchesQuery($tag->title, $validated['query'])
+            ))
+            ->values();
 
         if (! empty($validated['article_id'])) {
             $article = Article::findOrFail($validated['article_id']);

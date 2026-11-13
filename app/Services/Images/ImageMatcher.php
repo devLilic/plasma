@@ -13,8 +13,16 @@ class ImageMatcher
      */
     public function bestMatch(array $terms): ?Image
     {
-        return $this->rank(Image::with('tags')->get(), $terms)
-            ->first(fn (Image $image) => $this->score($image, $terms) > 0);
+        $ranked = $this->rank(Image::with('tags')->get(), $terms);
+        $best = $ranked->first(fn (Image $image) => $this->score($image, $terms) > 0);
+        if (! $best) {
+            return null;
+        }
+
+        $bestScore = $this->score($best, $terms);
+        $tiedBestMatches = $ranked->filter(fn (Image $image) => $this->score($image, $terms) === $bestScore)->count();
+
+        return $tiedBestMatches === 1 ? $best : null;
     }
 
     /**
@@ -55,12 +63,19 @@ class ImageMatcher
 
             $tagTokens = $this->tokens($normalizedTag);
             $commonWords = $tagTokens->intersect($termTokens)->count();
-            $phraseMatch = $normalizedTerms->contains(
-                fn ($term) => str_contains($term, $normalizedTag) || str_contains($normalizedTag, $term)
-            );
+            $phraseMatch = $normalizedTerms->contains(fn ($term) => $this->containsTokenPhrase($term, $normalizedTag));
 
             return ($phraseMatch ? 100 + ($tagTokens->count() * 10) : 0) + ($commonWords * 10);
         });
+    }
+
+    public function tagMatchesQuery(string $tag, string $query): bool
+    {
+        $normalizedTag = $this->normalize($tag);
+        $normalizedQuery = $this->normalize($query);
+
+        return $normalizedTag !== '' && $normalizedQuery !== ''
+            && $this->containsTokenPhrase($normalizedTag, $normalizedQuery);
     }
 
     private function normalize(string $value): string
@@ -77,5 +92,23 @@ class ImageMatcher
             ->filter(fn ($word) => strlen($word) > 2 && ! in_array($word, ['beta', 'fake', 'intro', 'off', 'snc'], true))
             ->unique()
             ->values();
+    }
+
+    private function containsTokenPhrase(string $text, string $phrase): bool
+    {
+        $textTokens = array_values(array_filter(explode(' ', $text), fn ($token) => $token !== ''));
+        $phraseTokens = array_values(array_filter(explode(' ', $phrase), fn ($token) => $token !== ''));
+        $phraseLength = count($phraseTokens);
+        if ($phraseLength === 0 || $phraseLength > count($textTokens)) {
+            return false;
+        }
+
+        for ($start = 0; $start <= count($textTokens) - $phraseLength; $start++) {
+            if (array_slice($textTokens, $start, $phraseLength) === $phraseTokens) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
