@@ -346,6 +346,30 @@ class ArticleMosTimelineTest extends TestCase
         $this->assertSame('vox', $events[1]['kind']);
     }
 
+    public function test_first_title_is_kept_at_story_start_when_a_title_field_is_mentioned_inside_vox(): void
+    {
+        $title = $this->graphic('title', 'Titlu', 'Lucrările pe strada 31 August sunt complexe din cauza pavajului istoric');
+        $title['slug'] = '05_Titlu_Ultima_Ora';
+        array_unshift($title['editableObjects'], [
+            'name' => 'Supratitlu',
+            'value' => 'REABILITARE ISTORICĂ',
+            'role' => 'value',
+        ]);
+        $text = "VOX EA, RO\nNu mai este o reabilitare istorică, ci o construcție nouă.\nTEXT\nContinuarea știrii.";
+
+        $events = app(ArticleMosTimeline::class)->forArticle(
+            new Article,
+            [$title],
+            [['type' => 'BETA', 'paragraphs' => [$text]]],
+        );
+
+        $this->assertSame(['mos', 'vox'], array_column($events, 'kind'));
+        $this->assertSame('title', $events[0]['object']['commandId']);
+        $this->assertNull($events[0]['position']);
+        $this->assertNull($events[0]['sourceLine']);
+        $this->assertSame('', $events[0]['snippet']);
+    }
+
     public function test_vox_between_repeated_syncs_keeps_its_text_position_after_title_priority(): void
     {
         $speaker = $this->graphic('ana', 'NUME', 'ANA ȘERBAN');

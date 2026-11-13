@@ -47,7 +47,9 @@ class ArticleMosTimeline
         }
         foreach ($objects as $object) {
             $key = $this->objectKey($object);
-            if ($this->isVoxGraphic($object) || isset($voxObjectKeys[$key]) || isset($located[$key])) {
+            if ($this->isVoxGraphic($object)
+                || (isset($voxObjectKeys[$key]) && ! $this->hasPopulatedTitleField($object))
+                || isset($located[$key])) {
                 continue;
             }
             if (array_filter($object['editableObjects'], fn ($field) => trim($field['value']) !== '') !== []) {
@@ -61,8 +63,7 @@ class ArticleMosTimeline
         // A title graphic is the story's visual heading, so keep the first
         // title from the ENPS MOS list at the start even when it has no text match.
         foreach ($objects as $object) {
-            if ($this->isVoxGraphic($object)
-                || ! array_filter($object['editableObjects'] ?? [], fn ($field) => EnpsBasicContent::editableRole($field['name'] ?? '') === 'title' && trim($field['value'] ?? '') !== '')) {
+            if ($this->isVoxGraphic($object) || ! $this->hasPopulatedTitleField($object)) {
                 continue;
             }
 
@@ -81,6 +82,12 @@ class ArticleMosTimeline
         }
 
         return $timeline;
+    }
+
+    private function hasPopulatedTitleField(array $object): bool
+    {
+        return array_filter($object['editableObjects'] ?? [], fn ($field) =>
+            EnpsBasicContent::editableRole($field['name'] ?? '') === 'title' && trim($field['value'] ?? '') !== '') !== [];
     }
 
     private function objectKey(array $object): string
